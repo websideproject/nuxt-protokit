@@ -1,0 +1,21 @@
+{
+  "private": true,
+  "name": "nuxt-protokit-playground",
+  "type": "module",
+  "scripts": {
+    "dev": "nuxi dev",
+    "dev:prepare": "nuxi prepare",
+    "build": "nuxi build",
+    "generate": "nuxi generate",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "typecheck": "vue-tsc --noEmit"
+  },
+  "dependencies": {
+    "@websideproject/nuxt-protokit": "workspace:*",
+    "@nuxt/ui": "^3.0.0",
+    "yjs": "^13.6.0",
+    "y-indexeddb": "^9.0.0",
+    "nuxt": "^4.3.0"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "name": "nuxt-protokit-monorepo",
+  "private": true,
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/websideproject/nuxt-protokit.git"
+  },
+  "author": "HugoRCD",
+  "license": "MIT",
+  "packageManager": "bun@1.2.4",
+  "scripts": {
+    "dev": "turbo run dev --filter=nuxt-protokit-playground",
+    "dev:prepare": "turbo run dev:prepare",
+    "dev:docs": "turbo run dev --filter=nuxt-protokit-docs",
+    "docs": "turbo run dev --filter=nuxt-protokit-docs",
+    "build": "turbo run build",
+    "build:module": "turbo run build --filter=@websideproject/nuxt-protokit",
+    "build:docs": "turbo run build --filter=nuxt-protokit-docs",
+    "lint": "turbo run lint",
+    "lint:fix": "turbo run lint:fix",
+    "test": "turbo run test",
+    "typecheck": "turbo run typecheck",
+    "automd": "automd --config .github/automd.json"
+  },
+  "devDependencies": {
+    "@nuxt/eslint-config": "^1.11.0",
+    "@types/node": "latest",
+    "automd": "^0.4.0",
+    "eslint": "^9.39.1",
+    "turbo": "^2.6.1",
+    "typescript": "^5.9.3",
+    "vitest": "^4.0.14",
+    "vue-tsc": "^3.1.5"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "trustedDependencies": [
+    "@parcel/watcher",
+    "better-sqlite3",
+    "esbuild",
+    "sharp",
+    "unrs-resolver",
+    "vue-demi"
+  ]
+}
