@@ -8,18 +8,18 @@
 
 <!-- /automd -->
 
-Schema-driven, offline-first tool builder for Nuxt 4. Define a TypeScript schema and get a fully working interactive tool — forms, CRUD, computed values, visualizations, and automatic Y.js persistence.
+Schema-driven rapid prototyping for Nuxt 4. Define a TypeScript schema and get a fully working interactive prototype — forms, CRUD, computed values, visualizations, and automatic Y.js persistence.
 
 ## ✨ Features
 
 <!-- automd:file src=".github/snippets/features.md" -->
 
 - 📋 **Schema-driven** — define fields, derived values, collections, and visualizations in one TypeScript object
-- 📴 **Offline-first** — Y.js + IndexedDB means every write is local-first; sync is automatic on reconnect
+- 📴 **Offline-first** — Y.js + IndexedDB means every write is local-first; data is safe without a server
 - 🧮 **12 field types** — number, text, textarea, select, segmented, toggle, range, rating, color, date, tags, linked-responses
 - 📊 **5 visualization types** — progress bar, benchmark bar, bar chart, comparison table, feature matrix, timeline
 - 🔗 **Cross-tool data flow** — `produces`/`consumes` wire tools together via a reactive CRDT data graph
-- 🛡️ **Corruption recovery** — auto-detect IndexedDB corruption and restore from server snapshots
+- 🛡️ **Corruption recovery** — auto-detect IndexedDB corruption; restore from server snapshots when a sync backend is present
 - 🔄 **Multi-tab sync** — BroadcastChannel propagates edits across open tabs without a server round-trip
 
 <!-- /automd -->
@@ -47,12 +47,16 @@ Then add it to your `nuxt.config.ts`:
 export default defineNuxtConfig({
   modules: ['@websideproject/nuxt-protokit'],
   protokit: {
-    serverSync: false, // set true to enable Y.js server sync
+    serverSync: false, // set true only if you have a compatible sync backend
   },
 })
 ```
 
 <!-- /automd -->
+
+## 🔄 Server sync
+
+`serverSync: true` requires a compatible backend that implements the Y.js sync API (`POST /api/yjs/sync`, `GET /api/yjs/pull`, `GET /api/yjs/snapshots/:key`). You can use the separate **`yjs-sync`** companion module or build the endpoints yourself. Without a backend, keep `serverSync: false` — prototypes work fully offline via IndexedDB with no HTTP calls.
 
 ## 📖 Documentation
 
@@ -94,5 +98,11 @@ bun run test
 <!-- automd:file src=".github/snippets/license.md" -->
 
 Published under the [MIT](https://github.com/websideproject/nuxt-protokit/blob/main/LICENSE) license.
+
+Made by [websideproject](https://github.com/websideproject) and [community](https://github.com/websideproject/nuxt-protokit/graphs/contributors) 💛
+
+<a href="https://github.com/websideproject/nuxt-protokit/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=websideproject/nuxt-protokit" />
+</a>
 
 <!-- /automd -->

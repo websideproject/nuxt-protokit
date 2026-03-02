@@ -1,17 +1,17 @@
 ---
 title: protokit
-description: A schema-driven, offline-first tool builder for Nuxt 4. Define a TypeScript schema and get a fully working interactive tool — forms, CRUD, computed values, visualizations, and automatic Y.js persistence.
+description: Schema-driven rapid prototyping for Nuxt 4. Turn a TypeScript schema into a persistent, interactive prototype in minutes — forms, CRUD, computed values, visualizations, and automatic Y.js persistence.
 seo:
-  title: protokit — Schema-driven offline-first tool builder for Nuxt 4
-  description: Define a TypeScript schema and get a complete interactive tool with forms, CRUD, computed values, visualizations, and automatic Y.js persistence.
+  title: protokit — Schema-driven rapid prototyping for Nuxt 4
+  description: Turn a TypeScript schema into a fully working, offline-first product prototype in minutes. Forms, CRUD, computed values, visualizations — all from one schema.
 ---
 
 ::u-page-hero
 #title
-Build tools from schemas
+From schema to prototype in minutes
 
 #description
-A Nuxt 4 module for building **schema-driven interactive tools** with offline-first persistence. Define a TypeScript schema. Get a complete, persistent, interactive tool.
+A Nuxt 4 module for **rapid product prototyping**. Define a TypeScript schema. Get a complete, persistent, interactive prototype — without the boilerplate.
 
 #links
   :::u-button
@@ -101,9 +101,9 @@ Everything from one schema
   icon: i-lucide-git-merge
   ---
   #title
-  Cross-tool data flow
+  Connected prototypes
 
   #description
-  Wire tools together with `produces`/`consumes` — a reactive data graph with automatic CRDT merge.
+  Wire prototypes together with `produces`/`consumes` — a reactive data graph with automatic CRDT merge.
   :::
 ::

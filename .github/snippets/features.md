@@ -1,7 +1,7 @@
 - 📋 **Schema-driven** — define fields, derived values, collections, and visualizations in one TypeScript object
-- 📴 **Offline-first** — Y.js + IndexedDB means every write is local-first; sync is automatic on reconnect
+- 📴 **Offline-first** — Y.js + IndexedDB means every write is local-first; data is safe without a server
 - 🧮 **12 field types** — number, text, textarea, select, segmented, toggle, range, rating, color, date, tags, linked-responses
 - 📊 **5 visualization types** — progress bar, benchmark bar, bar chart, comparison table, feature matrix, timeline
-- 🔗 **Cross-tool data flow** — `produces`/`consumes` wire tools together via a reactive CRDT data graph
-- 🛡️ **Corruption recovery** — auto-detect IndexedDB corruption and restore from server snapshots
+- 🔗 **Connected prototypes** — `produces`/`consumes` wire prototypes together via a reactive CRDT data graph
+- 🛡️ **Corruption recovery** — auto-detect IndexedDB corruption; restore from server snapshots when a sync backend is present
 - 🔄 **Multi-tab sync** — BroadcastChannel propagates edits across open tabs without a server round-trip

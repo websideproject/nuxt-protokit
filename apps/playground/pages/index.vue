@@ -8,8 +8,8 @@
       </div>
       <h1 class="text-3xl font-bold text-highlighted">nuxt-protokit</h1>
       <p class="text-lg text-muted leading-relaxed">
-        Schema-driven, offline-first tool builder for Nuxt. Define a TypeScript schema — get a fully functional,
-        persisted, synced prototype with zero boilerplate.
+        Rapid product prototyping for Nuxt. Define a TypeScript schema — get a fully functional,
+        persistent, interactive prototype with zero boilerplate.
       </p>
     </div>
 
@@ -34,10 +34,10 @@
       <div class="rounded-xl border border-default bg-elevated overflow-hidden">
         <div class="flex items-center gap-2 px-4 py-2 border-b border-default bg-muted/30">
           <UIcon name="i-lucide-file-code" class="w-3.5 h-3.5 text-muted" />
-          <span class="text-xs text-muted font-mono">my-tool.vue</span>
+          <span class="text-xs text-muted font-mono">my-prototype.vue</span>
         </div>
         <pre class="px-4 py-4 text-xs text-muted overflow-x-auto leading-relaxed"><code><span class="text-highlighted">const</span> schema = <span class="text-primary">definePrototype</span>({
-  key: <span class="text-emerald-500">'my-tool'</span>,
+  key: <span class="text-emerald-500">'my-prototype'</span>,
   fields: {
     revenue: { type: <span class="text-emerald-500">'number'</span>, label: <span class="text-emerald-500">'Monthly Revenue'</span>, default: <span class="text-amber-500">10000</span> },
   },
