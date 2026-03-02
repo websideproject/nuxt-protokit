@@ -46,12 +46,21 @@ export interface CardDef {
 
 export type VizType = 'progress' | 'benchmark' | 'bar-chart' | 'comparison-table' | 'feature-matrix' | 'timeline'
 
-export interface VizDef {
+export interface BuiltInVizDef {
   type: VizType
   title?: string
   showWhen?: (ctx: import('./compute').ComputeContext) => boolean
   config: VizProgressConfig | VizBenchmarkConfig | VizBarChartConfig | VizComparisonTableConfig | VizFeatureMatrixConfig | VizTimelineConfig
 }
+
+export interface CustomVizDef {
+  type: `${string}:${string}`
+  title?: string
+  showWhen?: (ctx: import('./compute').ComputeContext) => boolean
+  config?: Record<string, any>
+}
+
+export type VizDef = BuiltInVizDef | CustomVizDef
 
 export interface VizProgressConfig {
   type: 'progress'

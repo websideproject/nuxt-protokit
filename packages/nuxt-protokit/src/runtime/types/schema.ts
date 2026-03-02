@@ -34,7 +34,17 @@ export type LinkedResponsesFieldDef = {
   answerRows?: number
 }
 
-export type FieldDef<T = any> = SimpleFieldDef<T> | LinkedResponsesFieldDef
+export type CustomFieldDef<T = any> = {
+  type: `${string}:${string}`
+  label: string | ((value: T) => string)
+  default: T
+  props?: Record<string, any>
+  showWhen?: (values: Record<string, any>) => boolean
+  help?: string
+  hint?: string
+}
+
+export type FieldDef<T = any> = SimpleFieldDef<T> | LinkedResponsesFieldDef | CustomFieldDef<T>
 
 // --- Preset Pack ---
 

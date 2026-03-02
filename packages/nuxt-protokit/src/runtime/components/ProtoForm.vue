@@ -2,6 +2,9 @@
 import type { Ref } from 'vue'
 import type { FieldDef, SectionDef } from '../types'
 import type { ComputeContext } from '../types/compute'
+import { useProtoExtensionRegistry } from '../composables/useProtoExtensionRegistry'
+
+const { getFieldComponent } = useProtoExtensionRegistry()
 
 const props = withDefaults(defineProps<{
   fields: Record<string, FieldDef>
@@ -149,6 +152,12 @@ const sectionedFields = computed(() => {
         :field-def="fieldDef as any"
         :collection-items="collectionItems"
       />
+      <component
+        v-else-if="getFieldComponent(fieldDef.type)"
+        :is="getFieldComponent(fieldDef.type)"
+        v-model="model[key].value"
+        v-bind="(fieldDef as any).props ?? {}"
+      />
       <template v-if="(fieldDef as any).help" #help>
         <span class="text-xs text-muted">{{ (fieldDef as any).help }}</span>
       </template>
@@ -241,6 +250,12 @@ const sectionedFields = computed(() => {
             :field-def="def as any"
             :collection-items="collectionItems"
           />
+          <component
+            v-else-if="getFieldComponent(def.type)"
+            :is="getFieldComponent(def.type)"
+            v-model="model[key].value"
+            v-bind="(def as any).props ?? {}"
+          />
           <template v-if="(def as any).help" #help>
             <span class="text-xs text-muted">{{ (def as any).help }}</span>
           </template>
@@ -326,6 +341,12 @@ const sectionedFields = computed(() => {
           v-model="model[key].value"
           :field-def="def as any"
           :collection-items="collectionItems"
+        />
+        <component
+          v-else-if="getFieldComponent(def.type)"
+          :is="getFieldComponent(def.type)"
+          v-model="model[key].value"
+          v-bind="(def as any).props ?? {}"
         />
         <template v-if="(def as any).help" #help>
           <span class="text-xs text-muted">{{ (def as any).help }}</span>

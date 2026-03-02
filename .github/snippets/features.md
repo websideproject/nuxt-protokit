@@ -5,3 +5,4 @@
 - 🔗 **Connected prototypes** — `produces`/`consumes` wire prototypes together via a reactive CRDT data graph
 - 🛡️ **Corruption recovery** — auto-detect IndexedDB corruption; restore from server snapshots when a sync backend is present
 - 🔄 **Multi-tab sync** — BroadcastChannel propagates edits across open tabs without a server round-trip
+- 🧩 **Extensible** — register custom field types and viz types via `defineProtokitExtension` without modifying the module
