@@ -5,6 +5,7 @@ import { formatMoney } from '#protokit/utils/formatters'
 const schema: PrototypeSchema = {
   key: 'playground-runway',
   title: 'Personal Runway Calculator',
+  shortTitle: 'Runway',
   description: 'How long can you sustain yourself while building your startup?',
   icon: 'i-lucide-plane-takeoff',
   defaultCols: 2,

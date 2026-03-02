@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { PrototypeSchema } from '../types/schema'
 import { usePrototype } from '../composables/usePrototype'
 
@@ -37,11 +37,20 @@ const collectionItems = computed(() => {
 </script>
 
 <template>
-  <div v-if="!isReady" class="flex items-center justify-center py-12">
-    <UIcon name="i-lucide-loader-2" class="size-6 animate-spin text-muted" />
+  <div
+    v-if="!isReady"
+    class="flex items-center justify-center py-12"
+  >
+    <UIcon
+      name="i-lucide-loader-2"
+      class="size-6 animate-spin text-muted"
+    />
   </div>
 
-  <div v-else class="space-y-6">
+  <div
+    v-else
+    class="space-y-6"
+  >
     <!-- Custom layout via ProtoDashboard -->
     <ProtoDashboard
       v-if="hasLayout"
@@ -49,14 +58,17 @@ const collectionItems = computed(() => {
       :state="state"
       :collections="collections"
       :compute-context="computeContext"
-      :derived="derived"
+      :derived="(derived as any)"
       :doc="doc"
       :collection-items="collectionItems"
       @reset="reset"
     />
 
     <!-- Default layout: form → results → visualizations → collections -->
-    <div v-else class="space-y-6">
+    <div
+      v-else
+      class="space-y-6"
+    >
       <!-- Form: section mode - ProtoForm adds its own cards per section -->
       <ProtoForm
         v-if="schema.sections"
@@ -70,10 +82,21 @@ const collectionItems = computed(() => {
       <UCard v-else>
         <template #header>
           <div class="flex items-center gap-2">
-            <UIcon v-if="schema.icon" :name="schema.icon" class="size-5" />
-            <h3 class="font-semibold">{{ schema.title }}</h3>
+            <UIcon
+              v-if="schema.icon"
+              :name="schema.icon"
+              class="size-5"
+            />
+            <h3 class="font-semibold">
+              {{ schema.title }}
+            </h3>
           </div>
-          <p v-if="schema.description" class="text-sm text-muted mt-1">{{ schema.description }}</p>
+          <p
+            v-if="schema.description"
+            class="text-sm text-muted mt-1"
+          >
+            {{ schema.description }}
+          </p>
         </template>
         <ProtoForm
           :fields="schema.fields"
@@ -84,11 +107,16 @@ const collectionItems = computed(() => {
       </UCard>
 
       <!-- Results -->
-      <template v-for="(result, ri) in schema.results" :key="ri">
+      <template
+        v-for="(result, ri) in schema.results"
+        :key="ri"
+      >
         <UCard v-if="!result.showWhen || result.showWhen(computeContext)">
           <template #header>
             <div class="flex items-center justify-between">
-              <h3 class="font-semibold">{{ result.title }}</h3>
+              <h3 class="font-semibold">
+                {{ result.title }}
+              </h3>
               <ProtoBadge
                 v-if="result.badge?.(computeContext)"
                 v-bind="result.badge!(computeContext)!"
@@ -103,8 +131,14 @@ const collectionItems = computed(() => {
       </template>
 
       <!-- Visualizations -->
-      <UCard v-for="(viz, vi) in schema.visualizations" :key="`viz-${vi}`">
-        <ProtoViz :viz="viz" :context="computeContext" />
+      <UCard
+        v-for="(viz, vi) in schema.visualizations"
+        :key="`viz-${vi}`"
+      >
+        <ProtoViz
+          :viz="viz"
+          :context="computeContext"
+        />
       </UCard>
 
       <!-- Cards -->
@@ -124,7 +158,10 @@ const collectionItems = computed(() => {
       </template>
 
       <!-- Collections -->
-      <template v-for="(collSchema, collKey) in schema.collections" :key="collKey">
+      <template
+        v-for="(collSchema, collKey) in schema.collections"
+        :key="collKey"
+      >
         <UCard v-if="collections[collKey]">
           <ProtoCrudList
             :schema="collSchema"
@@ -140,7 +177,12 @@ const collectionItems = computed(() => {
 
       <!-- Reset -->
       <div class="flex justify-end">
-        <UButton variant="ghost" size="sm" icon="i-lucide-rotate-ccw" @click="reset">
+        <UButton
+          variant="ghost"
+          size="sm"
+          icon="i-lucide-rotate-ccw"
+          @click="reset"
+        >
           Reset
         </UButton>
       </div>

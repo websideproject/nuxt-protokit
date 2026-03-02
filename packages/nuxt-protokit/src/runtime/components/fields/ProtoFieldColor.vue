@@ -15,7 +15,7 @@ const emit = defineEmits<{
       type="color"
       class="h-9 w-12 rounded border border-default cursor-pointer"
       @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
-    />
+    >
     <UInput
       :model-value="modelValue"
       class="w-full"

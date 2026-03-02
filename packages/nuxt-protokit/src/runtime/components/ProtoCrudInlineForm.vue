@@ -10,7 +10,7 @@ const props = withDefaults(defineProps<{
   addLabel?: string
   editLabel?: string
   collectionItems?: Record<string, any[]>
-  validate?: (item: Record<string, any>) => boolean | string
+  validate?: (item: Record<string, any>) => boolean | string | Record<string, string>
 }>(), {
   cols: 2,
   addLabel: 'Add',
@@ -28,7 +28,8 @@ const formData = ref<Record<string, any>>({ ...props.defaults })
 watch(() => props.editData, (data) => {
   if (data) {
     formData.value = { ...data }
-  } else {
+  }
+  else {
     formData.value = { ...props.defaults }
   }
 }, { immediate: true })
@@ -85,15 +86,30 @@ function cancel() {
       :errors="fieldErrors"
     />
     <div class="space-y-2">
-      <p v-if="validationError" class="text-sm text-error flex items-center gap-1.5">
-        <UIcon name="i-lucide-circle-alert" class="size-4 shrink-0" />
+      <p
+        v-if="validationError"
+        class="text-sm text-error flex items-center gap-1.5"
+      >
+        <UIcon
+          name="i-lucide-circle-alert"
+          class="size-4 shrink-0"
+        />
         {{ validationError }}
       </p>
       <div class="flex gap-2">
-        <UButton variant="outline" icon="i-lucide-check" @click="save">
+        <UButton
+          variant="outline"
+          icon="i-lucide-check"
+          @click="save"
+        >
           {{ editData ? editLabel : addLabel }}
         </UButton>
-        <UButton v-if="editData" variant="ghost" size="sm" @click="cancel">
+        <UButton
+          v-if="editData"
+          variant="ghost"
+          size="sm"
+          @click="cancel"
+        >
           Cancel
         </UButton>
       </div>

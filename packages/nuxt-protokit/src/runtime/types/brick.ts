@@ -16,7 +16,7 @@ export interface ResultSectionDef {
   title: string
   icon?: string
   showWhen?: (ctx: import('./compute').ComputeContext) => boolean
-  badge?: (ctx: import('./compute').ComputeContext) => { label: string; color: string } | null
+  badge?: (ctx: import('./compute').ComputeContext) => { label: string, color: string } | null
   stats: (ctx: import('./compute').ComputeContext) => Array<{
     label: string
     value: string | number
@@ -38,7 +38,7 @@ export interface CardDef {
     value: string | number
     valueClass?: string
   }>
-  badge?: (ctx: import('./compute').ComputeContext) => { label: string; color: string } | null
+  badge?: (ctx: import('./compute').ComputeContext) => { label: string, color: string } | null
   footer?: string
 }
 
@@ -67,7 +67,7 @@ export interface VizProgressConfig {
   value: (ctx: import('./compute').ComputeContext) => number
   max?: number
   label?: (ctx: import('./compute').ComputeContext) => string
-  thresholds?: Array<{ value: number; color: string; label?: string }>
+  thresholds?: Array<{ value: number, color: string, label?: string }>
 }
 
 export interface VizBenchmarkConfig {
@@ -82,14 +82,14 @@ export interface VizBenchmarkConfig {
 
 export interface VizBarChartConfig {
   type: 'bar-chart'
-  data: (ctx: import('./compute').ComputeContext) => Array<{ label: string; value: number; color?: string }>
+  data: (ctx: import('./compute').ComputeContext) => Array<{ label: string, value: number, color?: string }>
   maxValue?: number
   unit?: string
 }
 
 export interface VizComparisonTableConfig {
   type: 'comparison-table'
-  columns: Array<{ key: string; label: string }>
+  columns: Array<{ key: string, label: string }>
   rows: (ctx: import('./compute').ComputeContext) => Array<Record<string, any>>
 }
 
@@ -119,7 +119,7 @@ export interface DashboardTabDef {
   id: string
   label: string
   icon?: string
-  badge?: (ctx: import('./compute').ComputeContext) => { label: string; color: string } | null
+  badge?: (ctx: import('./compute').ComputeContext) => { label: string, color: string } | null
   rows: LayoutRow[]
 }
 
@@ -141,11 +141,11 @@ export interface InlineTabDef {
   items: LayoutItem[]
 }
 
-export type LayoutItem =
-  | { type: 'form'; sectionIndex?: number; span?: number }
-  | { type: 'stats'; resultIndex: number; span?: number }
-  | { type: 'viz'; vizIndex: number; span?: number }
-  | { type: 'card'; cardIndex: number; span?: number }
-  | { type: 'collection'; collectionKey: string; view: 'list' | 'table'; span?: number }
-  | { type: 'section'; title: string; items: LayoutItem[]; span?: number }
-  | { type: 'tabs'; tabs: InlineTabDef[]; span?: number }
+export type LayoutItem
+  = | { type: 'form', sectionIndex?: number, span?: number }
+    | { type: 'stats', resultIndex: number, span?: number }
+    | { type: 'viz', vizIndex: number, span?: number }
+    | { type: 'card', cardIndex: number, span?: number }
+    | { type: 'collection', collectionKey: string, view: 'list' | 'table', span?: number }
+    | { type: 'section', title: string, items: LayoutItem[], span?: number }
+    | { type: 'tabs', tabs: InlineTabDef[], span?: number }

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 defineProps<{
   modelValue: any
-  options?: Array<string | { label: string; value: any; icon?: string }>
+  options?: Array<string | { label: string, value: any, icon?: string }>
   placeholder?: string
 }>()
 

@@ -1,6 +1,5 @@
 import { ref, type Ref } from 'vue'
-import type { PrototypeSchema } from '../types/schema'
-import type { CollectionSchema } from '../types/schema'
+import type { PrototypeSchema, CollectionSchema } from '../types/schema'
 
 const prototypeRegistry = new Map<string, PrototypeSchema>()
 const collectionRegistry = new Map<string, CollectionSchema>()

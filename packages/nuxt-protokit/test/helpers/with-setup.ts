@@ -5,7 +5,7 @@ import { createApp, defineComponent } from 'vue'
  * (onUnmounted, etc.) available. Returns the composable result and a
  * `cleanup` function that unmounts the app.
  */
-export function withSetup<T>(composable: () => T): { result: T; cleanup: () => void } {
+export function withSetup<T>(composable: () => T): { result: T, cleanup: () => void } {
   let result!: T
   const app = createApp(
     defineComponent({

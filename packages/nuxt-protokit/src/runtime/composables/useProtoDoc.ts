@@ -88,7 +88,7 @@ async function pullFromServer(fullKey: string, doc: Y.Doc, base: string): Promis
     const emptyStateVector = Y.encodeStateVector(new Y.Doc())
     const res = await $fetch<{
       success: boolean
-      data?: { updates: Array<{ update: string; timestamp: number }>, hasMore: boolean }
+      data?: { updates: Array<{ update: string, timestamp: number }>, hasMore: boolean }
       error?: string
     }>(`${base}/pull`, {
       method: 'GET',
@@ -105,13 +105,15 @@ async function pullFromServer(fullKey: string, doc: Y.Doc, base: string): Promis
         // Prevents a corrupt server update from partially modifying local state.
         const testDoc = new Y.Doc()
         let valid = true
-        try { Y.applyUpdate(testDoc, bytes) } catch { valid = false }
+        try { Y.applyUpdate(testDoc, bytes) }
+        catch { valid = false }
         testDoc.destroy()
         if (!valid) {
           console.warn(`[useProtoDoc] Skipping invalid Y.js update from server for "${fullKey}"`)
           continue
         }
-        try { Y.applyUpdate(doc, bytes) } catch {}
+        try { Y.applyUpdate(doc, bytes) }
+        catch {}
       }
     }
   }
@@ -211,7 +213,7 @@ export function useProtoDoc(
       // Push to server + create snapshot after a clean local load (fire and forget)
       if (import.meta.client && syncEnabled) {
         pushDocToServer(fullKey, doc, providers.clientId!, syncBase).then(() =>
-          createServerSnapshot(fullKey, syncBase)
+          createServerSnapshot(fullKey, syncBase),
         )
       }
     })
@@ -227,7 +229,7 @@ export function useProtoDoc(
       providers.serverPushTimer = setTimeout(() => {
         providers.serverPushTimer = undefined
         pushDocToServer(fullKey, doc, providers.clientId!, syncBase).then(() =>
-          createServerSnapshot(fullKey, syncBase)
+          createServerSnapshot(fullKey, syncBase),
         )
       }, 30_000) // 30 s debounce — keeps server in sync without hammering it
     })
@@ -257,7 +259,8 @@ export function useProtoDoc(
       providers.idbErrorHandler = undefined
 
       // Destroy the corrupt IndexedDB provider
-      try { await idbProvider.destroy() } catch {}
+      try { await idbProvider.destroy() }
+      catch {}
       providers.indexeddb = undefined
 
       // Await deletion so the fresh provider cannot reopen the corrupt DB before it's gone.

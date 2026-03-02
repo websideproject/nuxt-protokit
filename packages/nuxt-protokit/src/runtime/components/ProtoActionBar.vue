@@ -25,7 +25,8 @@ async function handleCopyText(action: Extract<ProtoAction, { type: 'copy-text' }
     setTimeout(() => {
       copiedState.value[action.id] = false
     }, 2000)
-  } catch {
+  }
+  catch {
     // Fallback: create temp textarea
     const ta = document.createElement('textarea')
     ta.value = text
@@ -55,7 +56,8 @@ function handleExportMarkdown(action: Extract<ProtoAction, { type: 'export-markd
     a.download = filename
     a.click()
     URL.revokeObjectURL(url)
-  } catch {
+  }
+  catch {
     // Fallback: clipboard
     navigator.clipboard.writeText(content).catch(() => {})
     copiedState.value[action.id] = true
@@ -68,9 +70,11 @@ function handleExportMarkdown(action: Extract<ProtoAction, { type: 'export-markd
 function handleAction(action: ProtoAction) {
   if (action.type === 'copy-text') {
     handleCopyText(action)
-  } else if (action.type === 'export-markdown') {
+  }
+  else if (action.type === 'export-markdown') {
     handleExportMarkdown(action)
-  } else if (action.type === 'reset') {
+  }
+  else if (action.type === 'reset') {
     props.onReset?.()
   }
 }
@@ -79,7 +83,10 @@ const visibleActions = computed(() => props.actions.filter(a => isVisible(a)))
 </script>
 
 <template>
-  <div v-if="visibleActions.length > 0" class="flex flex-wrap gap-2 pt-2 border-t border-default">
+  <div
+    v-if="visibleActions.length > 0"
+    class="flex flex-wrap gap-2 pt-2 border-t border-default"
+  >
     <UButton
       v-for="action in visibleActions"
       :key="action.id"

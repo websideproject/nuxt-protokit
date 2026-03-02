@@ -1,5 +1,5 @@
 import { ref, watch, type Ref } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 
 export interface UseProtoTextReturn {
   text: Ref<string>

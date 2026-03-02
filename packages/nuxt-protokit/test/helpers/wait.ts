@@ -12,7 +12,8 @@ export function waitFor(fn: () => boolean | Promise<boolean>, timeout = 3000): P
           resolve()
           return
         }
-      } catch {
+      }
+      catch {
         // not ready yet
       }
       if (Date.now() - start > timeout) {

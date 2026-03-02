@@ -3,12 +3,12 @@ import type { LinkedResponsesFieldDef } from '../../types/schema'
 
 const props = defineProps<{
   fieldDef: LinkedResponsesFieldDef
-  modelValue: Array<{ sourceId: string; answer: string }>
+  modelValue: Array<{ sourceId: string, answer: string }>
   collectionItems?: Record<string, any[]>
 }>()
 
 const emit = defineEmits<{
-  'update:modelValue': [value: Array<{ sourceId: string; answer: string }>]
+  'update:modelValue': [value: Array<{ sourceId: string, answer: string }>]
 }>()
 
 const sourceItems = computed(() => {
@@ -33,7 +33,8 @@ function setAnswer(sourceId: string, answer: string) {
   const idx = current.findIndex(r => r.sourceId === sourceId)
   if (idx >= 0) {
     current[idx] = { sourceId, answer }
-  } else {
+  }
+  else {
     current.push({ sourceId, answer })
   }
   emit('update:modelValue', current)
@@ -42,8 +43,14 @@ function setAnswer(sourceId: string, answer: string) {
 
 <template>
   <div class="space-y-3">
-    <div v-if="sourceItems.length === 0" class="text-sm text-muted py-4 text-center">
-      <UIcon :name="'i-lucide-help-circle'" class="size-5 mx-auto mb-1 opacity-50" />
+    <div
+      v-if="sourceItems.length === 0"
+      class="text-sm text-muted py-4 text-center"
+    >
+      <UIcon
+        :name="'i-lucide-help-circle'"
+        class="size-5 mx-auto mb-1 opacity-50"
+      />
       <p>No {{ fieldDef.sourceCollection }} found. Add some first.</p>
     </div>
     <div

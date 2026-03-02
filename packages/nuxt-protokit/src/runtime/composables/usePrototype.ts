@@ -1,5 +1,5 @@
 import { computed, ref, type Ref, type ComputedRef } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { PrototypeSchema } from '../types/schema'
 import type { ComputeContext } from '../types/compute'
 import { useProtoDoc } from './useProtoDoc'
@@ -41,7 +41,8 @@ export function usePrototype(
   if (options?.existingDoc) {
     doc = options.existingDoc
     isReady = ref(true) as Ref<boolean>
-  } else {
+  }
+  else {
     const protoDoc = useProtoDoc(options?.docKey ?? schema.key, {
       disableSync: options?.disableSync,
     })

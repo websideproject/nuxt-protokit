@@ -10,7 +10,7 @@ import { trackTestDb } from '../helpers/browser-setup'
 import { waitFor } from '../helpers/wait'
 
 // Helper: create a Y.Doc with IndexedDB persistence
-function createDocWithIDB(key: string): { doc: Y.Doc; idb: IndexeddbPersistence; ready: Promise<void> } {
+function createDocWithIDB(key: string): { doc: Y.Doc, idb: IndexeddbPersistence, ready: Promise<void> } {
   const doc = new Y.Doc()
   const idb = new IndexeddbPersistence(key, doc)
   const ready = new Promise<void>((resolve) => {

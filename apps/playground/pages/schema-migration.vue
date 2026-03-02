@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import type { CollectionSchema } from '#protokit/types'
-import * as Y from 'yjs'
 
 const LEGACY_STORAGE_KEY = 'migration-demo-legacy-snapshot'
 
@@ -65,7 +64,7 @@ const { doc, items, add, update, remove, isReady } = useProtoCollection(schema)
 // so the next page load triggers the full migration chain (v0 → v1 → v2).
 
 const seeded = ref(false)
-const legacySnapshot = ref<any[] | null>(null)
+const legacySnapshot = ref<unknown[] | null>(null)
 
 onMounted(() => {
   const stored = localStorage.getItem(LEGACY_STORAGE_KEY)
@@ -84,7 +83,7 @@ function seedLegacyData() {
 
   doc.transact(() => {
     dataArray.delete(0, dataArray.length)
-    dataArray.insert(0, legacyItems as any)
+    dataArray.insert(0, legacyItems as never[])
     metaMap.set('v', 0) // reset stored version to force migration on reload
   })
 

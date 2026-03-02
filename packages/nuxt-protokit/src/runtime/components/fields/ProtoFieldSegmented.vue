@@ -1,14 +1,14 @@
 <script setup lang="ts">
 defineProps<{
   modelValue: any
-  options?: Array<string | { label: string; value: any; icon?: string }>
+  options?: Array<string | { label: string, value: any, icon?: string }>
 }>()
 
 const emit = defineEmits<{
   'update:modelValue': [value: any]
 }>()
 
-function getItems(options: Array<string | { label: string; value: any; icon?: string }> | undefined) {
+function getItems(options: Array<string | { label: string, value: any, icon?: string }> | undefined) {
   if (!options) return []
   return options.map(o => typeof o === 'string' ? { label: o, value: o } : o)
 }

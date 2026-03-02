@@ -5,7 +5,7 @@ import { afterEach } from 'vitest'
  * We track them via a global Set populated by deleteTestDb().
  */
 declare global {
-  // eslint-disable-next-line no-var
+
   var __testDbs: Set<string>
 }
 

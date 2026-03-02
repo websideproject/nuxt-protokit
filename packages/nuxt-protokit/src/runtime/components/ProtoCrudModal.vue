@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, watch, computed, type WritableComputedRef } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { CollectionSchema } from '../types/schema'
 import { useProtoDraft } from '../composables/useProtoDraft'
 
@@ -42,10 +42,12 @@ watch(isOpen, (open) => {
   if (props.editData) {
     formData.value = { ...props.editData }
     showDraftBanner.value = false
-  } else if (hasDraft.value) {
+  }
+  else if (hasDraft.value) {
     formData.value = { ...props.schema.defaults }
     showDraftBanner.value = true
-  } else {
+  }
+  else {
     formData.value = { ...props.schema.defaults }
     showDraftBanner.value = false
   }
@@ -117,10 +119,10 @@ function cancel() {
 const modalTitle = computed(() => props.editData ? `Edit ${props.schema.title}` : `Add ${props.schema.title}`)
 
 const maxWMap: Record<string, string> = {
-  sm: 'max-w-sm',
-  md: 'max-w-md',
-  lg: 'max-w-lg',
-  xl: 'max-w-xl',
+  'sm': 'max-w-sm',
+  'md': 'max-w-md',
+  'lg': 'max-w-lg',
+  'xl': 'max-w-xl',
   '2xl': 'max-w-2xl',
   '3xl': 'max-w-3xl',
   '4xl': 'max-w-4xl',
@@ -141,7 +143,12 @@ const formCols = computed<1 | 2>(() => {
 </script>
 
 <template>
-  <UModal v-model:open="isOpen" :title="modalTitle" :ui="modalUi" scrollable>
+  <UModal
+    v-model:open="isOpen"
+    :title="modalTitle"
+    :ui="modalUi"
+    scrollable
+  >
     <template #body>
       <!-- Draft resume banner -->
       <UAlert
@@ -154,8 +161,21 @@ const formCols = computed<1 | 2>(() => {
         class="mb-4"
       >
         <template #actions>
-          <UButton size="xs" variant="outline" @click="resumeDraft">Resume</UButton>
-          <UButton size="xs" variant="ghost" color="neutral" @click="discardDraft">Discard</UButton>
+          <UButton
+            size="xs"
+            variant="outline"
+            @click="resumeDraft"
+          >
+            Resume
+          </UButton>
+          <UButton
+            size="xs"
+            variant="ghost"
+            color="neutral"
+            @click="discardDraft"
+          >
+            Discard
+          </UButton>
         </template>
       </UAlert>
 
@@ -179,10 +199,17 @@ const formCols = computed<1 | 2>(() => {
 
     <template #footer>
       <div class="flex gap-2">
-        <UButton icon="i-lucide-check" @click="save">
+        <UButton
+          icon="i-lucide-check"
+          @click="save"
+        >
           {{ editData ? 'Save Changes' : 'Add' }}
         </UButton>
-        <UButton variant="ghost" color="neutral" @click="cancel">
+        <UButton
+          variant="ghost"
+          color="neutral"
+          @click="cancel"
+        >
           Cancel
         </UButton>
       </div>

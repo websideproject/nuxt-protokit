@@ -80,7 +80,7 @@ describe('formatNumber', () => {
   it('formats 1_000_000 with locale separators', () => {
     const result = formatNumber(1_000_000)
     // Accept both "1,000,000" and locale-specific equivalents
-    expect(result.replace(/[\s,\.]/g, '')).toBe('1000000')
+    expect(result.replace(/[\s,.]/g, '')).toBe('1000000')
   })
 
   it('returns "N/A" for Infinity', () => {
@@ -108,7 +108,7 @@ describe('applyFormat', () => {
 
   it('dispatches to formatNumber for "number"', () => {
     const result = applyFormat(1000, 'number')
-    expect(result.replace(/[\s,\.]/g, '')).toBe('1000')
+    expect(result.replace(/[\s,.]/g, '')).toBe('1000')
   })
 
   it('dispatches to formatDate for "date"', () => {

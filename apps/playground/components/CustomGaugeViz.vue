@@ -2,7 +2,7 @@
 import type { ComputeContext } from '#protokit/types'
 
 const props = defineProps<{
-  config: Record<string, any>
+  config: Record<string, unknown>
   context: ComputeContext
 }>()
 
@@ -10,10 +10,10 @@ const value = computed(() => {
   const raw = typeof props.config.value === 'function'
     ? props.config.value(props.context)
     : (props.config.value ?? 0)
-  return Math.max(0, Math.min(props.config.max ?? 100, raw))
+  return Math.max(0, Math.min((props.config.max as number) ?? 100, raw as number))
 })
 
-const pct = computed(() => value.value / (props.config.max ?? 100))
+const pct = computed(() => (value.value as number) / ((props.config.max as number) ?? 100))
 
 // SVG half-circle gauge
 const radius = 56

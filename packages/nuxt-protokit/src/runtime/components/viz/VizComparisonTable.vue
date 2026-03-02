@@ -1,6 +1,6 @@
 <script setup lang="ts">
 defineProps<{
-  columns: Array<{ key: string; label: string }>
+  columns: Array<{ key: string, label: string }>
   rows: Array<Record<string, any>>
 }>()
 </script>
@@ -11,7 +11,10 @@ defineProps<{
     :data="rows"
     :columns="columns.map(c => ({ accessorKey: c.key, header: c.label }))"
   />
-  <div v-else class="text-center py-4 text-sm text-muted">
+  <div
+    v-else
+    class="text-center py-4 text-sm text-muted"
+  >
     No data to display.
   </div>
 </template>

@@ -7,6 +7,7 @@ const SHARED_DOC_KEY = 'playground-sync-shared'
 const schema: PrototypeSchema = {
   key: SHARED_DOC_KEY,
   title: 'Break-Even Calculator',
+  shortTitle: 'Tab Sync',
   description: 'Calculate how many units you need to sell to break even.',
   icon: 'i-lucide-target',
   defaultCols: 2,

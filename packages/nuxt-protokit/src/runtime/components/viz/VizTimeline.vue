@@ -44,11 +44,23 @@ function statusRing(status?: string) {
       <!-- Content -->
       <div class="min-w-0 pt-0">
         <div class="flex items-center gap-2">
-          <UIcon v-if="item.icon" :name="item.icon" class="size-4 text-muted shrink-0" />
+          <UIcon
+            v-if="item.icon"
+            :name="item.icon"
+            class="size-4 text-muted shrink-0"
+          />
           <span class="font-medium text-highlighted text-sm">{{ item.title }}</span>
-          <span v-if="item.date" class="text-xs text-muted">{{ item.date }}</span>
+          <span
+            v-if="item.date"
+            class="text-xs text-muted"
+          >{{ item.date }}</span>
         </div>
-        <p v-if="item.description" class="text-sm text-muted mt-0.5">{{ item.description }}</p>
+        <p
+          v-if="item.description"
+          class="text-sm text-muted mt-0.5"
+        >
+          {{ item.description }}
+        </p>
       </div>
     </div>
   </div>

@@ -33,7 +33,7 @@ const rows = computed(() => {
     for (const col of tableColumns.value) {
       const fieldDef = props.schema.fields[col.key]
       const raw = item[col.key]
-      row[col.key] = col.format ? applyFormat(raw, col.format) : (fieldDef?.format ? applyFormat(raw, fieldDef.format) : raw)
+      row[col.key] = (col as any).format ? applyFormat(raw, (col as any).format) : ((fieldDef as any)?.format ? applyFormat(raw, (fieldDef as any).format) : raw)
     }
     return row
   })
@@ -44,9 +44,20 @@ const rows = computed(() => {
   <div>
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
-        <UIcon v-if="schema.icon" :name="schema.icon" class="size-5 text-muted" />
-        <h3 class="font-semibold">{{ schema.title }}</h3>
-        <UBadge variant="subtle" size="sm">{{ items.length }}</UBadge>
+        <UIcon
+          v-if="schema.icon"
+          :name="schema.icon"
+          class="size-5 text-muted"
+        />
+        <h3 class="font-semibold">
+          {{ schema.title }}
+        </h3>
+        <UBadge
+          variant="subtle"
+          size="sm"
+        >
+          {{ items.length }}
+        </UBadge>
       </div>
     </div>
 
@@ -56,8 +67,13 @@ const rows = computed(() => {
       :columns="tableColumns.map(c => ({ accessorKey: c.key, header: c.label }))"
     />
 
-    <div v-else class="text-center py-8 text-muted">
-      <p class="text-sm">No data to display.</p>
+    <div
+      v-else
+      class="text-center py-8 text-muted"
+    >
+      <p class="text-sm">
+        No data to display.
+      </p>
     </div>
   </div>
 </template>

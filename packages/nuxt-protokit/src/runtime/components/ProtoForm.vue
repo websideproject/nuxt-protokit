@@ -24,7 +24,7 @@ const props = withDefaults(defineProps<{
 
 // Get all visible fields (respecting showWhen)
 function isVisible(key: string, fieldDef: FieldDef): boolean {
-  if (!fieldDef.showWhen) return true
+  if (!(fieldDef as any).showWhen) return true
   const values: Record<string, any> = {}
   for (const [k, v] of Object.entries(props.model)) {
     values[k] = v.value
@@ -78,7 +78,10 @@ const sectionedFields = computed(() => {
 
 <template>
   <!-- Flat mode: single grid -->
-  <div v-if="!sections" :class="gridClass">
+  <div
+    v-if="!sections"
+    :class="gridClass"
+  >
     <UFormField
       v-for="[key, fieldDef] in flatFields"
       :key="key"
@@ -156,26 +159,46 @@ const sectionedFields = computed(() => {
         :collection-items="collectionItems"
       />
       <component
-        v-else-if="getFieldComponent(fieldDef.type)"
         :is="getFieldComponent(fieldDef.type)"
+        v-else-if="getFieldComponent(fieldDef.type)"
         v-model="model[key].value"
         v-bind="(fieldDef as any).props ?? {}"
       />
-      <template v-if="(fieldDef as any).help" #help>
+      <template
+        v-if="(fieldDef as any).help"
+        #help
+      >
         <span class="text-xs text-muted">{{ (fieldDef as any).help }}</span>
       </template>
     </UFormField>
   </div>
 
   <!-- Section mode: with cards (default) -->
-  <div v-else-if="!noCard" class="space-y-6">
-    <UCard v-for="(section, si) in sectionedFields" :key="si">
+  <div
+    v-else-if="!noCard"
+    class="space-y-6"
+  >
+    <UCard
+      v-for="(section, si) in sectionedFields"
+      :key="si"
+    >
       <template #header>
         <div class="flex items-center gap-2">
-          <UIcon v-if="section.icon" :name="section.icon" class="size-5" />
-          <h3 class="font-semibold">{{ section.title }}</h3>
+          <UIcon
+            v-if="section.icon"
+            :name="section.icon"
+            class="size-5"
+          />
+          <h3 class="font-semibold">
+            {{ section.title }}
+          </h3>
         </div>
-        <p v-if="section.description" class="text-sm text-muted mt-1">{{ section.description }}</p>
+        <p
+          v-if="section.description"
+          class="text-sm text-muted mt-1"
+        >
+          {{ section.description }}
+        </p>
       </template>
       <div :class="sectionGridClass(section)">
         <UFormField
@@ -255,12 +278,15 @@ const sectionedFields = computed(() => {
             :collection-items="collectionItems"
           />
           <component
-            v-else-if="getFieldComponent(def.type)"
             :is="getFieldComponent(def.type)"
+            v-else-if="getFieldComponent(def.type)"
             v-model="model[key].value"
             v-bind="(def as any).props ?? {}"
           />
-          <template v-if="(def as any).help" #help>
+          <template
+            v-if="(def as any).help"
+            #help
+          >
             <span class="text-xs text-muted">{{ (def as any).help }}</span>
           </template>
         </UFormField>
@@ -269,8 +295,15 @@ const sectionedFields = computed(() => {
   </div>
 
   <!-- Section mode: no card (parent provides card wrapper, we just render fields) -->
-  <div v-else class="space-y-4">
-    <div v-for="(section, si) in sectionedFields" :key="si" :class="sectionGridClass(section)">
+  <div
+    v-else
+    class="space-y-4"
+  >
+    <div
+      v-for="(section, si) in sectionedFields"
+      :key="si"
+      :class="sectionGridClass(section)"
+    >
       <UFormField
         v-for="{ key, def } in section.visibleFields"
         :key="key"
@@ -348,12 +381,15 @@ const sectionedFields = computed(() => {
           :collection-items="collectionItems"
         />
         <component
-          v-else-if="getFieldComponent(def.type)"
           :is="getFieldComponent(def.type)"
+          v-else-if="getFieldComponent(def.type)"
           v-model="model[key].value"
           v-bind="(def as any).props ?? {}"
         />
-        <template v-if="(def as any).help" #help>
+        <template
+          v-if="(def as any).help"
+          #help
+        >
           <span class="text-xs text-muted">{{ (def as any).help }}</span>
         </template>
       </UFormField>

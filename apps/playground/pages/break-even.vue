@@ -5,6 +5,7 @@ import { formatMoney } from '#protokit/utils/formatters'
 const schema: PrototypeSchema = {
   key: 'playground-break-even',
   title: 'Break-Even Calculator',
+  shortTitle: 'Break-Even',
   description: 'Calculate how many units you need to sell to break even.',
   icon: 'i-lucide-target',
   tags: ['finance', 'planning'],

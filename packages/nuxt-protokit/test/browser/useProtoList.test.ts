@@ -4,7 +4,7 @@ import * as Y from 'yjs'
 import { withSetup } from '../helpers/with-setup'
 import { useProtoList } from '../../src/runtime/composables/useProtoList'
 
-type Item = { name: string; value: number }
+type Item = { name: string, value: number }
 
 const defaults: Item = { name: '', value: 0 }
 

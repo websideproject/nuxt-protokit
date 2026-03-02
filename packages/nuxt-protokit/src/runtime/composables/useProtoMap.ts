@@ -1,5 +1,5 @@
 import { ref, watch, onUnmounted, type Ref } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { FieldDef, SchemaMigrations } from '../types/schema'
 import { deepClone } from '../utils/deepClone'
 import { runMigrations } from '../utils/runMigrations'
@@ -72,14 +72,15 @@ export function useProtoMap<S extends Record<string, FieldDef>>(
     // Watch ref → sync to Y.Map
     watch(fieldRef, (newVal) => {
       if (suppressSync.has(key)) return
-      const isDeep = fieldDef.deep || fieldDef.type === 'tags'
+      const isDeep = (fieldDef as any).deep || fieldDef.type === 'tags'
       const yVal = dataMap.get(key)
       // Only update if value actually changed
       if (isDeep) {
         if (JSON.stringify(newVal) !== JSON.stringify(yVal)) {
           dataMap.set(key, deepClone(newVal))
         }
-      } else {
+      }
+      else {
         if (newVal !== yVal) {
           dataMap.set(key, newVal)
         }

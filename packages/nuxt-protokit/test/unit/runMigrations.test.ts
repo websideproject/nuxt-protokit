@@ -22,9 +22,9 @@ describe('runMigrations', () => {
     const log: number[] = []
     const data = { value: 0 }
     const result = runMigrations(data, 0, 3, {
-      1: d => { log.push(1); return { ...d, value: d.value + 1 } },
-      2: d => { log.push(2); return { ...d, value: d.value + 10 } },
-      3: d => { log.push(3); return { ...d, value: d.value + 100 } },
+      1: (d) => { log.push(1); return { ...d, value: d.value + 1 } },
+      2: (d) => { log.push(2); return { ...d, value: d.value + 10 } },
+      3: (d) => { log.push(3); return { ...d, value: d.value + 100 } },
     })
     expect(log).toEqual([1, 2, 3])
     expect(result.value).toBe(111)
@@ -45,8 +45,8 @@ describe('runMigrations', () => {
     const result = runMigrations(data, 2, 4, {
       1: () => { log.push(1); return data }, // should NOT run
       2: () => { log.push(2); return data }, // should NOT run (storedVersion = 2)
-      3: d => { log.push(3); return { ...d, v: d.v + 1 } },
-      4: d => { log.push(4); return { ...d, v: d.v + 10 } },
+      3: (d) => { log.push(3); return { ...d, v: d.v + 1 } },
+      4: (d) => { log.push(4); return { ...d, v: d.v + 10 } },
     })
     expect(log).toEqual([3, 4])
     expect(result.v).toBe(11)

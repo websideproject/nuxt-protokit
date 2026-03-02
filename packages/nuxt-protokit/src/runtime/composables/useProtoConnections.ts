@@ -1,5 +1,5 @@
 import { ref, onUnmounted, type Ref } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { ConnectionsDef } from '../types/compute'
 
 /**

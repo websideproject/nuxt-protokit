@@ -1,5 +1,5 @@
 import { ref, watch, onUnmounted, type ComputedRef, type Ref } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { PrototypeSchema } from '../types/schema'
 
 /**
