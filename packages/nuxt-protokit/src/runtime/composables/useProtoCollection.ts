@@ -5,6 +5,7 @@ import { useProtoDoc } from './useProtoDoc'
 import { useProtoList } from './useProtoList'
 
 export interface UseProtoCollectionReturn {
+  doc: Y.Doc
   items: Ref<any[]>
   add: (item: any) => void
   update: (index: number, item: any) => void
@@ -46,6 +47,9 @@ export function useProtoCollection(
   const list = useProtoList(doc, schema.key, {
     defaults: schema.defaults as any,
     maxItems: schema.maxItems,
+    version: schema.version,
+    migrations: schema.migrations,
+    waitFor: isReady,
   })
 
   // Search
@@ -79,6 +83,7 @@ export function useProtoCollection(
   })
 
   return {
+    doc,
     items: list.items,
     add: list.add,
     update: list.update,

@@ -50,7 +50,10 @@ export function usePrototype(
   }
 
   // Initialize map state from schema fields
-  const { state, reset: resetMap } = useProtoMap(doc, schema.key, schema.fields)
+  const { state, reset: resetMap } = useProtoMap(doc, schema.key, schema.fields, {
+    version: schema.version,
+    migrations: schema.migrations,
+  })
 
   // Initialize collections
   const collections: Record<string, UseProtoListReturn<any>> = {}
@@ -59,6 +62,8 @@ export function usePrototype(
       collections[key] = useProtoList(doc, `${schema.key}:${collSchema.key}`, {
         defaults: collSchema.defaults,
         maxItems: collSchema.maxItems,
+        version: collSchema.version,
+        migrations: collSchema.migrations,
       })
     }
   }

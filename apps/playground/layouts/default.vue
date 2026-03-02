@@ -17,6 +17,7 @@ const navItems = [
     { label: 'Bricks Gallery', to: '/bricks-gallery', icon: 'i-lucide-blocks' },
     { label: 'Corruption Recovery', to: '/corruption-recovery', icon: 'i-lucide-database-zap' },
     { label: 'Custom Extensions', to: '/custom-extensions', icon: 'i-lucide-puzzle' },
+    { label: 'Schema Migration', to: '/schema-migration', icon: 'i-lucide-arrow-up-circle' },
   ],
 ]
 </script>
