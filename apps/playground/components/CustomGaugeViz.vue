@@ -33,7 +33,12 @@ const strokeColor = computed(() => {
 
 <template>
   <div class="flex flex-col items-center gap-1 py-2">
-    <svg width="160" height="88" viewBox="0 0 160 88" overflow="visible">
+    <svg
+      width="160"
+      height="88"
+      viewBox="0 0 160 88"
+      overflow="visible"
+    >
       <!-- Track -->
       <path
         :d="`M ${cx - radius},${cy} A ${radius},${radius} 0 0 1 ${cx + radius},${cy}`"
@@ -67,6 +72,11 @@ const strokeColor = computed(() => {
         {{ value }}
       </text>
     </svg>
-    <p v-if="config.label" class="text-xs text-muted">{{ config.label }}</p>
+    <p
+      v-if="config.label"
+      class="text-xs text-muted"
+    >
+      {{ config.label }}
+    </p>
   </div>
 </template>

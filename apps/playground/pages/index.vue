@@ -3,10 +3,20 @@
     <!-- Hero -->
     <div class="space-y-3">
       <div class="flex items-center gap-2">
-        <UIcon name="i-lucide-layers" class="w-6 h-6 text-primary" />
-        <UBadge color="primary" variant="subtle">v0.1.0</UBadge>
+        <UIcon
+          name="i-lucide-layers"
+          class="w-6 h-6 text-primary"
+        />
+        <UBadge
+          color="primary"
+          variant="subtle"
+        >
+          v0.1.0
+        </UBadge>
       </div>
-      <h1 class="text-3xl font-bold text-highlighted">nuxt-protokit</h1>
+      <h1 class="text-3xl font-bold text-highlighted">
+        nuxt-protokit
+      </h1>
       <p class="text-lg text-muted leading-relaxed">
         Rapid product prototyping for Nuxt. Define a TypeScript schema — get a fully functional,
         persistent, interactive prototype with zero boilerplate.
@@ -20,20 +30,32 @@
         :key="feature.label"
         class="flex items-start gap-3 p-4 rounded-xl border border-default bg-elevated"
       >
-        <UIcon :name="feature.icon" class="w-4 h-4 text-primary mt-0.5 shrink-0" />
+        <UIcon
+          :name="feature.icon"
+          class="w-4 h-4 text-primary mt-0.5 shrink-0"
+        />
         <div>
-          <p class="text-sm font-medium text-highlighted">{{ feature.label }}</p>
-          <p class="text-xs text-muted mt-0.5">{{ feature.description }}</p>
+          <p class="text-sm font-medium text-highlighted">
+            {{ feature.label }}
+          </p>
+          <p class="text-xs text-muted mt-0.5">
+            {{ feature.description }}
+          </p>
         </div>
       </div>
     </div>
 
     <!-- Quick start -->
     <div class="space-y-3">
-      <h2 class="text-base font-semibold text-highlighted">Quick start</h2>
+      <h2 class="text-base font-semibold text-highlighted">
+        Quick start
+      </h2>
       <div class="rounded-xl border border-default bg-elevated overflow-hidden">
         <div class="flex items-center gap-2 px-4 py-2 border-b border-default bg-muted/30">
-          <UIcon name="i-lucide-file-code" class="w-3.5 h-3.5 text-muted" />
+          <UIcon
+            name="i-lucide-file-code"
+            class="w-3.5 h-3.5 text-muted"
+          />
           <span class="text-xs text-muted font-mono">my-prototype.vue</span>
         </div>
         <pre class="px-4 py-4 text-xs text-muted overflow-x-auto leading-relaxed"><code><span class="text-highlighted">const</span> schema = <span class="text-primary">definePrototype</span>({

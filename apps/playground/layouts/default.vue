@@ -32,7 +32,10 @@ const navItems = [
         class="h-14 px-4 flex items-center gap-2.5 border-b border-default hover:bg-muted/50 transition-colors"
       >
         <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
-          <UIcon name="i-lucide-layers" class="w-4 h-4 text-primary" />
+          <UIcon
+            name="i-lucide-layers"
+            class="w-4 h-4 text-primary"
+          />
         </div>
         <div class="min-w-0">
           <p class="text-sm font-semibold text-highlighted leading-tight truncate">nuxt-protokit</p>
@@ -52,7 +55,9 @@ const navItems = [
 
       <!-- Footer -->
       <div class="px-3 py-3 border-t border-default">
-        <p class="text-xs text-muted truncate text-center">@websideproject/nuxt-protokit</p>
+        <p class="text-xs text-muted truncate text-center">
+          @websideproject/nuxt-protokit
+        </p>
       </div>
     </aside>
 

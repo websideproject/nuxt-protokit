@@ -112,7 +112,9 @@ function resetDemo() {
   <div class="max-w-2xl mx-auto px-6 py-8 space-y-8">
     <!-- Header -->
     <div>
-      <h1 class="text-xl font-bold text-highlighted">Schema Migration Demo</h1>
+      <h1 class="text-xl font-bold text-highlighted">
+        Schema Migration Demo
+      </h1>
       <p class="text-sm text-muted mt-1">
         Demonstrates how <code class="text-xs bg-muted px-1 py-0.5 rounded">version</code> +
         <code class="text-xs bg-muted px-1 py-0.5 rounded">migrations</code> handle
@@ -123,26 +125,47 @@ function resetDemo() {
     <!-- Migration map -->
     <div class="rounded-xl border border-default bg-elevated overflow-hidden text-sm">
       <div class="flex items-center gap-2 px-4 py-2.5 border-b border-default bg-muted/30">
-        <UIcon name="i-lucide-git-branch" class="size-3.5 text-muted" />
+        <UIcon
+          name="i-lucide-git-branch"
+          class="size-3.5 text-muted"
+        />
         <span class="text-xs text-muted font-medium">Migration history</span>
       </div>
       <div class="divide-y divide-default">
         <div class="px-4 py-2.5 flex items-start gap-3">
-          <UBadge size="sm" color="neutral" variant="subtle">v0</UBadge>
+          <UBadge
+            size="sm"
+            color="neutral"
+            variant="subtle"
+          >
+            v0
+          </UBadge>
           <span class="text-muted text-xs mt-0.5">
             Original shape: <code class="bg-muted px-1 rounded">done: boolean</code>,
             <code class="bg-muted px-1 rounded">assignee: string</code>
           </span>
         </div>
         <div class="px-4 py-2.5 flex items-start gap-3">
-          <UBadge size="sm" color="warning" variant="subtle">v1</UBadge>
+          <UBadge
+            size="sm"
+            color="warning"
+            variant="subtle"
+          >
+            v1
+          </UBadge>
           <span class="text-muted text-xs mt-0.5">
             <code class="bg-muted px-1 rounded">done</code> →
             <code class="bg-muted px-1 rounded">status: 'open' | 'done'</code>
           </span>
         </div>
         <div class="px-4 py-2.5 flex items-start gap-3">
-          <UBadge size="sm" color="success" variant="subtle">v2 (current)</UBadge>
+          <UBadge
+            size="sm"
+            color="success"
+            variant="subtle"
+          >
+            v2 (current)
+          </UBadge>
           <span class="text-muted text-xs mt-0.5">
             <code class="bg-muted px-1 rounded">assignee</code> →
             <code class="bg-muted px-1 rounded">assigneeId</code> +
@@ -154,7 +177,9 @@ function resetDemo() {
 
     <!-- Seed controls -->
     <div class="rounded-xl border border-default p-4 space-y-3">
-      <p class="text-sm font-medium text-highlighted">Simulate legacy data</p>
+      <p class="text-sm font-medium text-highlighted">
+        Simulate legacy data
+      </p>
       <p class="text-xs text-muted leading-relaxed">
         Click <strong>Seed v0 data</strong> to write 3 items in the original v0 format directly
         into Y.js and reset the stored version to 0. Then reload — the migration chain
@@ -187,8 +212,14 @@ function resetDemo() {
         >
           Reset
         </UButton>
-        <span v-if="seeded" class="text-xs text-warning flex items-center gap-1">
-          <UIcon name="i-lucide-triangle-alert" class="size-3.5" />
+        <span
+          v-if="seeded"
+          class="text-xs text-warning flex items-center gap-1"
+        >
+          <UIcon
+            name="i-lucide-triangle-alert"
+            class="size-3.5"
+          />
           3 legacy items written — reload to trigger migration
         </span>
       </div>
@@ -196,11 +227,20 @@ function resetDemo() {
 
     <!-- Raw JSON comparison — only shown after reload, when migration has actually run -->
     <ClientOnly>
-      <div v-if="legacySnapshot && !seeded" class="grid grid-cols-2 gap-4">
+      <div
+        v-if="legacySnapshot && !seeded"
+        class="grid grid-cols-2 gap-4"
+      >
         <!-- Before migration -->
         <div class="rounded-xl border border-default overflow-hidden text-sm">
           <div class="flex items-center gap-2 px-4 py-2.5 border-b border-default bg-muted/30">
-            <UBadge size="sm" color="warning" variant="subtle">v0</UBadge>
+            <UBadge
+              size="sm"
+              color="warning"
+              variant="subtle"
+            >
+              v0
+            </UBadge>
             <span class="text-xs text-muted font-medium">Before migration</span>
           </div>
           <pre class="px-4 py-3 text-xs text-muted overflow-x-auto leading-relaxed">{{ JSON.stringify(legacySnapshot, null, 2) }}</pre>
@@ -209,7 +249,13 @@ function resetDemo() {
         <!-- After migration -->
         <div class="rounded-xl border border-default overflow-hidden text-sm">
           <div class="flex items-center gap-2 px-4 py-2.5 border-b border-default bg-muted/30">
-            <UBadge size="sm" color="success" variant="subtle">v2</UBadge>
+            <UBadge
+              size="sm"
+              color="success"
+              variant="subtle"
+            >
+              v2
+            </UBadge>
             <span class="text-xs text-muted font-medium">After migration</span>
           </div>
           <pre class="px-4 py-3 text-xs text-muted overflow-x-auto leading-relaxed">{{ JSON.stringify(items, null, 2) }}</pre>
@@ -229,7 +275,10 @@ function resetDemo() {
           @remove="remove"
         />
       </div>
-      <div v-else class="space-y-2 animate-pulse">
+      <div
+        v-else
+        class="space-y-2 animate-pulse"
+      >
         <div class="h-10 bg-muted rounded" />
         <div class="h-12 bg-muted rounded" />
       </div>

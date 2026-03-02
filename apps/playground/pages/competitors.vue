@@ -58,29 +58,32 @@ const { doc, items, add, update, remove, move, isReady } = useProtoCollection(sc
 
 <template>
   <div class="max-w-3xl mx-auto px-6 py-8">
-      <ClientOnly>
-        <div v-if="isReady">
-          <ProtoCrudList
-            :schema="schema"
-            :items="items"
-            :doc="doc"
-            @add="add"
-            @update="(index, item) => update(index, item)"
-            @remove="remove"
-            @move="(from, to) => move(from, to)"
-          />
-        </div>
-        <div v-else class="space-y-2 animate-pulse">
+    <ClientOnly>
+      <div v-if="isReady">
+        <ProtoCrudList
+          :schema="schema"
+          :items="items"
+          :doc="doc"
+          @add="add"
+          @update="(index, item) => update(index, item)"
+          @remove="remove"
+          @move="(from, to) => move(from, to)"
+        />
+      </div>
+      <div
+        v-else
+        class="space-y-2 animate-pulse"
+      >
+        <div class="h-10 bg-muted rounded" />
+        <div class="h-12 bg-muted rounded" />
+        <div class="h-12 bg-muted rounded" />
+      </div>
+      <template #fallback>
+        <div class="space-y-2 animate-pulse">
           <div class="h-10 bg-muted rounded" />
           <div class="h-12 bg-muted rounded" />
-          <div class="h-12 bg-muted rounded" />
         </div>
-        <template #fallback>
-          <div class="space-y-2 animate-pulse">
-            <div class="h-10 bg-muted rounded" />
-            <div class="h-12 bg-muted rounded" />
-          </div>
-        </template>
-      </ClientOnly>
+      </template>
+    </ClientOnly>
   </div>
 </template>

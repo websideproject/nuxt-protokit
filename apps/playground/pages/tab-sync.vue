@@ -84,41 +84,59 @@ const schema: PrototypeSchema = {
 
 <template>
   <div class="max-w-5xl mx-auto px-6 py-8 space-y-6">
-      <UAlert
-        icon="i-lucide-info"
-        color="info"
-        variant="subtle"
-        title="How this works"
-        description="Both instances below use the same Y.js document key. Edits in one are instantly reflected in the other via BroadcastChannel — no server required. Open this page in two browser tabs to see cross-tab sync."
-      />
+    <UAlert
+      icon="i-lucide-info"
+      color="info"
+      variant="subtle"
+      title="How this works"
+      description="Both instances below use the same Y.js document key. Edits in one are instantly reflected in the other via BroadcastChannel — no server required. Open this page in two browser tabs to see cross-tab sync."
+    />
 
-      <ClientOnly>
+    <ClientOnly>
+      <div class="grid md:grid-cols-2 gap-4">
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UBadge
+                variant="subtle"
+                color="info"
+              >
+                Instance A
+              </UBadge>
+              <span class="text-sm text-muted">Shared doc: {{ SHARED_DOC_KEY }}</span>
+            </div>
+          </template>
+          <ProtoTool
+            :schema="schema"
+            :doc-key="SHARED_DOC_KEY"
+            disable-sync
+          />
+        </UCard>
+        <UCard>
+          <template #header>
+            <div class="flex items-center gap-2">
+              <UBadge
+                variant="subtle"
+                color="success"
+              >
+                Instance B
+              </UBadge>
+              <span class="text-sm text-muted">Same shared doc</span>
+            </div>
+          </template>
+          <ProtoTool
+            :schema="schema"
+            :doc-key="SHARED_DOC_KEY"
+            disable-sync
+          />
+        </UCard>
+      </div>
+      <template #fallback>
         <div class="grid md:grid-cols-2 gap-4">
-          <UCard>
-            <template #header>
-              <div class="flex items-center gap-2">
-                <UBadge variant="subtle" color="info">Instance A</UBadge>
-                <span class="text-sm text-muted">Shared doc: {{ SHARED_DOC_KEY }}</span>
-              </div>
-            </template>
-            <ProtoTool :schema="schema" :doc-key="SHARED_DOC_KEY" disable-sync />
-          </UCard>
-          <UCard>
-            <template #header>
-              <div class="flex items-center gap-2">
-                <UBadge variant="subtle" color="success">Instance B</UBadge>
-                <span class="text-sm text-muted">Same shared doc</span>
-              </div>
-            </template>
-            <ProtoTool :schema="schema" :doc-key="SHARED_DOC_KEY" disable-sync />
-          </UCard>
+          <div class="h-64 bg-muted rounded animate-pulse" />
+          <div class="h-64 bg-muted rounded animate-pulse" />
         </div>
-        <template #fallback>
-          <div class="grid md:grid-cols-2 gap-4">
-            <div class="h-64 bg-muted rounded animate-pulse" />
-            <div class="h-64 bg-muted rounded animate-pulse" />
-          </div>
-        </template>
-      </ClientOnly>
+      </template>
+    </ClientOnly>
   </div>
 </template>
