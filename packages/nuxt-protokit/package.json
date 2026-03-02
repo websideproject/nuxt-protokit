@@ -1,8 +1,20 @@
 {
   "name": "@websideproject/nuxt-protokit",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "description": "Schema-driven rapid prototyping for Nuxt 4 — turn a TypeScript schema into a persistent, interactive prototype in minutes",
-  "keywords": ["nuxt", "nuxt-module", "yjs", "offline-first", "prototype", "prototyping", "rapid-prototyping", "mvp", "form", "crud", "crdt"],
+  "keywords": [
+    "nuxt",
+    "nuxt-module",
+    "yjs",
+    "offline-first",
+    "prototype",
+    "prototyping",
+    "rapid-prototyping",
+    "mvp",
+    "form",
+    "crud",
+    "crdt"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/websideproject/nuxt-protokit.git"
