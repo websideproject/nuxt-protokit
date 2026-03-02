@@ -5,7 +5,7 @@
 
 export function formatMoney(
   v: number | null | undefined,
-  opts?: { kDecimals?: number; compact?: boolean },
+  opts?: { kDecimals?: number, compact?: boolean },
 ): string {
   if (v == null) return '--'
   if (v === Infinity || v === -Infinity) return 'N/A'

@@ -28,14 +28,25 @@ function getLabel(key: string, fieldDef: FieldDef): string {
 
 <template>
   <UCard>
-    <template v-if="title" #header>
-      <h3 class="font-semibold">{{ title }}</h3>
+    <template
+      v-if="title"
+      #header
+    >
+      <h3 class="font-semibold">
+        {{ title }}
+      </h3>
     </template>
     <div :class="gridClass">
-      <div v-for="(fieldDef, key) in fields" :key="key" class="space-y-0.5">
-        <div class="text-xs text-muted">{{ getLabel(key as string, fieldDef) }}</div>
+      <div
+        v-for="(fieldDef, key) in fields"
+        :key="key"
+        class="space-y-0.5"
+      >
+        <div class="text-xs text-muted">
+          {{ getLabel(key as string, fieldDef) }}
+        </div>
         <div class="font-medium text-highlighted">
-          {{ applyFormat(data[key as string], fieldDef.format) }}
+          {{ applyFormat(data[key as string], (fieldDef as any).format) }}
         </div>
       </div>
     </div>

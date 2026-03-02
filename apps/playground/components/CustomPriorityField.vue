@@ -7,7 +7,7 @@ const emit = defineEmits<{ 'update:modelValue': [v: string] }>()
 
 const levels = computed(() => props.options ?? ['low', 'medium', 'high', 'critical'])
 
-const styleMap: Record<string, { idle: string; active: string }> = {
+const styleMap: Record<string, { idle: string, active: string }> = {
   low: {
     idle: 'bg-muted/60 text-muted hover:bg-muted',
     active: 'bg-muted text-highlighted ring-2 ring-muted-foreground/40',

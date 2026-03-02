@@ -22,11 +22,26 @@ const isOpen = ref(props.defaultOpen)
       :class="collapsible ? 'cursor-pointer' : ''"
       @click="collapsible ? (isOpen = !isOpen) : null"
     >
-      <UIcon v-if="collapsible" :name="isOpen ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'" class="size-4 text-muted" />
-      <UIcon v-if="icon" :name="icon" class="size-5 text-muted" />
-      <h3 class="font-semibold">{{ title }}</h3>
+      <UIcon
+        v-if="collapsible"
+        :name="isOpen ? 'i-lucide-chevron-down' : 'i-lucide-chevron-right'"
+        class="size-4 text-muted"
+      />
+      <UIcon
+        v-if="icon"
+        :name="icon"
+        class="size-5 text-muted"
+      />
+      <h3 class="font-semibold">
+        {{ title }}
+      </h3>
     </div>
-    <p v-if="description && isOpen" class="text-sm text-muted mb-3">{{ description }}</p>
+    <p
+      v-if="description && isOpen"
+      class="text-sm text-muted mb-3"
+    >
+      {{ description }}
+    </p>
     <div v-show="isOpen">
       <slot />
     </div>

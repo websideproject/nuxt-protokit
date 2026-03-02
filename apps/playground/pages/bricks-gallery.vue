@@ -62,119 +62,184 @@ const sampleEntities = [
 
 <template>
   <div class="max-w-4xl mx-auto px-6 py-8 space-y-6">
-      <!-- Field Types -->
-      <UCard>
-        <template #header>
-          <h3 class="font-semibold text-highlighted">All Field Types</h3>
-        </template>
-        <ClientOnly>
-          <ProtoForm :fields="galleryFields" :model="galleryState" :cols="2" />
-          <template #fallback>
-            <div class="space-y-3 animate-pulse">
-              <div v-for="i in 4" :key="i" class="h-10 bg-muted rounded" />
-            </div>
-          </template>
-        </ClientOnly>
-      </UCard>
-
-      <!-- Stat Grid -->
-      <UCard>
-        <template #header>
-          <h3 class="font-semibold text-highlighted">ProtoStatGrid</h3>
-        </template>
-        <div class="space-y-4">
-          <ProtoStatGrid :stats="sampleStats" :cols="4" />
-          <ProtoStatGrid :stats="sampleStats.slice(0, 2)" :cols="2" size="sm" />
-        </div>
-      </UCard>
-
-      <!-- Badges -->
-      <UCard>
-        <template #header>
-          <h3 class="font-semibold text-highlighted">ProtoBadge</h3>
-        </template>
-        <div class="flex flex-wrap gap-2">
-          <ProtoBadge label="Success" color="success" />
-          <ProtoBadge label="Warning" color="warning" />
-          <ProtoBadge label="Error" color="error" />
-          <ProtoBadge label="Info" color="info" />
-          <ProtoBadge label="With Icon" icon="i-lucide-star" />
-          <ProtoBadge label="Outline" variant="outline" />
-        </div>
-      </UCard>
-
-      <!-- ProtoCard -->
-      <div class="grid md:grid-cols-2 gap-4">
-        <ProtoCard
-          title="Growth Card"
-          icon="i-lucide-trending-up"
-          :badge="{ label: 'Healthy', color: 'success' }"
-          :stats="[
-            { label: 'MRR', value: '$12.5K', valueClass: 'text-primary' },
-            { label: 'Growth', value: '+8%', valueClass: 'text-emerald-600' },
-          ]"
+    <!-- Field Types -->
+    <UCard>
+      <template #header>
+        <h3 class="font-semibold text-highlighted">
+          All Field Types
+        </h3>
+      </template>
+      <ClientOnly>
+        <ProtoForm
+          :fields="galleryFields"
+          :model="galleryState"
+          :cols="2"
         />
-        <ProtoCard
-          title="Status Card"
-          icon="i-lucide-activity"
-          description="With a description and footer."
-          footer="Last updated 2 hours ago"
-          :stats="[
-            { label: 'Uptime', value: '99.9%' },
-            { label: 'Latency', value: '45ms' },
-          ]"
+        <template #fallback>
+          <div class="space-y-3 animate-pulse">
+            <div
+              v-for="i in 4"
+              :key="i"
+              class="h-10 bg-muted rounded"
+            />
+          </div>
+        </template>
+      </ClientOnly>
+    </UCard>
+
+    <!-- Stat Grid -->
+    <UCard>
+      <template #header>
+        <h3 class="font-semibold text-highlighted">
+          ProtoStatGrid
+        </h3>
+      </template>
+      <div class="space-y-4">
+        <ProtoStatGrid
+          :stats="sampleStats"
+          :cols="4"
+        />
+        <ProtoStatGrid
+          :stats="sampleStats.slice(0, 2)"
+          :cols="2"
+          size="sm"
         />
       </div>
+    </UCard>
 
-      <!-- Visualizations row 1 -->
-      <div class="grid md:grid-cols-2 gap-4">
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold text-highlighted">VizBarChart</h3>
-          </template>
-          <VizBarChart :data="sampleBarData" unit=" leads" />
-        </UCard>
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold text-highlighted">VizBenchmarkBar</h3>
-          </template>
-          <VizBenchmarkBar :value="7.2" :median="5" :min="0" :max="10" label="NPS Score" unit="" />
-        </UCard>
+    <!-- Badges -->
+    <UCard>
+      <template #header>
+        <h3 class="font-semibold text-highlighted">
+          ProtoBadge
+        </h3>
+      </template>
+      <div class="flex flex-wrap gap-2">
+        <ProtoBadge
+          label="Success"
+          color="success"
+        />
+        <ProtoBadge
+          label="Warning"
+          color="warning"
+        />
+        <ProtoBadge
+          label="Error"
+          color="error"
+        />
+        <ProtoBadge
+          label="Info"
+          color="info"
+        />
+        <ProtoBadge
+          label="With Icon"
+          icon="i-lucide-star"
+        />
+        <ProtoBadge
+          label="Outline"
+          variant="outline"
+        />
       </div>
+    </UCard>
 
-      <!-- Visualizations row 2 -->
-      <div class="grid md:grid-cols-2 gap-4">
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold text-highlighted">VizTimeline</h3>
-          </template>
-          <VizTimeline :items="sampleTimeline" />
-        </UCard>
-        <UCard>
-          <template #header>
-            <h3 class="font-semibold text-highlighted">VizFeatureMatrix</h3>
-          </template>
-          <VizFeatureMatrix :features="sampleFeatures" :entities="sampleEntities" />
-        </UCard>
-      </div>
+    <!-- ProtoCard -->
+    <div class="grid md:grid-cols-2 gap-4">
+      <ProtoCard
+        title="Growth Card"
+        icon="i-lucide-trending-up"
+        :badge="{ label: 'Healthy', color: 'success' }"
+        :stats="[
+          { label: 'MRR', value: '$12.5K', valueClass: 'text-primary' },
+          { label: 'Growth', value: '+8%', valueClass: 'text-emerald-600' },
+        ]"
+      />
+      <ProtoCard
+        title="Status Card"
+        icon="i-lucide-activity"
+        description="With a description and footer."
+        footer="Last updated 2 hours ago"
+        :stats="[
+          { label: 'Uptime', value: '99.9%' },
+          { label: 'Latency', value: '45ms' },
+        ]"
+      />
+    </div>
 
-      <!-- VizProgressBar -->
+    <!-- Visualizations row 1 -->
+    <div class="grid md:grid-cols-2 gap-4">
       <UCard>
         <template #header>
-          <h3 class="font-semibold text-highlighted">VizProgressBar</h3>
+          <h3 class="font-semibold text-highlighted">
+            VizBarChart
+          </h3>
         </template>
-        <div class="space-y-4">
-          <VizProgressBar
-            :value="75"
-            label="Tasks Complete"
-            :thresholds="[
-              { value: 0, color: 'bg-red-500' },
-              { value: 50, color: 'bg-amber-500' },
-              { value: 80, color: 'bg-emerald-500' },
-            ]"
-          />
-          <VizProgressBar :value="35" label="Budget Used" />
-        </div>
+        <VizBarChart
+          :data="sampleBarData"
+          unit=" leads"
+        />
       </UCard>
+      <UCard>
+        <template #header>
+          <h3 class="font-semibold text-highlighted">
+            VizBenchmarkBar
+          </h3>
+        </template>
+        <VizBenchmarkBar
+          :value="7.2"
+          :median="5"
+          :min="0"
+          :max="10"
+          label="NPS Score"
+          unit=""
+        />
+      </UCard>
+    </div>
+
+    <!-- Visualizations row 2 -->
+    <div class="grid md:grid-cols-2 gap-4">
+      <UCard>
+        <template #header>
+          <h3 class="font-semibold text-highlighted">
+            VizTimeline
+          </h3>
+        </template>
+        <VizTimeline :items="sampleTimeline" />
+      </UCard>
+      <UCard>
+        <template #header>
+          <h3 class="font-semibold text-highlighted">
+            VizFeatureMatrix
+          </h3>
+        </template>
+        <VizFeatureMatrix
+          :features="sampleFeatures"
+          :entities="sampleEntities"
+        />
+      </UCard>
+    </div>
+
+    <!-- VizProgressBar -->
+    <UCard>
+      <template #header>
+        <h3 class="font-semibold text-highlighted">
+          VizProgressBar
+        </h3>
+      </template>
+      <div class="space-y-4">
+        <VizProgressBar
+          :value="75"
+          label="Tasks Complete"
+          :thresholds="[
+            { value: 0, color: 'bg-red-500' },
+            { value: 50, color: 'bg-amber-500' },
+            { value: 80, color: 'bg-emerald-500' },
+          ]"
+        />
+        <VizProgressBar
+          :value="35"
+          label="Budget Used"
+        />
+      </div>
+    </UCard>
   </div>
 </template>

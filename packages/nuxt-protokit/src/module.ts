@@ -70,7 +70,7 @@ export default defineNuxtModule<ModuleOptions>({
     nuxt.options.alias['#protokit/*'] = resolver.resolve('./runtime/*')
 
     // ── Extension hook (module-to-module interop) ─────────────────────────────
-    await nuxt.callHook('protokit:register-extension', {
+    await nuxt.callHook('protokit:register-extension' as any, {
       addComponentsDir: (dir: string) => addComponentsDir({ path: dir, global: true }),
       addImportsDir: (dir: string) => addImportsDir(dir),
     })

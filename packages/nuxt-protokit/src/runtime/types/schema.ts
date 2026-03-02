@@ -16,8 +16,8 @@ export type SimpleFieldDef<T = any> = {
   min?: number
   max?: number
   step?: number
-  options?: Array<string | { label: string; value: any; icon?: string }>
-  rangeLabels?: { min: string; max: string }
+  options?: Array<string | { label: string, value: any, icon?: string }>
+  rangeLabels?: { min: string, max: string }
   showWhen?: (values: Record<string, any>) => boolean
   format?: 'money' | 'percent' | 'number' | 'date' | ((v: T) => string)
   deep?: boolean
@@ -26,7 +26,7 @@ export type SimpleFieldDef<T = any> = {
 export type LinkedResponsesFieldDef = {
   type: 'linked-responses'
   label: string
-  default: Array<{ sourceId: string; answer: string }>
+  default: Array<{ sourceId: string, answer: string }>
   sourceCollection: string
   sourceLabel: (item: Record<string, any>) => string
   sourceBadge?: (item: Record<string, any>) => string
@@ -106,31 +106,31 @@ export interface CollectionSchema {
 
 // --- Action Definitions ---
 
-export type ProtoAction =
+export type ProtoAction
+  = | {
+    type: 'copy-text'
+    id: string
+    label: string
+    icon?: string
+    showWhen?: (ctx: ComputeContext) => boolean
+    text: (ctx: ComputeContext, collectionArrays: Record<string, any[]>) => string
+  }
   | {
-      type: 'copy-text'
-      id: string
-      label: string
-      icon?: string
-      showWhen?: (ctx: ComputeContext) => boolean
-      text: (ctx: ComputeContext, collectionArrays: Record<string, any[]>) => string
-    }
+    type: 'export-markdown'
+    id: string
+    label: string
+    icon?: string
+    showWhen?: (ctx: ComputeContext) => boolean
+    content: (ctx: ComputeContext, collectionArrays: Record<string, any[]>) => string
+    filename?: string
+  }
   | {
-      type: 'export-markdown'
-      id: string
-      label: string
-      icon?: string
-      showWhen?: (ctx: ComputeContext) => boolean
-      content: (ctx: ComputeContext, collectionArrays: Record<string, any[]>) => string
-      filename?: string
-    }
-  | {
-      type: 'reset'
-      id: string
-      label: string
-      icon?: string
-      showWhen?: (ctx: ComputeContext) => boolean
-    }
+    type: 'reset'
+    id: string
+    label: string
+    icon?: string
+    showWhen?: (ctx: ComputeContext) => boolean
+  }
 
 // --- Prototype Schema (Complete Tool) ---
 

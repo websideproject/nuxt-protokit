@@ -38,7 +38,10 @@ async function clearAllIndexedDB() {
     @click="isOpen = true"
   >
     <div class="relative">
-      <UIcon name="i-lucide-bug" class="w-4 h-4 text-muted" />
+      <UIcon
+        name="i-lucide-bug"
+        class="w-4 h-4 text-muted"
+      />
       <span
         v-if="docs.length"
         class="absolute -top-1.5 -right-2.5 text-[9px] font-bold text-primary leading-none"
@@ -54,13 +57,21 @@ async function clearAllIndexedDB() {
     :ui="{ content: 'sm:max-w-xl' }"
   >
     <template #actions>
-      <UBadge color="neutral" variant="subtle" size="xs" class="mr-1">
+      <UBadge
+        color="neutral"
+        variant="subtle"
+        size="xs"
+        class="mr-1"
+      >
         {{ docs.length }} doc{{ docs.length !== 1 ? 's' : '' }}
       </UBadge>
     </template>
 
     <template #body>
-      <div v-if="docs.length === 0" class="text-center py-6 text-sm text-muted">
+      <div
+        v-if="docs.length === 0"
+        class="text-center py-6 text-sm text-muted"
+      >
         No active Y.js documents
       </div>
 
@@ -79,10 +90,20 @@ async function clearAllIndexedDB() {
               :class="doc.isReady ? 'bg-success' : 'bg-error'"
             />
             <div class="flex-1 min-w-0">
-              <div class="text-xs font-mono text-highlighted truncate">{{ doc.docKey }}</div>
-              <div class="text-xs text-muted">{{ doc.docType }}</div>
+              <div class="text-xs font-mono text-highlighted truncate">
+                {{ doc.docKey }}
+              </div>
+              <div class="text-xs text-muted">
+                {{ doc.docType }}
+              </div>
             </div>
-            <UBadge color="neutral" variant="subtle" size="xs">{{ doc.refCount }}</UBadge>
+            <UBadge
+              color="neutral"
+              variant="subtle"
+              size="xs"
+            >
+              {{ doc.refCount }}
+            </UBadge>
             <UIcon
               :name="expandedDoc === doc.fullDocKey ? 'i-lucide-chevron-up' : 'i-lucide-chevron-down'"
               class="w-3.5 h-3.5 text-muted flex-shrink-0"
@@ -94,9 +115,27 @@ async function clearAllIndexedDB() {
             class="border-t border-default p-2 space-y-2"
           >
             <div class="flex flex-wrap gap-1">
-              <UBadge :color="doc.hasIndexedDB ? 'success' : 'neutral'" variant="subtle" size="xs">IndexedDB</UBadge>
-              <UBadge :color="doc.hasBroadcast ? 'success' : 'neutral'" variant="subtle" size="xs">Broadcast</UBadge>
-              <UBadge :color="serverSync.enabled ? 'success' : 'neutral'" variant="subtle" size="xs">Cloud</UBadge>
+              <UBadge
+                :color="doc.hasIndexedDB ? 'success' : 'neutral'"
+                variant="subtle"
+                size="xs"
+              >
+                IndexedDB
+              </UBadge>
+              <UBadge
+                :color="doc.hasBroadcast ? 'success' : 'neutral'"
+                variant="subtle"
+                size="xs"
+              >
+                Broadcast
+              </UBadge>
+              <UBadge
+                :color="serverSync.enabled ? 'success' : 'neutral'"
+                variant="subtle"
+                size="xs"
+              >
+                Cloud
+              </UBadge>
             </div>
             <div class="relative">
               <button

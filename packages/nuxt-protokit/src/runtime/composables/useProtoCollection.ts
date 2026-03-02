@@ -1,5 +1,5 @@
 import { computed, ref, type Ref, type ComputedRef } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { CollectionSchema } from '../types/schema'
 import { useProtoDoc } from './useProtoDoc'
 import { useProtoList } from './useProtoList'
@@ -38,7 +38,8 @@ export function useProtoCollection(
   if (options?.existingDoc) {
     doc = options.existingDoc
     isReady = ref(true) as Ref<boolean>
-  } else {
+  }
+  else {
     const protoDoc = useProtoDoc(options?.docKey ?? `collection-${schema.key}`)
     doc = protoDoc.doc
     isReady = protoDoc.isReady

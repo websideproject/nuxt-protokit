@@ -43,8 +43,15 @@ const gridClass = computed(() => {
       >
         {{ stat.value }}
       </div>
-      <div class="text-xs text-muted">{{ stat.label }}</div>
-      <div v-if="stat.subLabel" class="text-xs text-muted mt-0.5">{{ stat.subLabel }}</div>
+      <div class="text-xs text-muted">
+        {{ stat.label }}
+      </div>
+      <div
+        v-if="stat.subLabel"
+        class="text-xs text-muted mt-0.5"
+      >
+        {{ stat.subLabel }}
+      </div>
     </div>
   </div>
 </template>

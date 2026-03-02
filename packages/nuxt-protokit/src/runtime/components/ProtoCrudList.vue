@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { CollectionSchema, PresetPack } from '../types/schema'
 
 const props = withDefaults(defineProps<{
@@ -51,7 +51,8 @@ function startAdd() {
     modalEditingIndex.value = null
     modalEditData.value = null
     showModal.value = true
-  } else {
+  }
+  else {
     editingIndex.value = null
     editData.value = null
     showForm.value = true
@@ -63,7 +64,8 @@ function startEdit(index: number) {
     modalEditingIndex.value = index
     modalEditData.value = { ...props.items[index] }
     showModal.value = true
-  } else {
+  }
+  else {
     editingIndex.value = index
     editData.value = { ...props.items[index] }
     showForm.value = true
@@ -73,7 +75,8 @@ function startEdit(index: number) {
 function onSave(item: Record<string, any>) {
   if (editingIndex.value !== null) {
     emit('update', editingIndex.value, item)
-  } else {
+  }
+  else {
     emit('add', { id: Date.now(), ...item })
   }
   closeForm()
@@ -82,7 +85,8 @@ function onSave(item: Record<string, any>) {
 function onModalSave(item: Record<string, any>) {
   if (modalEditingIndex.value !== null) {
     emit('update', modalEditingIndex.value, item)
-  } else {
+  }
+  else {
     emit('add', { id: Date.now(), ...item })
   }
   showModal.value = false
@@ -108,7 +112,8 @@ function applyPreset(preset: PresetPack) {
   if (props.items.length > 0) {
     pendingPreset.value = preset
     showPresetConfirm.value = true
-  } else {
+  }
+  else {
     loadPreset(preset)
   }
 }
@@ -148,9 +153,20 @@ const draftKey = computed(() => props.schema.key)
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
-        <UIcon v-if="schema.icon" :name="schema.icon" class="size-5 text-muted" />
-        <h3 class="font-semibold">{{ schema.title }}</h3>
-        <UBadge variant="subtle" size="sm">{{ items.length }}</UBadge>
+        <UIcon
+          v-if="schema.icon"
+          :name="schema.icon"
+          class="size-5 text-muted"
+        />
+        <h3 class="font-semibold">
+          {{ schema.title }}
+        </h3>
+        <UBadge
+          variant="subtle"
+          size="sm"
+        >
+          {{ items.length }}
+        </UBadge>
       </div>
       <UButton
         v-if="!showForm"
@@ -164,7 +180,10 @@ const draftKey = computed(() => props.schema.key)
     </div>
 
     <!-- Compact preset strip (when items exist) -->
-    <div v-if="showCompactPresets" class="flex flex-wrap gap-2 p-2 rounded-lg bg-muted">
+    <div
+      v-if="showCompactPresets"
+      class="flex flex-wrap gap-2 p-2 rounded-lg bg-muted"
+    >
       <span class="text-xs text-muted self-center">Load preset:</span>
       <UButton
         v-for="preset in schema.presets"
@@ -192,8 +211,15 @@ const draftKey = computed(() => props.schema.key)
     <UCard v-if="showForm && !isModalMode">
       <template #header>
         <div class="flex items-center justify-between">
-          <h4 class="font-medium">{{ editingIndex !== null ? 'Edit' : 'Add' }}</h4>
-          <UButton variant="ghost" size="xs" icon="i-lucide-x" @click="closeForm" />
+          <h4 class="font-medium">
+            {{ editingIndex !== null ? 'Edit' : 'Add' }}
+          </h4>
+          <UButton
+            variant="ghost"
+            size="xs"
+            icon="i-lucide-x"
+            @click="closeForm"
+          />
         </div>
       </template>
       <ProtoCrudInlineForm
@@ -221,7 +247,10 @@ const draftKey = computed(() => props.schema.key)
     />
 
     <!-- Preset confirm modal -->
-    <UModal v-model:open="showPresetConfirm" title="Load preset pack?">
+    <UModal
+      v-model:open="showPresetConfirm"
+      title="Load preset pack?"
+    >
       <template #body>
         <p class="text-sm text-muted">
           You already have {{ items.length }} item{{ items.length !== 1 ? 's' : '' }}.
@@ -229,14 +258,24 @@ const draftKey = computed(() => props.schema.key)
           (duplicates skipped)?
         </p>
         <div class="flex gap-2 mt-4">
-          <UButton @click="confirmLoadPreset">Add to existing</UButton>
-          <UButton variant="ghost" @click="showPresetConfirm = false; pendingPreset = null">Cancel</UButton>
+          <UButton @click="confirmLoadPreset">
+            Add to existing
+          </UButton>
+          <UButton
+            variant="ghost"
+            @click="showPresetConfirm = false; pendingPreset = null"
+          >
+            Cancel
+          </UButton>
         </div>
       </template>
     </UModal>
 
     <!-- Onboarding preset cards (empty state) -->
-    <div v-if="showOnboardingPresets" class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div
+      v-if="showOnboardingPresets"
+      class="grid grid-cols-1 sm:grid-cols-2 gap-3"
+    >
       <UCard
         v-for="preset in schema.presets"
         :key="preset.id"
@@ -251,9 +290,18 @@ const draftKey = computed(() => props.schema.key)
             :class="`text-${preset.color || 'primary'}-500`"
           />
           <div>
-            <p class="font-semibold text-sm">{{ preset.label }}</p>
-            <p v-if="preset.description" class="text-xs text-muted mt-0.5">{{ preset.description }}</p>
-            <p class="text-xs text-muted mt-1">{{ preset.items.length }} items</p>
+            <p class="font-semibold text-sm">
+              {{ preset.label }}
+            </p>
+            <p
+              v-if="preset.description"
+              class="text-xs text-muted mt-0.5"
+            >
+              {{ preset.description }}
+            </p>
+            <p class="text-xs text-muted mt-1">
+              {{ preset.items.length }} items
+            </p>
           </div>
         </div>
       </UCard>
@@ -262,46 +310,90 @@ const draftKey = computed(() => props.schema.key)
         @click="startAdd"
       >
         <div class="flex items-center gap-3">
-          <UIcon name="i-lucide-plus" class="size-6 text-muted" />
+          <UIcon
+            name="i-lucide-plus"
+            class="size-6 text-muted"
+          />
           <div>
-            <p class="font-semibold text-sm">Start from scratch</p>
-            <p class="text-xs text-muted mt-0.5">Add items manually</p>
+            <p class="font-semibold text-sm">
+              Start from scratch
+            </p>
+            <p class="text-xs text-muted mt-0.5">
+              Add items manually
+            </p>
           </div>
         </div>
       </UCard>
     </div>
 
     <!-- Items list -->
-    <div v-else-if="filteredItems.length > 0" class="space-y-2">
+    <div
+      v-else-if="filteredItems.length > 0"
+      class="space-y-2"
+    >
       <div
         v-for="(item, index) in filteredItems"
         :key="item.id || index"
         class="flex items-center justify-between p-3 rounded-lg bg-elevated border border-default"
       >
-        <slot name="item" :item="item" :index="index">
+        <slot
+          name="item"
+          :item="item"
+          :index="index"
+        >
           <div class="min-w-0 flex-1">
             <div class="font-medium text-highlighted truncate">
               {{ schema.listDisplay?.primaryField ? item[schema.listDisplay.primaryField] : schema.itemLabel(item) }}
             </div>
-            <div v-if="schema.listDisplay?.secondaryField" class="text-sm text-muted truncate">
+            <div
+              v-if="schema.listDisplay?.secondaryField"
+              class="text-sm text-muted truncate"
+            >
               {{ item[schema.listDisplay.secondaryField] }}
             </div>
           </div>
-          <div v-if="schema.listDisplay?.badgeField && item[schema.listDisplay.badgeField]" class="ml-2">
-            <UBadge variant="subtle" size="sm">{{ item[schema.listDisplay.badgeField] }}</UBadge>
+          <div
+            v-if="schema.listDisplay?.badgeField && item[schema.listDisplay.badgeField]"
+            class="ml-2"
+          >
+            <UBadge
+              variant="subtle"
+              size="sm"
+            >
+              {{ item[schema.listDisplay.badgeField] }}
+            </UBadge>
           </div>
         </slot>
         <div class="flex items-center gap-1 ml-2 shrink-0">
-          <UButton variant="ghost" size="xs" icon="i-lucide-pencil" @click="startEdit(index)" />
-          <UButton variant="ghost" size="xs" icon="i-lucide-x" color="error" @click="removeItem(index)" />
+          <UButton
+            variant="ghost"
+            size="xs"
+            icon="i-lucide-pencil"
+            @click="startEdit(index)"
+          />
+          <UButton
+            variant="ghost"
+            size="xs"
+            icon="i-lucide-x"
+            color="error"
+            @click="removeItem(index)"
+          />
         </div>
       </div>
     </div>
 
     <!-- Empty state (no presets or presets hidden) -->
-    <div v-else-if="!showForm && !showOnboardingPresets" class="text-center py-8 text-muted">
-      <UIcon :name="schema.icon || 'i-lucide-list'" class="size-8 mx-auto mb-2 opacity-50" />
-      <p class="text-sm">No items yet. Click "Add" to get started.</p>
+    <div
+      v-else-if="!showForm && !showOnboardingPresets"
+      class="text-center py-8 text-muted"
+    >
+      <UIcon
+        :name="schema.icon || 'i-lucide-list'"
+        class="size-8 mx-auto mb-2 opacity-50"
+      />
+      <p class="text-sm">
+        No items yet. Click "Add" to get started.
+      </p>
     </div>
   </div>
 </template>

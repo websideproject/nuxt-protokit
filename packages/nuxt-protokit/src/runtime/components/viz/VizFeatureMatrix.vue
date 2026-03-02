@@ -13,16 +13,32 @@ defineProps<{
     <table class="w-full text-sm">
       <thead>
         <tr class="border-b border-default">
-          <th class="text-left p-2 text-muted font-medium">Feature</th>
-          <th v-for="entity in entities" :key="entity.name" class="text-center p-2 text-muted font-medium">
+          <th class="text-left p-2 text-muted font-medium">
+            Feature
+          </th>
+          <th
+            v-for="entity in entities"
+            :key="entity.name"
+            class="text-center p-2 text-muted font-medium"
+          >
             {{ entity.name }}
           </th>
         </tr>
       </thead>
       <tbody>
-        <tr v-for="feature in features" :key="feature" class="border-b border-muted">
-          <td class="p-2 text-highlighted">{{ feature }}</td>
-          <td v-for="entity in entities" :key="entity.name" class="text-center p-2">
+        <tr
+          v-for="feature in features"
+          :key="feature"
+          class="border-b border-muted"
+        >
+          <td class="p-2 text-highlighted">
+            {{ feature }}
+          </td>
+          <td
+            v-for="entity in entities"
+            :key="entity.name"
+            class="text-center p-2"
+          >
             <UIcon
               v-if="entity.coverage[feature] === true"
               name="i-lucide-check"

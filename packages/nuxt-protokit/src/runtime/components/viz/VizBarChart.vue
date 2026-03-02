@@ -1,6 +1,6 @@
 <script setup lang="ts">
 const props = withDefaults(defineProps<{
-  data: Array<{ label: string; value: number; color?: string }>
+  data: Array<{ label: string, value: number, color?: string }>
   maxValue?: number
   unit?: string
 }>(), {

@@ -48,13 +48,22 @@ function resolve(action: 'restore' | 'fresh') {
 </script>
 
 <template>
-  <UModal :open="isOpen" title="Data Recovery Needed" :close="false" :ui="{ content: 'max-w-md' }" @update:open="handleOpenChange">
+  <UModal
+    :open="isOpen"
+    title="Data Recovery Needed"
+    :close="false"
+    :ui="{ content: 'max-w-md' }"
+    @update:open="handleOpenChange"
+  >
     <template #body>
       <div class="space-y-4">
         <!-- Icon + intro -->
         <div class="flex gap-3 items-start">
           <div class="w-10 h-10 rounded-full bg-warning/10 flex-shrink-0 flex items-center justify-center">
-            <UIcon name="i-lucide-database-zap" class="w-5 h-5 text-warning" />
+            <UIcon
+              name="i-lucide-database-zap"
+              class="w-5 h-5 text-warning"
+            />
           </div>
           <div class="space-y-1">
             <p class="text-sm text-highlighted">
@@ -62,7 +71,9 @@ function resolve(action: 'restore' | 'fresh') {
               <code class="px-1 py-0.5 rounded bg-muted text-xs font-mono">{{ current?.displayName }}</code>
               could not be loaded — the local database appears to be corrupt.
             </p>
-            <p class="text-xs text-muted">This can happen after interrupted writes or browser crashes.</p>
+            <p class="text-xs text-muted">
+              This can happen after interrupted writes or browser crashes.
+            </p>
           </div>
         </div>
 
@@ -71,9 +82,14 @@ function resolve(action: 'restore' | 'fresh') {
           v-if="hasBackup"
           class="flex items-start gap-2 p-3 rounded-lg border border-success/30 bg-success/5"
         >
-          <UIcon name="i-lucide-history" class="w-4 h-4 text-success mt-0.5 flex-shrink-0" />
+          <UIcon
+            name="i-lucide-history"
+            class="w-4 h-4 text-success mt-0.5 flex-shrink-0"
+          />
           <div>
-            <p class="text-sm font-medium text-success">Server backup found</p>
+            <p class="text-sm font-medium text-success">
+              Server backup found
+            </p>
             <p class="text-xs text-muted">
               {{ current?.latestSnapshotLabel ? `"${current.latestSnapshotLabel}" — ` : '' }}Saved {{ snapshotAgeDisplay }}. Restoring will recover your data from the server.
             </p>
@@ -85,15 +101,25 @@ function resolve(action: 'restore' | 'fresh') {
           v-else
           class="flex items-start gap-2 p-3 rounded-lg border border-error/30 bg-error/5"
         >
-          <UIcon name="i-lucide-alert-triangle" class="w-4 h-4 text-error mt-0.5 flex-shrink-0" />
+          <UIcon
+            name="i-lucide-alert-triangle"
+            class="w-4 h-4 text-error mt-0.5 flex-shrink-0"
+          />
           <div>
-            <p class="text-sm font-medium text-error">No server backup available</p>
-            <p class="text-xs text-muted">Starting fresh will clear the corrupt data. Future changes will be backed up to the server automatically.</p>
+            <p class="text-sm font-medium text-error">
+              No server backup available
+            </p>
+            <p class="text-xs text-muted">
+              Starting fresh will clear the corrupt data. Future changes will be backed up to the server automatically.
+            </p>
           </div>
         </div>
 
         <!-- Queue indicator -->
-        <p v-if="corruptionQueue.length > 1" class="text-xs text-muted text-right">
+        <p
+          v-if="corruptionQueue.length > 1"
+          class="text-xs text-muted text-right"
+        >
           {{ corruptionQueue.length - 1 }} more item{{ corruptionQueue.length > 2 ? 's' : '' }} to resolve
         </p>
       </div>

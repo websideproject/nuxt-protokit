@@ -72,22 +72,26 @@ const schema: PrototypeSchema = {
 
 <template>
   <div class="max-w-2xl mx-auto px-6 py-8 space-y-6">
-      <UAlert
-        icon="i-lucide-info"
-        color="neutral"
-        variant="subtle"
-        title="How to test corruption recovery"
-        description="1. Go to the Break-Even page and click 'Inject Garbage into IndexedDB'. 2. Navigate away (to any other page). 3. Come back here — ProtoTool will try to open the corrupt IndexedDB and trigger the recovery modal."
-      />
+    <UAlert
+      icon="i-lucide-info"
+      color="neutral"
+      variant="subtle"
+      title="How to test corruption recovery"
+      description="1. Go to the Break-Even page and click 'Inject Garbage into IndexedDB'. 2. Navigate away (to any other page). 3. Come back here — ProtoTool will try to open the corrupt IndexedDB and trigger the recovery modal."
+    />
 
-      <ClientOnly>
-        <ProtoTool :schema="schema" :doc-key="DOC_KEY" disable-sync />
-        <template #fallback>
-          <div class="space-y-4 animate-pulse">
-            <div class="h-10 bg-muted rounded" />
-            <div class="h-10 bg-muted rounded" />
-          </div>
-        </template>
-      </ClientOnly>
+    <ClientOnly>
+      <ProtoTool
+        :schema="schema"
+        :doc-key="DOC_KEY"
+        disable-sync
+      />
+      <template #fallback>
+        <div class="space-y-4 animate-pulse">
+          <div class="h-10 bg-muted rounded" />
+          <div class="h-10 bg-muted rounded" />
+        </div>
+      </template>
+    </ClientOnly>
   </div>
 </template>

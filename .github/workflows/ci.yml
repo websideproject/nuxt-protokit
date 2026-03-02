@@ -61,6 +61,8 @@ jobs:
           bun-version: latest
       - name: Install dependencies
         run: bun install --frozen-lockfile
+      - name: Install Playwright browsers
+        run: bunx playwright install chromium --with-deps
       - name: Prepare
         run: bun run dev:prepare
       - name: Test

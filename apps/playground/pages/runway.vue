@@ -5,6 +5,7 @@ import { formatMoney } from '#protokit/utils/formatters'
 const schema: PrototypeSchema = {
   key: 'playground-runway',
   title: 'Personal Runway Calculator',
+  shortTitle: 'Runway',
   description: 'How long can you sustain yourself while building your startup?',
   icon: 'i-lucide-plane-takeoff',
   defaultCols: 2,
@@ -111,15 +112,18 @@ const schema: PrototypeSchema = {
 
 <template>
   <div class="max-w-4xl mx-auto px-6 py-8">
-      <ClientOnly>
-        <ProtoTool :schema="schema" disable-sync />
-        <template #fallback>
-          <div class="space-y-4 animate-pulse">
-            <div class="h-10 bg-muted rounded" />
-            <div class="h-10 bg-muted rounded" />
-            <div class="h-24 bg-muted rounded" />
-          </div>
-        </template>
-      </ClientOnly>
+    <ClientOnly>
+      <ProtoTool
+        :schema="schema"
+        disable-sync
+      />
+      <template #fallback>
+        <div class="space-y-4 animate-pulse">
+          <div class="h-10 bg-muted rounded" />
+          <div class="h-10 bg-muted rounded" />
+          <div class="h-24 bg-muted rounded" />
+        </div>
+      </template>
+    </ClientOnly>
   </div>
 </template>

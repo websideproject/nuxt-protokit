@@ -25,10 +25,16 @@ const emit = defineEmits<{
     :step="step"
     @update:model-value="emit('update:modelValue', Number($event))"
   >
-    <template v-if="leading" #leading>
+    <template
+      v-if="leading"
+      #leading
+    >
       <span class="text-muted text-sm">{{ leading }}</span>
     </template>
-    <template v-if="trailing" #trailing>
+    <template
+      v-if="trailing"
+      #trailing
+    >
       <span class="text-muted text-sm">{{ trailing }}</span>
     </template>
   </UInput>

@@ -5,6 +5,7 @@ import type { PrototypeSchema, ComputeContext } from '#protokit/types'
 const schema: PrototypeSchema = {
   key: 'playground-resource-estimator',
   title: 'Resource Cost Estimator',
+  shortTitle: 'Estimator',
   description: 'Estimate total project cost based on team size, salaries, and duration.',
   icon: 'i-lucide-calculator',
   tags: ['finance', 'planning'],
@@ -49,22 +50,22 @@ const schema: PrototypeSchema = {
   derived: {
     monthlySalaryCost: {
       compute: ({ fields }: ComputeContext) => fields.teamSize * fields.avgMonthlySalary,
-      format: { type: 'money', currency: '€' },
+      format: 'money',
     },
     monthlyOverhead: {
       compute: ({ fields, derived }: ComputeContext) =>
         derived.monthlySalaryCost * (fields.overheadPercent / 100),
-      format: { type: 'money', currency: '€' },
+      format: 'money',
     },
     monthlyTotal: {
       compute: ({ fields, derived }: ComputeContext) =>
         derived.monthlySalaryCost + derived.monthlyOverhead + fields.toolingCosts,
-      format: { type: 'money', currency: '€' },
+      format: 'money',
     },
     projectTotal: {
       compute: ({ fields, derived }: ComputeContext) =>
         derived.monthlyTotal * fields.projectDurationMonths,
-      format: { type: 'money', currency: '€' },
+      format: 'money',
     },
   },
 
@@ -107,15 +108,18 @@ const schema: PrototypeSchema = {
 
 <template>
   <div class="max-w-2xl mx-auto px-6 py-8">
-      <ClientOnly>
-        <ProtoTool :schema="schema" disable-sync />
-        <template #fallback>
-          <div class="space-y-4 animate-pulse">
-            <div class="h-10 bg-muted rounded" />
-            <div class="h-10 bg-muted rounded" />
-            <div class="h-24 bg-muted rounded" />
-          </div>
-        </template>
-      </ClientOnly>
+    <ClientOnly>
+      <ProtoTool
+        :schema="schema"
+        disable-sync
+      />
+      <template #fallback>
+        <div class="space-y-4 animate-pulse">
+          <div class="h-10 bg-muted rounded" />
+          <div class="h-10 bg-muted rounded" />
+          <div class="h-24 bg-muted rounded" />
+        </div>
+      </template>
+    </ClientOnly>
   </div>
 </template>

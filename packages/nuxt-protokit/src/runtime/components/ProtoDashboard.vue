@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import type { Ref, ComputedRef } from 'vue'
 import type { PrototypeSchema } from '../types'
 import type { ComputeContext } from '../types/compute'
@@ -22,7 +22,7 @@ const hasTabs = computed(() => !!(props.schema.layout?.tabs?.length))
 // Build UTabs items: value + slot + label + icon + badge (string)
 const tabItems = computed(() => {
   if (!hasTabs.value) return []
-  return props.schema.layout!.tabs!.map(tab => {
+  return props.schema.layout!.tabs!.map((tab) => {
     const badge = tab.badge?.(props.computeContext)
     return {
       value: tab.id,
@@ -52,8 +52,10 @@ function spanClass(span?: number) {
 </script>
 
 <template>
-  <div v-if="schema.layout" class="space-y-6">
-
+  <div
+    v-if="schema.layout"
+    class="space-y-6"
+  >
     <!-- ── Page-level tabs ── -->
     <UTabs
       v-if="hasTabs"
@@ -73,10 +75,15 @@ function spanClass(span?: number) {
             :key="ri"
             :class="colsClass(row.cols)"
           >
-            <template v-for="(item, ii) in row.items" :key="ii">
-
+            <template
+              v-for="(item, ii) in row.items"
+              :key="ii"
+            >
               <!-- Form -->
-              <div v-if="item.type === 'form'" :class="spanClass(item.span)">
+              <div
+                v-if="item.type === 'form'"
+                :class="spanClass(item.span)"
+              >
                 <UCard>
                   <template
                     v-if="item.sectionIndex != null && schema.sections?.[item.sectionIndex]"
@@ -88,7 +95,9 @@ function spanClass(span?: number) {
                         :name="schema.sections[item.sectionIndex].icon!"
                         class="size-5 text-muted"
                       />
-                      <h3 class="font-semibold">{{ schema.sections[item.sectionIndex].title }}</h3>
+                      <h3 class="font-semibold">
+                        {{ schema.sections[item.sectionIndex].title }}
+                      </h3>
                     </div>
                   </template>
                   <ProtoForm
@@ -103,11 +112,16 @@ function spanClass(span?: number) {
               </div>
 
               <!-- Stats -->
-              <div v-else-if="item.type === 'stats' && schema.results?.[item.resultIndex]" :class="spanClass(item.span)">
+              <div
+                v-else-if="item.type === 'stats' && schema.results?.[item.resultIndex]"
+                :class="spanClass(item.span)"
+              >
                 <UCard v-if="!schema.results[item.resultIndex].showWhen || schema.results[item.resultIndex].showWhen!(computeContext)">
                   <template #header>
                     <div class="flex items-center justify-between">
-                      <h3 class="font-semibold">{{ schema.results[item.resultIndex].title }}</h3>
+                      <h3 class="font-semibold">
+                        {{ schema.results[item.resultIndex].title }}
+                      </h3>
                       <ProtoBadge
                         v-if="schema.results[item.resultIndex].badge?.(computeContext)"
                         v-bind="schema.results[item.resultIndex].badge!(computeContext)!"
@@ -121,23 +135,36 @@ function spanClass(span?: number) {
                 </UCard>
                 <UCard v-else>
                   <template #header>
-                    <h3 class="font-semibold text-muted">{{ schema.results[item.resultIndex].title }}</h3>
+                    <h3 class="font-semibold text-muted">
+                      {{ schema.results[item.resultIndex].title }}
+                    </h3>
                   </template>
-                  <p class="text-sm text-muted py-2">Not enough data yet.</p>
+                  <p class="text-sm text-muted py-2">
+                    Not enough data yet.
+                  </p>
                 </UCard>
               </div>
 
               <!-- Viz -->
-              <div v-else-if="item.type === 'viz' && schema.visualizations?.[item.vizIndex]" :class="spanClass(item.span)">
+              <div
+                v-else-if="item.type === 'viz' && schema.visualizations?.[item.vizIndex]"
+                :class="spanClass(item.span)"
+              >
                 <UCard
                   v-if="!schema.visualizations[item.vizIndex].showWhen || schema.visualizations[item.vizIndex].showWhen!(computeContext)"
                 >
-                  <ProtoViz :viz="schema.visualizations[item.vizIndex]" :context="computeContext" />
+                  <ProtoViz
+                    :viz="schema.visualizations[item.vizIndex]"
+                    :context="computeContext"
+                  />
                 </UCard>
               </div>
 
               <!-- Card -->
-              <div v-else-if="item.type === 'card' && schema.cards?.[item.cardIndex]" :class="spanClass(item.span)">
+              <div
+                v-else-if="item.type === 'card' && schema.cards?.[item.cardIndex]"
+                :class="spanClass(item.span)"
+              >
                 <ProtoCard
                   :title="schema.cards[item.cardIndex].title"
                   :icon="schema.cards[item.cardIndex].icon"
@@ -175,13 +202,23 @@ function spanClass(span?: number) {
               </div>
 
               <!-- Inline tabs -->
-              <div v-else-if="item.type === 'tabs'" :class="spanClass(item.span)">
+              <div
+                v-else-if="item.type === 'tabs'"
+                :class="spanClass(item.span)"
+              >
                 <UTabs
                   :items="item.tabs.map(t => ({ value: t.id, slot: t.id, label: t.label, icon: t.icon }))"
                 >
-                  <template v-for="inlineTab in item.tabs" :key="inlineTab.id" #[inlineTab.id]>
+                  <template
+                    v-for="inlineTab in item.tabs"
+                    :key="inlineTab.id"
+                    #[inlineTab.id]
+                  >
                     <div class="space-y-4 mt-4">
-                      <template v-for="(subItem, si) in inlineTab.items" :key="si">
+                      <template
+                        v-for="(subItem, si) in inlineTab.items"
+                        :key="si"
+                      >
                         <div v-if="subItem.type === 'collection' && collections[subItem.collectionKey]">
                           <UCard>
                             <ProtoCrudList
@@ -206,7 +243,10 @@ function spanClass(span?: number) {
                           v-else-if="subItem.type === 'viz' && schema.visualizations?.[subItem.vizIndex]
                             && (!schema.visualizations[subItem.vizIndex].showWhen || schema.visualizations[subItem.vizIndex].showWhen!(computeContext))"
                         >
-                          <ProtoViz :viz="schema.visualizations[subItem.vizIndex]" :context="computeContext" />
+                          <ProtoViz
+                            :viz="schema.visualizations[subItem.vizIndex]"
+                            :context="computeContext"
+                          />
                         </UCard>
                       </template>
                     </div>
@@ -215,12 +255,14 @@ function spanClass(span?: number) {
               </div>
 
               <!-- Section -->
-              <div v-else-if="item.type === 'section'" :class="spanClass(item.span)">
+              <div
+                v-else-if="item.type === 'section'"
+                :class="spanClass(item.span)"
+              >
                 <ProtoSection :title="item.title">
                   <slot :name="`section-${item.title}`" />
                 </ProtoSection>
               </div>
-
             </template>
           </div>
         </div>
@@ -234,9 +276,14 @@ function spanClass(span?: number) {
         :key="ri"
         :class="colsClass(row.cols)"
       >
-        <template v-for="(item, ii) in row.items" :key="ii">
-
-          <div v-if="item.type === 'form'" :class="spanClass(item.span)">
+        <template
+          v-for="(item, ii) in row.items"
+          :key="ii"
+        >
+          <div
+            v-if="item.type === 'form'"
+            :class="spanClass(item.span)"
+          >
             <UCard>
               <template
                 v-if="item.sectionIndex != null && schema.sections?.[item.sectionIndex]"
@@ -248,7 +295,9 @@ function spanClass(span?: number) {
                     :name="schema.sections[item.sectionIndex].icon!"
                     class="size-5 text-muted"
                   />
-                  <h3 class="font-semibold">{{ schema.sections[item.sectionIndex].title }}</h3>
+                  <h3 class="font-semibold">
+                    {{ schema.sections[item.sectionIndex].title }}
+                  </h3>
                 </div>
               </template>
               <ProtoForm
@@ -262,11 +311,16 @@ function spanClass(span?: number) {
             </UCard>
           </div>
 
-          <div v-else-if="item.type === 'stats' && schema.results?.[item.resultIndex]" :class="spanClass(item.span)">
+          <div
+            v-else-if="item.type === 'stats' && schema.results?.[item.resultIndex]"
+            :class="spanClass(item.span)"
+          >
             <UCard v-if="!schema.results[item.resultIndex].showWhen || schema.results[item.resultIndex].showWhen!(computeContext)">
               <template #header>
                 <div class="flex items-center justify-between">
-                  <h3 class="font-semibold">{{ schema.results[item.resultIndex].title }}</h3>
+                  <h3 class="font-semibold">
+                    {{ schema.results[item.resultIndex].title }}
+                  </h3>
                   <ProtoBadge
                     v-if="schema.results[item.resultIndex].badge?.(computeContext)"
                     v-bind="schema.results[item.resultIndex].badge!(computeContext)!"
@@ -280,13 +334,22 @@ function spanClass(span?: number) {
             </UCard>
           </div>
 
-          <div v-else-if="item.type === 'viz' && schema.visualizations?.[item.vizIndex]" :class="spanClass(item.span)">
+          <div
+            v-else-if="item.type === 'viz' && schema.visualizations?.[item.vizIndex]"
+            :class="spanClass(item.span)"
+          >
             <UCard v-if="!schema.visualizations[item.vizIndex].showWhen || schema.visualizations[item.vizIndex].showWhen!(computeContext)">
-              <ProtoViz :viz="schema.visualizations[item.vizIndex]" :context="computeContext" />
+              <ProtoViz
+                :viz="schema.visualizations[item.vizIndex]"
+                :context="computeContext"
+              />
             </UCard>
           </div>
 
-          <div v-else-if="item.type === 'card' && schema.cards?.[item.cardIndex]" :class="spanClass(item.span)">
+          <div
+            v-else-if="item.type === 'card' && schema.cards?.[item.cardIndex]"
+            :class="spanClass(item.span)"
+          >
             <ProtoCard
               :title="schema.cards[item.cardIndex].title"
               :icon="schema.cards[item.cardIndex].icon"
@@ -322,15 +385,16 @@ function spanClass(span?: number) {
             </UCard>
           </div>
 
-          <div v-else-if="item.type === 'section'" :class="spanClass(item.span)">
+          <div
+            v-else-if="item.type === 'section'"
+            :class="spanClass(item.span)"
+          >
             <ProtoSection :title="item.title">
               <slot :name="`section-${item.title}`" />
             </ProtoSection>
           </div>
-
         </template>
       </div>
     </template>
-
   </div>
 </template>

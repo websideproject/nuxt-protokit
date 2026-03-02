@@ -1,5 +1,5 @@
 import { ref, computed, watch, type Ref, type ComputedRef } from 'vue'
-import * as Y from 'yjs'
+import type * as Y from 'yjs'
 import { deepClone } from '../utils/deepClone'
 import { runMigrations } from '../utils/runMigrations'
 import type { SchemaMigrations } from '../types/schema'

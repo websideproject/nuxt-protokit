@@ -36,7 +36,10 @@ function onKeydown(e: KeyboardEvent) {
 
 <template>
   <div>
-    <div v-if="modelValue.length > 0" class="flex flex-wrap gap-1 mb-3">
+    <div
+      v-if="modelValue.length > 0"
+      class="flex flex-wrap gap-1 mb-3"
+    >
       <UBadge
         v-for="(tag, i) in modelValue"
         :key="tag"
@@ -45,7 +48,10 @@ function onKeydown(e: KeyboardEvent) {
         @click="removeTag(i)"
       >
         {{ tag }}
-        <UIcon name="i-lucide-x" class="ml-1 size-3" />
+        <UIcon
+          name="i-lucide-x"
+          class="ml-1 size-3"
+        />
       </UBadge>
     </div>
     <UInput
@@ -55,7 +61,12 @@ function onKeydown(e: KeyboardEvent) {
       @keydown="onKeydown"
     >
       <template #trailing>
-        <UButton variant="ghost" size="xs" icon="i-lucide-plus" @click="addTag" />
+        <UButton
+          variant="ghost"
+          size="xs"
+          icon="i-lucide-plus"
+          @click="addTag"
+        />
       </template>
     </UInput>
   </div>

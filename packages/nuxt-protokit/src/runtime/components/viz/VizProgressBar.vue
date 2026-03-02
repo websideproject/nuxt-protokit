@@ -3,7 +3,7 @@ const props = withDefaults(defineProps<{
   value: number
   max?: number
   label?: string
-  thresholds?: Array<{ value: number; color: string; label?: string }>
+  thresholds?: Array<{ value: number, color: string, label?: string }>
 }>(), {
   max: 100,
 })
@@ -33,7 +33,10 @@ const thresholdLabel = computed(() => {
 
 <template>
   <div class="space-y-1">
-    <div v-if="label || thresholdLabel" class="flex justify-between text-sm">
+    <div
+      v-if="label || thresholdLabel"
+      class="flex justify-between text-sm"
+    >
       <span class="text-muted">{{ label }}</span>
       <span class="font-medium text-highlighted">{{ thresholdLabel || `${Math.round(percentage)}%` }}</span>
     </div>

@@ -112,7 +112,10 @@ const schema: PrototypeSchema = {
   <div class="max-w-2xl mx-auto px-6 py-8">
     <!-- Info banner -->
     <div class="mb-6 flex items-start gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
-      <UIcon name="i-lucide-blocks" class="size-4 text-primary mt-0.5 shrink-0" />
+      <UIcon
+        name="i-lucide-blocks"
+        class="size-4 text-primary mt-0.5 shrink-0"
+      />
       <div class="text-sm text-muted leading-relaxed">
         This page registers a <code class="text-xs bg-muted px-1 py-0.5 rounded">demo:priority</code> field
         and a <code class="text-xs bg-muted px-1 py-0.5 rounded">demo:gauge</code> viz via
@@ -122,7 +125,10 @@ const schema: PrototypeSchema = {
     </div>
 
     <ClientOnly>
-      <ProtoTool :schema="schema" disable-sync />
+      <ProtoTool
+        :schema="schema"
+        disable-sync
+      />
       <template #fallback>
         <div class="space-y-4 animate-pulse">
           <div class="h-10 bg-muted rounded" />

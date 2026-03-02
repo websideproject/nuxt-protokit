@@ -2,7 +2,7 @@
 import type { ComputeContext } from '#protokit/types'
 
 const props = defineProps<{
-  config: Record<string, any>
+  config: Record<string, unknown>
   context: ComputeContext
 }>()
 
@@ -10,10 +10,10 @@ const value = computed(() => {
   const raw = typeof props.config.value === 'function'
     ? props.config.value(props.context)
     : (props.config.value ?? 0)
-  return Math.max(0, Math.min(props.config.max ?? 100, raw))
+  return Math.max(0, Math.min((props.config.max as number) ?? 100, raw as number))
 })
 
-const pct = computed(() => value.value / (props.config.max ?? 100))
+const pct = computed(() => (value.value as number) / ((props.config.max as number) ?? 100))
 
 // SVG half-circle gauge
 const radius = 56
@@ -33,7 +33,12 @@ const strokeColor = computed(() => {
 
 <template>
   <div class="flex flex-col items-center gap-1 py-2">
-    <svg width="160" height="88" viewBox="0 0 160 88" overflow="visible">
+    <svg
+      width="160"
+      height="88"
+      viewBox="0 0 160 88"
+      overflow="visible"
+    >
       <!-- Track -->
       <path
         :d="`M ${cx - radius},${cy} A ${radius},${radius} 0 0 1 ${cx + radius},${cy}`"
@@ -67,6 +72,11 @@ const strokeColor = computed(() => {
         {{ value }}
       </text>
     </svg>
-    <p v-if="config.label" class="text-xs text-muted">{{ config.label }}</p>
+    <p
+      v-if="config.label"
+      class="text-xs text-muted"
+    >
+      {{ config.label }}
+    </p>
   </div>
 </template>

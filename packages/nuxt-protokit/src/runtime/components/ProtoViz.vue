@@ -19,7 +19,12 @@ const shouldShow = computed(() => {
 
 <template>
   <div v-if="shouldShow">
-    <h4 v-if="viz.title" class="font-medium text-sm text-highlighted mb-2">{{ viz.title }}</h4>
+    <h4
+      v-if="viz.title"
+      class="font-medium text-sm text-highlighted mb-2"
+    >
+      {{ viz.title }}
+    </h4>
 
     <VizProgressBar
       v-if="viz.type === 'progress'"
@@ -64,8 +69,8 @@ const shouldShow = computed(() => {
     />
 
     <component
-      v-else-if="customVizComponent"
       :is="customVizComponent"
+      v-else-if="customVizComponent"
       :config="(viz as any).config"
       :context="context"
     />

@@ -23,7 +23,10 @@ const valueColor = computed(() => {
 
 <template>
   <div class="space-y-2">
-    <div v-if="label" class="flex justify-between text-sm">
+    <div
+      v-if="label"
+      class="flex justify-between text-sm"
+    >
       <span class="text-muted">{{ label }}</span>
       <span class="font-medium text-highlighted">{{ value }}{{ unit || '' }}</span>
     </div>

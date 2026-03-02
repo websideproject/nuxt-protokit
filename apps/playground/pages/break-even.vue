@@ -5,6 +5,7 @@ import { formatMoney } from '#protokit/utils/formatters'
 const schema: PrototypeSchema = {
   key: 'playground-break-even',
   title: 'Break-Even Calculator',
+  shortTitle: 'Break-Even',
   description: 'Calculate how many units you need to sell to break even.',
   icon: 'i-lucide-target',
   tags: ['finance', 'planning'],
@@ -137,15 +138,18 @@ const schema: PrototypeSchema = {
 
 <template>
   <div class="max-w-2xl mx-auto px-6 py-8">
-      <ClientOnly>
-        <ProtoTool :schema="schema" disable-sync />
-        <template #fallback>
-          <div class="space-y-4 animate-pulse">
-            <div class="h-10 bg-muted rounded" />
-            <div class="h-10 bg-muted rounded" />
-            <div class="h-24 bg-muted rounded" />
-          </div>
-        </template>
-      </ClientOnly>
+    <ClientOnly>
+      <ProtoTool
+        :schema="schema"
+        disable-sync
+      />
+      <template #fallback>
+        <div class="space-y-4 animate-pulse">
+          <div class="h-10 bg-muted rounded" />
+          <div class="h-10 bg-muted rounded" />
+          <div class="h-24 bg-muted rounded" />
+        </div>
+      </template>
+    </ClientOnly>
   </div>
 </template>
