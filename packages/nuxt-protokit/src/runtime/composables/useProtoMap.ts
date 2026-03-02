@@ -1,7 +1,8 @@
 import { ref, watch, onUnmounted, type Ref } from 'vue'
 import * as Y from 'yjs'
-import type { FieldDef } from '../types/schema'
+import type { FieldDef, SchemaMigrations } from '../types/schema'
 import { deepClone } from '../utils/deepClone'
+import { runMigrations } from '../utils/runMigrations'
 
 export interface UseProtoMapReturn<S extends Record<string, FieldDef>> {
   state: Record<keyof S, Ref>
@@ -18,10 +19,42 @@ export function useProtoMap<S extends Record<string, FieldDef>>(
   doc: Y.Doc,
   mapKey: string,
   schema: S,
+  options?: {
+    version?: number
+    migrations?: SchemaMigrations
+  },
 ): UseProtoMapReturn<S> {
   const dataMap = doc.getMap(mapKey)
   const state = {} as Record<keyof S, Ref>
   const suppressSync = new Set<string>()
+
+  // ── Migration ────────────────────────────────────────────────────────────
+  // Version is tracked as a special key inside the same Y.Map.
+  if (options?.version !== undefined) {
+    const storedVersion = (dataMap.get('__proto_version__') as number) ?? 0
+    const currentVersion = options.version
+
+    if (storedVersion < currentVersion && options.migrations) {
+      // Snapshot current values for all schema keys
+      const snapshot: Record<string, any> = {}
+      for (const key of Object.keys(schema)) {
+        const val = dataMap.get(key)
+        if (val !== undefined) snapshot[key] = val
+      }
+
+      const migrated = runMigrations(snapshot, storedVersion, currentVersion, options.migrations)
+
+      doc.transact(() => {
+        for (const [key, value] of Object.entries(migrated)) {
+          if (key in schema) dataMap.set(key, deepClone(value))
+        }
+        dataMap.set('__proto_version__', currentVersion)
+      })
+    }
+    else if (storedVersion !== currentVersion) {
+      dataMap.set('__proto_version__', currentVersion)
+    }
+  }
 
   // Initialize refs from schema defaults, then override with Y.Map values
   for (const [key, fieldDef] of Object.entries(schema)) {

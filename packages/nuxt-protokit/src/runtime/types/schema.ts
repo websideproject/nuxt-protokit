@@ -46,6 +46,15 @@ export type CustomFieldDef<T = any> = {
 
 export type FieldDef<T = any> = SimpleFieldDef<T> | LinkedResponsesFieldDef | CustomFieldDef<T>
 
+// --- Schema Migration ---
+
+/**
+ * Each key is the TARGET version number. The runner steps through versions
+ * in order, so v2→v5 applies migrations[3], [4], [5] in sequence.
+ * Steps with no entry are skipped (treated as defaults-only changes).
+ */
+export type SchemaMigrations = Record<number, (data: Record<string, any>) => Record<string, any>>
+
 // --- Preset Pack ---
 
 export interface PresetPack {
@@ -89,6 +98,10 @@ export interface CollectionSchema {
     format?: 'money' | 'percent' | 'number' | 'date' | ((v: any) => string)
   }>
   validate?: (item: Record<string, any>) => true | false | string | Record<string, string>
+  /** Current schema version. Increment when you need to transform stored data. */
+  version?: number
+  /** Step functions keyed by target version. See SchemaMigrations. */
+  migrations?: SchemaMigrations
 }
 
 // --- Action Definitions ---
@@ -157,4 +170,9 @@ export interface PrototypeSchema {
 
   // Dashboard layout
   layout?: DashboardLayout
+
+  /** Current schema version. Increment when you need to transform stored field data. */
+  version?: number
+  /** Step functions keyed by target version. See SchemaMigrations. */
+  migrations?: SchemaMigrations
 }
