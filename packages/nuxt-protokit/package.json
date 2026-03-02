@@ -48,12 +48,15 @@
     "@pinia/nuxt": ">=0.5.0"
   },
   "peerDependenciesMeta": {
-    "@pinia/nuxt": { "optional": true }
+    "@pinia/nuxt": {
+      "optional": true
+    }
   },
   "devDependencies": {
     "@nuxt/devtools": "^3.1.1",
     "@nuxt/module-builder": "^1.0.2",
     "@nuxt/schema": "^4.3.0",
+    "@nuxt/test-utils": "^4.0.0",
     "@vitejs/plugin-vue": "^5.2.3",
     "@vitest/browser": "^4",
     "@vitest/browser-playwright": "^4",
