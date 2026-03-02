@@ -1,11 +1,15 @@
 <script setup lang="ts">
 import type { VizDef } from '../types/brick'
 import type { ComputeContext } from '../types/compute'
+import { useProtoExtensionRegistry } from '../composables/useProtoExtensionRegistry'
 
 const props = defineProps<{
   viz: VizDef
   context: ComputeContext
 }>()
+
+const { getVizComponent } = useProtoExtensionRegistry()
+const customVizComponent = computed(() => getVizComponent(props.viz.type))
 
 const shouldShow = computed(() => {
   if (!props.viz.showWhen) return true
@@ -57,6 +61,13 @@ const shouldShow = computed(() => {
     <VizTimeline
       v-else-if="viz.type === 'timeline'"
       :items="(viz.config as any).items(context)"
+    />
+
+    <component
+      v-else-if="customVizComponent"
+      :is="customVizComponent"
+      :config="(viz as any).config"
+      :context="context"
     />
   </div>
 </template>

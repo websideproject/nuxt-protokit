@@ -2,6 +2,9 @@
 import type { Ref } from 'vue'
 import type { FieldDef, SectionDef } from '../types'
 import type { ComputeContext } from '../types/compute'
+import { useProtoExtensionRegistry } from '../composables/useProtoExtensionRegistry'
+
+const { getFieldComponent } = useProtoExtensionRegistry()
 
 const props = withDefaults(defineProps<{
   fields: Record<string, FieldDef>
@@ -12,6 +15,8 @@ const props = withDefaults(defineProps<{
   collectionItems?: Record<string, any[]>
   /** When true, sections render without UCard wrapper (parent is responsible for the card) */
   noCard?: boolean
+  /** Field-level validation errors — key is the field name, value is the error message */
+  errors?: Record<string, string>
 }>(), {
   cols: 2,
   noCard: false,
@@ -79,6 +84,7 @@ const sectionedFields = computed(() => {
       :key="key"
       :label="resolveLabel(fieldDef, model[key]?.value)"
       :hint="(fieldDef as any).hint"
+      :error="errors?.[key]"
       :class="fieldDef.type === 'linked-responses' ? 'col-span-full' : ''"
     >
       <ProtoFieldNumber
@@ -149,6 +155,12 @@ const sectionedFields = computed(() => {
         :field-def="fieldDef as any"
         :collection-items="collectionItems"
       />
+      <component
+        v-else-if="getFieldComponent(fieldDef.type)"
+        :is="getFieldComponent(fieldDef.type)"
+        v-model="model[key].value"
+        v-bind="(fieldDef as any).props ?? {}"
+      />
       <template v-if="(fieldDef as any).help" #help>
         <span class="text-xs text-muted">{{ (fieldDef as any).help }}</span>
       </template>
@@ -171,6 +183,7 @@ const sectionedFields = computed(() => {
           :key="key"
           :label="resolveLabel(def, model[key]?.value)"
           :hint="(def as any).hint"
+          :error="errors?.[key]"
           :class="def.type === 'linked-responses' ? 'col-span-full' : ''"
         >
           <ProtoFieldNumber
@@ -241,6 +254,12 @@ const sectionedFields = computed(() => {
             :field-def="def as any"
             :collection-items="collectionItems"
           />
+          <component
+            v-else-if="getFieldComponent(def.type)"
+            :is="getFieldComponent(def.type)"
+            v-model="model[key].value"
+            v-bind="(def as any).props ?? {}"
+          />
           <template v-if="(def as any).help" #help>
             <span class="text-xs text-muted">{{ (def as any).help }}</span>
           </template>
@@ -257,6 +276,7 @@ const sectionedFields = computed(() => {
         :key="key"
         :label="resolveLabel(def, model[key]?.value)"
         :hint="(def as any).hint"
+        :error="errors?.[key]"
         :class="def.type === 'linked-responses' ? 'col-span-full' : ''"
       >
         <ProtoFieldNumber
@@ -326,6 +346,12 @@ const sectionedFields = computed(() => {
           v-model="model[key].value"
           :field-def="def as any"
           :collection-items="collectionItems"
+        />
+        <component
+          v-else-if="getFieldComponent(def.type)"
+          :is="getFieldComponent(def.type)"
+          v-model="model[key].value"
+          v-bind="(def as any).props ?? {}"
         />
         <template v-if="(def as any).help" #help>
           <span class="text-xs text-muted">{{ (def as any).help }}</span>

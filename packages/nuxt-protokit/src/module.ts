@@ -1,5 +1,14 @@
 import { defineNuxtModule, addImportsDir, addComponentsDir, createResolver } from '@nuxt/kit'
 
+declare module '@nuxt/schema' {
+  interface NuxtHooks {
+    'protokit:register-extension': (ctx: {
+      addComponentsDir: (dir: string) => void
+      addImportsDir: (dir: string) => void
+    }) => void | Promise<void>
+  }
+}
+
 export interface ModuleOptions {
   /**
    * Server-side sync via yjs-sync (or a compatible implementation).
@@ -59,6 +68,12 @@ export default defineNuxtModule<ModuleOptions>({
     // ── Aliases ───────────────────────────────────────────────────────────────
     nuxt.options.alias['#protokit'] = resolver.resolve('./runtime')
     nuxt.options.alias['#protokit/*'] = resolver.resolve('./runtime/*')
+
+    // ── Extension hook (module-to-module interop) ─────────────────────────────
+    await nuxt.callHook('protokit:register-extension', {
+      addComponentsDir: (dir: string) => addComponentsDir({ path: dir, global: true }),
+      addImportsDir: (dir: string) => addImportsDir(dir),
+    })
 
     // ── Auto-imports ──────────────────────────────────────────────────────────
     addImportsDir(resolver.resolve('./runtime/composables'))

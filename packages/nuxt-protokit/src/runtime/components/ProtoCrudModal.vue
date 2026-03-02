@@ -82,7 +82,26 @@ function discardDraft() {
   showDraftBanner.value = false
 }
 
+const validationError = ref<string | null>(null)
+const fieldErrors = ref<Record<string, string>>({})
+
 function save() {
+  if (props.schema.validate) {
+    const result = props.schema.validate(formData.value)
+    if (result !== true) {
+      if (result && typeof result === 'object') {
+        fieldErrors.value = result
+        validationError.value = null
+      }
+      else {
+        fieldErrors.value = {}
+        validationError.value = typeof result === 'string' ? result : 'Please fix the errors before saving.'
+      }
+      return
+    }
+  }
+  validationError.value = null
+  fieldErrors.value = {}
   clearDraft()
   emit('save', { ...formData.value })
   isOpen.value = false
@@ -145,6 +164,16 @@ const formCols = computed<1 | 2>(() => {
         :model="model"
         :cols="formCols"
         :collection-items="collectionItems"
+        :errors="fieldErrors"
+      />
+
+      <UAlert
+        v-if="validationError"
+        color="error"
+        variant="subtle"
+        icon="i-lucide-circle-alert"
+        :description="validationError"
+        class="mt-4"
       />
     </template>
 

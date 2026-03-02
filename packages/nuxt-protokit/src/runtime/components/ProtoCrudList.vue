@@ -201,6 +201,7 @@ const draftKey = computed(() => props.schema.key)
         :defaults="schema.defaults"
         :edit-data="editData"
         :collection-items="collectionItems"
+        :validate="schema.validate"
         @save="onSave"
         @cancel="closeForm"
       />

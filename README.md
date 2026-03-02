@@ -18,9 +18,10 @@ Schema-driven rapid prototyping for Nuxt 4. Define a TypeScript schema and get a
 - 📴 **Offline-first** — Y.js + IndexedDB means every write is local-first; data is safe without a server
 - 🧮 **12 field types** — number, text, textarea, select, segmented, toggle, range, rating, color, date, tags, linked-responses
 - 📊 **5 visualization types** — progress bar, benchmark bar, bar chart, comparison table, feature matrix, timeline
-- 🔗 **Cross-tool data flow** — `produces`/`consumes` wire tools together via a reactive CRDT data graph
+- 🔗 **Connected prototypes** — `produces`/`consumes` wire prototypes together via a reactive CRDT data graph
 - 🛡️ **Corruption recovery** — auto-detect IndexedDB corruption; restore from server snapshots when a sync backend is present
 - 🔄 **Multi-tab sync** — BroadcastChannel propagates edits across open tabs without a server round-trip
+- 🧩 **Extensible** — register custom field types and viz types via `defineProtokitExtension` without modifying the module
 
 <!-- /automd -->
 
@@ -32,13 +33,13 @@ Install the module and its peer dependencies:
 
 ```bash
 # npm
-npm install -D @websideproject/nuxt-protokit yjs y-indexeddb @nuxt/ui
+npm install @websideproject/nuxt-protokit yjs y-indexeddb @nuxt/ui
 
 # pnpm
-pnpm add -D @websideproject/nuxt-protokit yjs y-indexeddb @nuxt/ui
+pnpm add @websideproject/nuxt-protokit yjs y-indexeddb @nuxt/ui
 
 # bun
-bun add -D @websideproject/nuxt-protokit yjs y-indexeddb @nuxt/ui
+bun add @websideproject/nuxt-protokit yjs y-indexeddb @nuxt/ui
 ```
 
 Then add it to your `nuxt.config.ts`:
@@ -47,7 +48,7 @@ Then add it to your `nuxt.config.ts`:
 export default defineNuxtConfig({
   modules: ['@websideproject/nuxt-protokit'],
   protokit: {
-    serverSync: false, // set true only if you have a compatible sync backend
+    serverSync: false, // set true to enable server persistence — need help? websideproject.com
   },
 })
 ```

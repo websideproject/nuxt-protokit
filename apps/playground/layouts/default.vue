@@ -16,6 +16,7 @@ const navItems = [
     { label: 'Real-time Sync', to: '/tab-sync', icon: 'i-lucide-refresh-cw' },
     { label: 'Bricks Gallery', to: '/bricks-gallery', icon: 'i-lucide-blocks' },
     { label: 'Corruption Recovery', to: '/corruption-recovery', icon: 'i-lucide-database-zap' },
+    { label: 'Custom Extensions', to: '/custom-extensions', icon: 'i-lucide-puzzle' },
   ],
 ]
 </script>

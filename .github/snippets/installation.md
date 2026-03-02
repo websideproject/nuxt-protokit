@@ -17,7 +17,7 @@ Then add it to your `nuxt.config.ts`:
 export default defineNuxtConfig({
   modules: ['@websideproject/nuxt-protokit'],
   protokit: {
-    serverSync: false, // requires the yjs-sync companion module — see docs
+    serverSync: false, // set true to enable server persistence — need help? websideproject.com
   },
 })
 ```
