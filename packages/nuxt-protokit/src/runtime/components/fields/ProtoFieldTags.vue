@@ -36,7 +36,7 @@ function onKeydown(e: KeyboardEvent) {
 
 <template>
   <div>
-    <div v-if="modelValue.length > 0" class="flex flex-wrap gap-1 mb-2">
+    <div v-if="modelValue.length > 0" class="flex flex-wrap gap-1 mb-3">
       <UBadge
         v-for="(tag, i) in modelValue"
         :key="tag"

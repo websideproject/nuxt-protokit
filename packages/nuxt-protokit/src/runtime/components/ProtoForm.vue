@@ -15,6 +15,8 @@ const props = withDefaults(defineProps<{
   collectionItems?: Record<string, any[]>
   /** When true, sections render without UCard wrapper (parent is responsible for the card) */
   noCard?: boolean
+  /** Field-level validation errors — key is the field name, value is the error message */
+  errors?: Record<string, string>
 }>(), {
   cols: 2,
   noCard: false,
@@ -82,6 +84,7 @@ const sectionedFields = computed(() => {
       :key="key"
       :label="resolveLabel(fieldDef, model[key]?.value)"
       :hint="(fieldDef as any).hint"
+      :error="errors?.[key]"
       :class="fieldDef.type === 'linked-responses' ? 'col-span-full' : ''"
     >
       <ProtoFieldNumber
@@ -180,6 +183,7 @@ const sectionedFields = computed(() => {
           :key="key"
           :label="resolveLabel(def, model[key]?.value)"
           :hint="(def as any).hint"
+          :error="errors?.[key]"
           :class="def.type === 'linked-responses' ? 'col-span-full' : ''"
         >
           <ProtoFieldNumber
@@ -272,6 +276,7 @@ const sectionedFields = computed(() => {
         :key="key"
         :label="resolveLabel(def, model[key]?.value)"
         :hint="(def as any).hint"
+        :error="errors?.[key]"
         :class="def.type === 'linked-responses' ? 'col-span-full' : ''"
       >
         <ProtoFieldNumber

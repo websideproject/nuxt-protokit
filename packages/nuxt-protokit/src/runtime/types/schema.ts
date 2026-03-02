@@ -88,7 +88,7 @@ export interface CollectionSchema {
     sortable?: boolean
     format?: 'money' | 'percent' | 'number' | 'date' | ((v: any) => string)
   }>
-  validate?: (item: Record<string, any>) => boolean | string
+  validate?: (item: Record<string, any>) => true | false | string | Record<string, string>
 }
 
 // --- Action Definitions ---

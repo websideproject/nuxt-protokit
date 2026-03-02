@@ -45,6 +45,12 @@ const schema: CollectionSchema = {
     { key: 'pricing', label: 'Price', sortable: true, format: 'money' },
     { key: 'threat', label: 'Threat' },
   ],
+  validate: (item) => {
+    const errors: Record<string, string> = {}
+    if (!item.name?.trim()) errors.name = 'Company name is required.'
+    if (item.url && !/^https?:\/\/.+/.test(item.url)) errors.url = 'Must start with http:// or https://'
+    return Object.keys(errors).length ? errors : true
+  },
 }
 
 const { doc, items, add, update, remove, move, isReady } = useProtoCollection(schema)
