@@ -18,6 +18,7 @@ const navItems = [
     { label: 'Corruption Recovery', to: '/corruption-recovery', icon: 'i-lucide-database-zap' },
     { label: 'Custom Extensions', to: '/custom-extensions', icon: 'i-lucide-puzzle' },
     { label: 'Schema Migration', to: '/schema-migration', icon: 'i-lucide-arrow-up-circle' },
+    { label: 'Permissions', to: '/permissions', icon: 'i-lucide-shield' },
   ],
 ]
 </script>

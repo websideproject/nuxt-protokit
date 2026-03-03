@@ -1,5 +1,6 @@
 import type { ComputeContext, DerivedDef, ConnectionsDef } from './compute'
 import type { DashboardLayout, CardDef, VizDef, ResultSectionDef, SectionDef } from './brick'
+import type { CollectionPermissions, FieldPermissions } from './permissions'
 
 // --- Field Definitions ---
 
@@ -21,6 +22,13 @@ export type SimpleFieldDef<T = any> = {
   showWhen?: (values: Record<string, any>) => boolean
   format?: 'money' | 'percent' | 'number' | 'date' | ((v: T) => string)
   deep?: boolean
+  /**
+   * Frontend visibility/editability guards for this field.
+   *
+   * ⚠️ **Frontend only** — the Y.js document value is always present.
+   * See {@link FieldPermissions} for details.
+   */
+  permissions?: FieldPermissions
 }
 
 export type LinkedResponsesFieldDef = {
@@ -32,6 +40,13 @@ export type LinkedResponsesFieldDef = {
   sourceBadge?: (item: Record<string, any>) => string
   answerPlaceholder?: string
   answerRows?: number
+  /**
+   * Frontend visibility/editability guards for this field.
+   *
+   * ⚠️ **Frontend only** — the Y.js document value is always present.
+   * See {@link FieldPermissions} for details.
+   */
+  permissions?: FieldPermissions
 }
 
 export type CustomFieldDef<T = any> = {
@@ -42,6 +57,13 @@ export type CustomFieldDef<T = any> = {
   showWhen?: (values: Record<string, any>) => boolean
   help?: string
   hint?: string
+  /**
+   * Frontend visibility/editability guards for this field.
+   *
+   * ⚠️ **Frontend only** — the Y.js document value is always present.
+   * See {@link FieldPermissions} for details.
+   */
+  permissions?: FieldPermissions
 }
 
 export type FieldDef<T = any> = SimpleFieldDef<T> | LinkedResponsesFieldDef | CustomFieldDef<T>
@@ -102,6 +124,13 @@ export interface CollectionSchema {
   version?: number
   /** Step functions keyed by target version. See SchemaMigrations. */
   migrations?: SchemaMigrations
+  /**
+   * Frontend CRUD guards for this collection.
+   *
+   * The UI hides or disables controls based on these guards.
+   * For true access control, also enforce these rules on the server.
+   */
+  permissions?: CollectionPermissions
 }
 
 // --- Action Definitions ---
