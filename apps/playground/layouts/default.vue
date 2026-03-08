@@ -12,6 +12,10 @@ const navItems = [
     { label: 'Competitor Tracker', to: '/competitors', icon: 'i-lucide-users' },
   ],
   [
+    { type: 'label', label: 'Components' },
+    { label: 'Calendar', to: '/calendar', icon: 'i-lucide-calendar' },
+  ],
+  [
     { type: 'label', label: 'Features' },
     { label: 'Real-time Sync', to: '/tab-sync', icon: 'i-lucide-refresh-cw' },
     { label: 'Bricks Gallery', to: '/bricks-gallery', icon: 'i-lucide-blocks' },
