@@ -198,12 +198,14 @@ export function getEventColorStyle(color: CalendarColor): {
   background: string
   color: string
   borderColor: string
+  borderSubtle: string
 } {
   const hex = CALENDAR_COLOR_HEX[color] ?? '#3b82f6'
   return {
     background: `color-mix(in srgb, ${hex} 18%, transparent)`,
     color: hex,
     borderColor: hex,
+    borderSubtle: `color-mix(in srgb, ${hex} 30%, transparent)`,
   }
 }
 

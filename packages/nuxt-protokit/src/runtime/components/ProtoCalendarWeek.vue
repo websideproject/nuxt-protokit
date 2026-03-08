@@ -130,6 +130,19 @@ const ghostDeltaDays = ref(0)
 // Suppress the click that browsers fire after pointerup when a drag occurred
 const suppressNextClick = ref(false)
 
+// ── Event resize (bottom-handle drag) ─────────────────────────────────────────
+
+interface EventResize {
+  eventId: string
+  startMin: number
+  origEndMin: number
+  snappedEndMin: number
+}
+
+const eventResize = ref<EventResize | null>(null)
+const ghostResizeEventId = ref<string | null>(null)
+const ghostResizeEndMin = ref(0)
+
 function onEventPointerDown(e: PointerEvent, ev: CalendarEvent) {
   e.preventDefault()
   e.stopPropagation() // prevent grid from starting range selection
@@ -138,6 +151,23 @@ function onEventPointerDown(e: PointerEvent, ev: CalendarEvent) {
   ghostEventId.value = ev.id
   ghostDeltaMin.value = 0
   ghostDeltaDays.value = 0
+}
+
+function onResizePointerDown(e: PointerEvent, ev: CalendarEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+  ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+
+  const [, st = '00:00:00'] = ev.startAt.split('T')
+  const [sh, sm] = st.split(':').map(Number)
+  const [, et = '01:00:00'] = ev.endAt.split('T')
+  const [eh, em] = et.split(':').map(Number)
+  const startMin = sh * 60 + sm
+  const origEndMin = eh * 60 + em
+
+  eventResize.value = { eventId: ev.id, startMin, origEndMin, snappedEndMin: origEndMin }
+  ghostResizeEventId.value = ev.id
+  ghostResizeEndMin.value = origEndMin
 }
 
 const ghostEvent = computed(() => ghostEventId.value ? props.events.find(e => e.id === ghostEventId.value) ?? null : null)
@@ -154,6 +184,31 @@ function ghostColIdx(): number {
   const origDayStr = ghostEvent.value.startAt.split('T')[0]
   const origIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(origDayStr + 'T12:00:00')))
   return Math.max(0, Math.min(6, (origIdx === -1 ? 0 : origIdx) + ghostDeltaDays.value))
+}
+
+const ghostResizeEvent = computed(() =>
+  ghostResizeEventId.value ? props.events.find(e => e.id === ghostResizeEventId.value) ?? null : null,
+)
+
+function ghostResizeTopPct(): number {
+  if (!ghostResizeEvent.value) return 0
+  const [, t = '00:00:00'] = ghostResizeEvent.value.startAt.split('T')
+  const [h, m] = t.split(':').map(Number)
+  return (h * 60 + m) / GRID_HEIGHT * 100
+}
+
+function ghostResizeHeightPct(): number {
+  if (!ghostResizeEvent.value) return 0
+  const [, st = '00:00:00'] = ghostResizeEvent.value.startAt.split('T')
+  const [sh, sm] = st.split(':').map(Number)
+  return Math.max(15, ghostResizeEndMin.value - (sh * 60 + sm)) / GRID_HEIGHT * 100
+}
+
+function ghostResizeColIdx(): number {
+  if (!ghostResizeEvent.value) return 0
+  const dayStr = ghostResizeEvent.value.startAt.split('T')[0]
+  const idx = weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(dayStr + 'T12:00:00')))
+  return idx === -1 ? 0 : idx
 }
 
 // ── Range selection (click-drag on empty space) ───────────────────────────────
@@ -191,6 +246,15 @@ function onGridPointerDown(e: PointerEvent) {
 // ── Unified grid pointermove / pointerup ──────────────────────────────────────
 
 function onGridPointerMove(e: PointerEvent) {
+  // Event resize
+  if (eventResize.value) {
+    const raw = getGridMinute(e.clientY)
+    const snapped = Math.min(23 * 60 + 45, Math.max(eventResize.value.startMin + 15, Math.round(raw / 15) * 15))
+    eventResize.value.snappedEndMin = snapped
+    ghostResizeEndMin.value = snapped
+    return
+  }
+
   // Event drag
   if (eventDrag.value) {
     const state = eventDrag.value
@@ -220,6 +284,24 @@ function onGridPointerMove(e: PointerEvent) {
 }
 
 function onGridPointerUp(e: PointerEvent) {
+  // Event resize end
+  if (eventResize.value) {
+    const state = eventResize.value
+    const ev = props.events.find(ev => ev.id === state.eventId)
+    const didResize = state.snappedEndMin !== state.origEndMin
+    if (ev && didResize) {
+      const eventDate = new Date(ev.startAt.split('T')[0] + 'T12:00:00')
+      emit('eventMove', ev.id, ev.startAt, buildISOAt(eventDate, state.snappedEndMin))
+    }
+    if (didResize) {
+      suppressNextClick.value = true
+      setTimeout(() => { suppressNextClick.value = false }, 300)
+    }
+    eventResize.value = null
+    ghostResizeEventId.value = null
+    return
+  }
+
   // Event drag end
   if (eventDrag.value) {
     const state = eventDrag.value
@@ -236,7 +318,6 @@ function onGridPointerUp(e: PointerEvent) {
       emit('eventMove', ev.id, toLocalISOString(newStart), toLocalISOString(new Date(newStart.getTime() + dur)))
     }
     if (didMove) {
-      // Suppress the click event that fires right after pointerup
       suppressNextClick.value = true
       setTimeout(() => { suppressNextClick.value = false }, 300)
     }
@@ -249,7 +330,6 @@ function onGridPointerUp(e: PointerEvent) {
   if (selection.value) {
     const sel = selection.value
     const day = weekDays.value[sel.dayIdx]
-    // Only emit if the user actually dragged (endMin > startMin + 0)
     if (sel.endMin > sel.startMin) {
       emit('rangeSelect', buildISOAt(day, sel.startMin), buildISOAt(day, Math.min(23 * 60 + 59, sel.endMin)))
     }
@@ -260,6 +340,8 @@ function onGridPointerUp(e: PointerEvent) {
 function onGridPointerCancel() {
   eventDrag.value = null
   ghostEventId.value = null
+  eventResize.value = null
+  ghostResizeEventId.value = null
   selection.value = null
 }
 
@@ -396,13 +478,13 @@ function onColumnDrop(e: DragEvent, day: Date) {
           <div
             v-for="ev in getTimedEventsForDay(day)"
             :key="ev.id"
-            class="absolute px-0.5 cursor-grab active:cursor-grabbing"
+            class="absolute px-0.5 cursor-grab active:cursor-grabbing group"
             :style="{
               top: `${eventTopPct(ev)}%`,
               height: `${eventHeightPct(ev)}%`,
               left: eventLeft(ev.id),
               width: eventWidth(ev.id),
-              opacity: ghostEventId === ev.id ? 0.25 : 1,
+              opacity: ghostEventId === ev.id || ghostResizeEventId === ev.id ? 0.25 : 1,
               zIndex: ghostEventId === ev.id ? 0 : 1,
             }"
             @pointerdown="onEventPointerDown($event, ev)"
@@ -413,6 +495,13 @@ function onColumnDrop(e: DragEvent, day: Date) {
               view="week"
               class="h-full pointer-events-none"
             />
+            <div
+              class="absolute bottom-0 left-0 right-0 h-2 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style="cursor: ns-resize"
+              @pointerdown.stop="onResizePointerDown($event, ev)"
+            >
+              <div class="w-6 h-0.5 rounded-full bg-current opacity-60" />
+            </div>
           </div>
 
           <!-- Range selection ghost -->
@@ -457,6 +546,24 @@ function onColumnDrop(e: DragEvent, day: Date) {
         >
           <ProtoCalendarEvent
             :event="ghostEvent"
+            view="week"
+            class="h-full outline outline-2 outline-primary"
+          />
+        </div>
+
+        <!-- Resize ghost overlay -->
+        <div
+          v-if="ghostResizeEvent && eventResize"
+          class="absolute pointer-events-none opacity-90 z-20 px-0.5"
+          :style="{
+            top: `${ghostResizeTopPct()}%`,
+            height: `${ghostResizeHeightPct()}%`,
+            left: `calc(48px + ${(ghostResizeColIdx() / 7) * 100}%)`,
+            width: `calc(${(1 / 7) * 100}% - 2px)`,
+          }"
+        >
+          <ProtoCalendarEvent
+            :event="ghostResizeEvent"
             view="week"
             class="h-full outline outline-2 outline-primary"
           />

@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useAutoAnimate } from '@formkit/auto-animate/vue'
 import type { CalendarView, CalendarColor } from '#protokit/types'
 
 // ── Calendar events ───────────────────────────────────────────────────────────
@@ -52,6 +53,11 @@ function cycleColor(task: Task) {
 }
 
 const newTaskTitle = ref('')
+// Set of task ids that already have a linked calendar event
+const scheduledTaskIds = computed(() =>
+  new Set(events.value.map(e => e.linkedTaskId).filter(Boolean)),
+)
+
 const pendingTasks = computed(() => taskList.items.value.filter(t => !t.done))
 const doneTasks = computed(() => taskList.items.value.filter(t => t.done))
 
@@ -86,6 +92,10 @@ const viewTitle = computed(() => {
 const draggingTask = ref<Task | null>(null)
 
 function onTaskDragStart(e: DragEvent, task: Task) {
+  if (scheduledTaskIds.value.has(task.id)) {
+    e.preventDefault()
+    return
+  }
   draggingTask.value = task
   e.dataTransfer!.effectAllowed = 'copy'
   e.dataTransfer!.setData('application/x-task', JSON.stringify(task))
@@ -114,6 +124,7 @@ function onExternalDrop(startAt: string, endAt: string, allDay: boolean, rawData
     color: task.color ?? 'sky',
     description: '',
     location: '',
+    linkedTaskId: task.id,
   })
   draggingTask.value = null
 }
@@ -149,6 +160,10 @@ function onModalSave(event: any) {
 }
 
 function onModalDelete(event: any) { removeEvent(event.id) }
+
+// ── Auto-animate refs ─────────────────────────────────────────────────────────
+const [pendingListRef] = useAutoAnimate()
+const [doneListRef] = useAutoAnimate()
 
 // ── Color swatch ──────────────────────────────────────────────────────────────
 function colorDot(color: CalendarColor) {
@@ -274,34 +289,59 @@ function colorDot(color: CalendarColor) {
         <!-- Task list -->
         <div class="flex-1 overflow-y-auto py-1">
           <!-- Pending -->
+          <div ref="pendingListRef">
           <div
             v-for="task in pendingTasks"
             :key="task.id"
             class="group flex items-center gap-2 px-3 py-2 hover:bg-muted/50 transition-colors rounded mx-1 my-0.5"
-            :class="{ 'opacity-40 scale-95': draggingTask?.id === task.id }"
-            draggable="true"
+            :class="{
+              'opacity-40 scale-95': draggingTask?.id === task.id,
+              'cursor-default': scheduledTaskIds.has(task.id),
+            }"
+            :draggable="!scheduledTaskIds.has(task.id)"
             @dragstart="onTaskDragStart($event, task)"
             @dragend="onTaskDragEnd"
           >
+            <!-- Grip (unscheduled) or calendar check (scheduled) -->
             <UIcon
+              v-if="scheduledTaskIds.has(task.id)"
+              name="i-lucide-calendar-check"
+              class="w-4 h-4 text-primary shrink-0"
+              title="Already on calendar"
+            />
+            <UIcon
+              v-else
               name="i-lucide-grip-vertical"
               class="w-4 h-4 text-muted cursor-grab shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
             />
             <button
-              class="w-2.5 h-2.5 rounded-full shrink-0 transition-transform hover:scale-125 ring-1 ring-black/10 dark:ring-white/10"
+              class="w-2.5 h-2.5 rounded-full shrink-0 transition-transform ring-1 ring-black/10 dark:ring-white/10"
+              :class="scheduledTaskIds.has(task.id) ? '' : 'hover:scale-125'"
               :style="colorDot(task.color)"
               :title="`Color: ${task.color}`"
-              @click.stop="cycleColor(task)"
+              :disabled="scheduledTaskIds.has(task.id)"
+              @click.stop="!scheduledTaskIds.has(task.id) && cycleColor(task)"
             />
             <UCheckbox
               :model-value="task.done"
               class="shrink-0"
               @update:model-value="toggleTask(task)"
             />
-            <span class="flex-1 text-sm text-default truncate select-none leading-tight">
+            <span
+              class="flex-1 text-sm truncate select-none leading-tight"
+              :class="scheduledTaskIds.has(task.id) ? 'text-muted' : 'text-default'"
+            >
               {{ task.title }}
             </span>
+            <!-- Scheduled badge -->
+            <span
+              v-if="scheduledTaskIds.has(task.id)"
+              class="text-xs text-primary bg-primary/10 px-1.5 py-0.5 rounded shrink-0"
+            >
+              scheduled
+            </span>
             <UButton
+              v-else
               icon="i-lucide-x"
               variant="ghost"
               color="neutral"
@@ -309,6 +349,8 @@ function colorDot(color: CalendarColor) {
               class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
               @click.stop="deleteTask(task)"
             />
+          </div>
+
           </div>
 
           <!-- Empty state -->
@@ -333,32 +375,34 @@ function colorDot(color: CalendarColor) {
                 Done · {{ doneTasks.length }}
               </p>
             </div>
-            <div
-              v-for="task in doneTasks"
-              :key="task.id"
-              class="group flex items-center gap-2 px-3 py-1.5 mx-1 rounded opacity-50 hover:opacity-70 transition-opacity"
-            >
-              <div class="w-4 shrink-0" />
+            <div ref="doneListRef">
               <div
-                class="w-2.5 h-2.5 rounded-full shrink-0"
-                :style="colorDot(task.color)"
-              />
-              <UCheckbox
-                :model-value="task.done"
-                class="shrink-0"
-                @update:model-value="toggleTask(task)"
-              />
-              <span class="flex-1 text-sm text-muted line-through truncate select-none">
-                {{ task.title }}
-              </span>
-              <UButton
-                icon="i-lucide-x"
-                variant="ghost"
-                color="neutral"
-                size="xs"
-                class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
-                @click.stop="deleteTask(task)"
-              />
+                v-for="task in doneTasks"
+                :key="task.id"
+                class="group flex items-center gap-2 px-3 py-1.5 mx-1 rounded opacity-50 hover:opacity-70 transition-opacity"
+              >
+                <div class="w-4 shrink-0" />
+                <div
+                  class="w-2.5 h-2.5 rounded-full shrink-0"
+                  :style="colorDot(task.color)"
+                />
+                <UCheckbox
+                  :model-value="task.done"
+                  class="shrink-0"
+                  @update:model-value="toggleTask(task)"
+                />
+                <span class="flex-1 text-sm text-muted line-through truncate select-none">
+                  {{ task.title }}
+                </span>
+                <UButton
+                  icon="i-lucide-x"
+                  variant="ghost"
+                  color="neutral"
+                  size="xs"
+                  class="shrink-0 opacity-0 group-hover:opacity-100 transition-opacity"
+                  @click.stop="deleteTask(task)"
+                />
+              </div>
             </div>
           </template>
         </div>

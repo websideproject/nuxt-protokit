@@ -96,6 +96,19 @@ const ghostEventId = ref<string | null>(null)
 const ghostDeltaMin = ref(0)
 const suppressNextClick = ref(false)
 
+// ── Event resize (bottom-handle drag) ─────────────────────────────────────────
+
+interface EventResize {
+  eventId: string
+  startMin: number
+  origEndMin: number
+  snappedEndMin: number
+}
+
+const eventResize = ref<EventResize | null>(null)
+const ghostResizeEventId = ref<string | null>(null)
+const ghostResizeEndMin = ref(0)
+
 function onEventPointerDown(e: PointerEvent, ev: CalendarEvent) {
   e.preventDefault()
   e.stopPropagation()
@@ -105,6 +118,23 @@ function onEventPointerDown(e: PointerEvent, ev: CalendarEvent) {
   ghostDeltaMin.value = 0
 }
 
+function onResizePointerDown(e: PointerEvent, ev: CalendarEvent) {
+  e.preventDefault()
+  e.stopPropagation()
+  ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+
+  const [, st = '00:00:00'] = ev.startAt.split('T')
+  const [sh, sm] = st.split(':').map(Number)
+  const [, et = '01:00:00'] = ev.endAt.split('T')
+  const [eh, em] = et.split(':').map(Number)
+  const startMin = sh * 60 + sm
+  const origEndMin = eh * 60 + em
+
+  eventResize.value = { eventId: ev.id, startMin, origEndMin, snappedEndMin: origEndMin }
+  ghostResizeEventId.value = ev.id
+  ghostResizeEndMin.value = origEndMin
+}
+
 const ghostEvent = computed(() => ghostEventId.value ? props.events.find(e => e.id === ghostEventId.value) ?? null : null)
 
 function ghostTopPct(): number {
@@ -112,6 +142,24 @@ function ghostTopPct(): number {
   const [, t = '00:00:00'] = ghostEvent.value.startAt.split('T')
   const [h, m] = t.split(':').map(Number)
   return Math.max(0, Math.min(23 * 60 + 30, h * 60 + m + ghostDeltaMin.value)) / GRID_HEIGHT * 100
+}
+
+const ghostResizeEvent = computed(() =>
+  ghostResizeEventId.value ? props.events.find(e => e.id === ghostResizeEventId.value) ?? null : null,
+)
+
+function ghostResizeTopPct(): number {
+  if (!ghostResizeEvent.value) return 0
+  const [, t = '00:00:00'] = ghostResizeEvent.value.startAt.split('T')
+  const [h, m] = t.split(':').map(Number)
+  return (h * 60 + m) / GRID_HEIGHT * 100
+}
+
+function ghostResizeHeightPct(): number {
+  if (!ghostResizeEvent.value) return 0
+  const [, st = '00:00:00'] = ghostResizeEvent.value.startAt.split('T')
+  const [sh, sm] = st.split(':').map(Number)
+  return Math.max(15, ghostResizeEndMin.value - (sh * 60 + sm)) / GRID_HEIGHT * 100
 }
 
 // ── Range selection ───────────────────────────────────────────────────────────
@@ -135,6 +183,15 @@ function onGridPointerDown(e: PointerEvent) {
 }
 
 function onGridPointerMove(e: PointerEvent) {
+  // Event resize
+  if (eventResize.value) {
+    const raw = getGridMinute(e.clientY)
+    const snapped = Math.min(23 * 60 + 45, Math.max(eventResize.value.startMin + 15, Math.round(raw / 15) * 15))
+    eventResize.value.snappedEndMin = snapped
+    ghostResizeEndMin.value = snapped
+    return
+  }
+
   if (eventDrag.value) {
     const rect = gridRef.value?.getBoundingClientRect()
     if (!rect) return
@@ -152,6 +209,24 @@ function onGridPointerMove(e: PointerEvent) {
 }
 
 function onGridPointerUp() {
+  // Event resize end
+  if (eventResize.value) {
+    const state = eventResize.value
+    const ev = props.events.find(ev => ev.id === state.eventId)
+    const didResize = state.snappedEndMin !== state.origEndMin
+    if (ev && didResize) {
+      const eventDate = new Date(ev.startAt.split('T')[0] + 'T12:00:00')
+      emit('eventMove', ev.id, ev.startAt, buildISOAt(eventDate, state.snappedEndMin))
+    }
+    if (didResize) {
+      suppressNextClick.value = true
+      setTimeout(() => { suppressNextClick.value = false }, 300)
+    }
+    eventResize.value = null
+    ghostResizeEventId.value = null
+    return
+  }
+
   if (eventDrag.value) {
     const state = eventDrag.value
     const ev = props.events.find(ev => ev.id === state.eventId)
@@ -185,6 +260,8 @@ function onGridPointerUp() {
 function onGridPointerCancel() {
   eventDrag.value = null
   ghostEventId.value = null
+  eventResize.value = null
+  ghostResizeEventId.value = null
   selection.value = null
 }
 
@@ -276,13 +353,13 @@ function onColumnDrop(e: DragEvent) {
           <div
             v-for="ev in timedEvents"
             :key="ev.id"
-            class="absolute px-1 cursor-grab active:cursor-grabbing"
+            class="absolute px-1 cursor-grab active:cursor-grabbing group"
             :style="{
               top: `${eventTopPct(ev)}%`,
               height: `${eventHeightPct(ev)}%`,
               left: eventLeft(ev.id),
               width: eventWidth(ev.id),
-              opacity: ghostEventId === ev.id ? 0.25 : 1,
+              opacity: ghostEventId === ev.id || ghostResizeEventId === ev.id ? 0.25 : 1,
               zIndex: ghostEventId === ev.id ? 0 : 1,
             }"
             @pointerdown="onEventPointerDown($event, ev)"
@@ -293,6 +370,13 @@ function onColumnDrop(e: DragEvent) {
               view="day"
               class="h-full pointer-events-none"
             />
+            <div
+              class="absolute bottom-0 left-0 right-0 h-2 z-10 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              style="cursor: ns-resize"
+              @pointerdown.stop="onResizePointerDown($event, ev)"
+            >
+              <div class="w-6 h-0.5 rounded-full bg-current opacity-60" />
+            </div>
           </div>
 
           <!-- Range selection ghost -->
@@ -337,6 +421,24 @@ function onColumnDrop(e: DragEvent) {
           >
             <ProtoCalendarEvent
               :event="ghostEvent"
+              view="day"
+              class="h-full outline outline-2 outline-primary"
+            />
+          </div>
+
+          <!-- Resize ghost -->
+          <div
+            v-if="ghostResizeEvent && eventResize"
+            class="absolute pointer-events-none opacity-90 z-20 px-1"
+            :style="{
+              top: `${ghostResizeTopPct()}%`,
+              height: `${ghostResizeHeightPct()}%`,
+              left: '0%',
+              width: '99%',
+            }"
+          >
+            <ProtoCalendarEvent
+              :event="ghostResizeEvent"
               view="day"
               class="h-full outline outline-2 outline-primary"
             />

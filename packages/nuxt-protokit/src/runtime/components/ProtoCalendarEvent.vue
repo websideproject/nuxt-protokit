@@ -18,11 +18,12 @@ const colorStyle = computed(() => getEventColorStyle(props.event.color ?? 'blue'
 
 <template>
   <div
-    class="rounded cursor-pointer select-none overflow-hidden border-l-2 transition-opacity hover:opacity-90 active:opacity-75"
+    class="rounded cursor-pointer select-none overflow-hidden transition-opacity hover:opacity-90 active:opacity-75"
     :style="{
       background: colorStyle.background,
       color: colorStyle.color,
-      borderColor: colorStyle.borderColor,
+      border: `1px solid ${colorStyle.borderSubtle}`,
+      borderLeft: `3px solid ${colorStyle.borderColor}`,
       padding: view === 'day' ? '6px 8px' : '2px 6px',
     }"
     @click.stop="$emit('click')"

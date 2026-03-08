@@ -13,6 +13,8 @@ export interface CalendarEvent {
   color: CalendarColor
   description: string
   location: string
+  /** Optional id of the source task this event was created from */
+  linkedTaskId: string
 }
 
 export const CALENDAR_EVENT_DEFAULTS: CalendarEvent = {
@@ -24,6 +26,7 @@ export const CALENDAR_EVENT_DEFAULTS: CalendarEvent = {
   color: 'blue',
   description: '',
   location: '',
+  linkedTaskId: '',
 }
 
 /** Tailwind default 500-shade hex values — used for inline styles so no CSS var scanning needed */
