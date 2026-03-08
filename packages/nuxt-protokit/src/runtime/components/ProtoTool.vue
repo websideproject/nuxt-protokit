@@ -2,11 +2,37 @@
 import type * as Y from 'yjs'
 import type { PrototypeSchema } from '../types/schema'
 import { usePrototype } from '../composables/usePrototype'
+import type { EncryptionConfig } from '../composables/useProtoDoc'
 
 const props = defineProps<{
   schema: PrototypeSchema
   doc?: Y.Doc
   docKey?: string
+  /**
+   * Namespace prefix for the Y.js document key, creating isolated IndexedDB
+   * stores and BroadcastChannels per namespace. Compose from whatever segments
+   * your app requires:
+   *
+   * ```html
+   * <!-- Tenant-shared: all users in the org share one doc -->
+   * <ProtoTool :schema="s" :namespace="tenantId" />
+   *
+   * <!-- Private per user within a tenant -->
+   * <ProtoTool :schema="s" :namespace="`${tenantId}:${userId}`" />
+   * ```
+   *
+   * Resulting key: `<namespace>:<schema.key>`
+   */
+  namespace?: string
+  /**
+   * Encrypt all IndexedDB updates with AES-GCM using this password.
+   * The key is derived via PBKDF2; the salt is stored in the encrypted IDB.
+   * For CryptoKey-based encryption, use `usePrototype` directly.
+   *
+   * ⚠️ Changing the password or removing it starts a fresh document —
+   * encrypted and unencrypted stores are always separate.
+   */
+  encryptionPassword?: string
   /**
    * Force this tool's document to be local-only (no server sync),
    * regardless of the global `protokit.serverSync` config.
@@ -17,9 +43,15 @@ const props = defineProps<{
   disableSync?: boolean
 }>()
 
+const encryption = computed<EncryptionConfig | undefined>(() =>
+  props.encryptionPassword ? { password: props.encryptionPassword } : undefined,
+)
+
 const { state, collections, derived, computeContext, reset, isReady, doc } = usePrototype(props.schema, {
   docKey: props.docKey,
   existingDoc: props.doc,
+  namespace: props.namespace,
+  encryption: encryption.value,
   disableSync: props.disableSync,
 })
 
