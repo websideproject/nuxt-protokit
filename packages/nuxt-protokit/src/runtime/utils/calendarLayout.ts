@@ -1,4 +1,5 @@
 import type { CalendarColor, CalendarEvent, CalendarEventLayout } from '../types/calendar'
+import { CALENDAR_COLOR_HEX } from '../types/calendar'
 
 // ── Timezone-safe date helpers ────────────────────────────────────────────────
 
@@ -58,6 +59,27 @@ export function formatTimeRange(startAt: string, endAt: string): string {
 export function formatStartTime(startAt: string): string {
   const s = parseLocalISO(startAt)
   return formatHourInternal(s.getHours(), s.getMinutes())
+}
+
+/** Format a minute-of-day (0–1439) as "9am", "2:30pm" etc. */
+export function minutesToTimeLabel(min: number): string {
+  const h = Math.floor(min / 60) % 24
+  const m = min % 60
+  return formatHourInternal(h, m)
+}
+
+/** "YYYY-MM-DD" from a Date */
+export function toDateString(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
+}
+
+/** Build an ISO datetime from date + minute-of-day */
+export function buildISOAt(d: Date, minuteOfDay: number): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const h = Math.floor(minuteOfDay / 60)
+  const m = minuteOfDay % 60
+  return `${toDateString(d)}T${pad(h)}:${pad(m)}:00`
 }
 
 const MONTH_NAMES = ['January', 'February', 'March', 'April', 'May', 'June',
@@ -170,18 +192,18 @@ export function computeOverlapLayout(
   return result
 }
 
-// ── Color styles (inline CSS — no Tailwind class scanning needed) ─────────────
-// Uses Tailwind v4 CSS custom properties exposed globally as --color-{name}-{shade}
+// ── Color styles (inline CSS using hardcoded hex — works regardless of CSS var availability) ──
 
 export function getEventColorStyle(color: CalendarColor): {
   background: string
   color: string
   borderColor: string
 } {
+  const hex = CALENDAR_COLOR_HEX[color] ?? '#3b82f6'
   return {
-    background: `color-mix(in srgb, var(--color-${color}-500) 18%, transparent)`,
-    color: `var(--color-${color}-700)`,
-    borderColor: `var(--color-${color}-500)`,
+    background: `color-mix(in srgb, ${hex} 18%, transparent)`,
+    color: hex,
+    borderColor: hex,
   }
 }
 

@@ -92,6 +92,12 @@ function onDayClick(date: Date, hour = 9) {
   isModalOpen.value = true
 }
 
+function onRangeSelect(startAt: string, endAt: string) {
+  newEventDefaults.value = { startAt, endAt }
+  selectedEvent.value = null
+  isModalOpen.value = true
+}
+
 function onEventClick(event: CalendarEvent) {
   selectedEvent.value = event
   newEventDefaults.value = {}
@@ -206,7 +212,7 @@ function onMonthDayClick(date: Date) {
           :events="events"
           :current-date="currentDate"
           class="flex-1 overflow-hidden"
-          @day-click="(date, hour) => onDayClick(date, hour)"
+          @range-select="onRangeSelect"
           @event-click="onEventClick"
           @event-move="onEventMove"
         />
@@ -215,7 +221,7 @@ function onMonthDayClick(date: Date) {
           :events="events"
           :current-date="currentDate"
           class="flex-1 overflow-hidden"
-          @day-click="(date, hour) => onDayClick(date, hour)"
+          @range-select="onRangeSelect"
           @event-click="onEventClick"
           @event-move="onEventMove"
         />

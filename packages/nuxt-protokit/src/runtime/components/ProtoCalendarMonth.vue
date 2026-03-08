@@ -18,6 +18,8 @@ const emit = defineEmits<{
   dayClick: [date: Date]
   eventClick: [event: CalendarEvent]
   eventMove: [id: string, newStartAt: string, newEndAt: string]
+  /** Fired when something external (non-calendar-event) is dropped onto a day */
+  externalDrop: [startAt: string, endAt: string, allDay: boolean, data: string]
 }>()
 
 const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
@@ -51,6 +53,8 @@ const eventsByDay = computed(() => {
 // HTML5 DnD state
 const draggingEventId = ref<string | null>(null)
 const draggingEvent = computed(() => props.events.find(e => e.id === draggingEventId.value) ?? null)
+// Tracks which cell is being hovered during any drag (internal or external)
+const dropTargetKey = ref<string | null>(null)
 
 function onDragStart(event: DragEvent, calEvent: CalendarEvent) {
   draggingEventId.value = calEvent.id
@@ -58,17 +62,35 @@ function onDragStart(event: DragEvent, calEvent: CalendarEvent) {
   event.dataTransfer!.effectAllowed = 'move'
 }
 
-function onDragOver(event: DragEvent) {
+function onDragOver(event: DragEvent, day: Date) {
   event.preventDefault()
-  event.dataTransfer!.dropEffect = 'move'
+  // Use 'copy' for external items (tasks), 'move' for internal calendar events
+  event.dataTransfer!.dropEffect = draggingEventId.value ? 'move' : 'copy'
+  dropTargetKey.value = dateKey(day)
+}
+
+function onDragLeave() {
+  dropTargetKey.value = null
 }
 
 function onDrop(event: DragEvent, targetDate: Date) {
   event.preventDefault()
+  dropTargetKey.value = null
   const src = draggingEvent.value
-  if (!src) return
-  draggingEventId.value = null
 
+  if (!src) {
+    // External drop (e.g. task from task panel)
+    const data = event.dataTransfer?.getData('application/x-task')
+      || event.dataTransfer?.getData('text/plain')
+    if (data) {
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const dateStr = `${targetDate.getFullYear()}-${pad(targetDate.getMonth() + 1)}-${pad(targetDate.getDate())}`
+      emit('externalDrop', `${dateStr}T00:00:00`, `${dateStr}T23:59:59`, true, data)
+    }
+    return
+  }
+
+  draggingEventId.value = null
   const srcDate = new Date(src.startAt.split('T')[0] + 'T00:00:00')
   const dayDiff = Math.round((targetDate.getTime() - srcDate.getTime()) / (24 * 60 * 60 * 1000))
   if (dayDiff === 0) return
@@ -77,12 +99,12 @@ function onDrop(event: DragEvent, targetDate: Date) {
   const origEnd = new Date(src.endAt)
   const newStart = new Date(origStart.getTime() + dayDiff * 24 * 60 * 60 * 1000)
   const newEnd = new Date(origEnd.getTime() + dayDiff * 24 * 60 * 60 * 1000)
-
   emit('eventMove', src.id, toLocalISOString(newStart), toLocalISOString(newEnd))
 }
 
 function onDragEnd() {
   draggingEventId.value = null
+  dropTargetKey.value = null
 }
 
 const currentMonth = computed(() => props.currentDate.getMonth())
@@ -113,10 +135,14 @@ const currentMonth = computed(() => props.currentDate.getMonth())
         <div
           v-for="day in week"
           :key="dateKey(day)"
-          class="min-h-0 border-r border-default last:border-r-0 p-1 flex flex-col gap-0.5 cursor-pointer hover:bg-muted/30 transition-colors"
-          :class="{ 'bg-muted/10': day.getMonth() !== currentMonth }"
+          class="min-h-0 border-r border-default last:border-r-0 p-1 flex flex-col gap-0.5 cursor-pointer transition-colors"
+          :class="[
+            day.getMonth() !== currentMonth ? 'bg-muted/10' : '',
+            dropTargetKey === dateKey(day) ? 'bg-primary/10 ring-1 ring-inset ring-primary/40' : 'hover:bg-muted/30',
+          ]"
           @click="$emit('dayClick', day)"
-          @dragover="onDragOver"
+          @dragover="onDragOver($event, day)"
+          @dragleave="onDragLeave"
           @drop="onDrop($event, day)"
         >
           <!-- Date number -->

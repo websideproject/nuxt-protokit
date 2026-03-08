@@ -3,11 +3,13 @@ import { computed, onMounted, ref } from 'vue'
 import type { CalendarEvent } from '../types/calendar'
 import {
   addDays,
+  buildISOAt,
   computeOverlapLayout,
   dateKey,
   formatHour,
   isToday,
   isSameDay,
+  minutesToTimeLabel,
   toLocalISOString,
 } from '../utils/calendarLayout'
 
@@ -17,100 +19,101 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  dayClick: [date: Date, hour: number]
+  rangeSelect: [startAt: string, endAt: string]
   eventClick: [event: CalendarEvent]
   eventMove: [id: string, newStartAt: string, newEndAt: string]
+  externalDrop: [startAt: string, endAt: string, allDay: boolean, data: string]
 }>()
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
-// 1440px total = 1px per minute
-const GRID_HEIGHT = 1440
+const GRID_HEIGHT = 1440 // 1px per minute
 const scrollRef = ref<HTMLElement | null>(null)
+const gridRef = ref<HTMLElement | null>(null)
 
 onMounted(() => {
-  if (scrollRef.value) scrollRef.value.scrollTop = 480 // scroll to 8am
+  if (scrollRef.value) scrollRef.value.scrollTop = 480
 })
 
-// Sun–Sat for the current week
+// Week days Sun–Sat
 const weekDays = computed(() => {
-  const startOfWeek = new Date(props.currentDate)
-  startOfWeek.setDate(props.currentDate.getDate() - props.currentDate.getDay())
-  startOfWeek.setHours(0, 0, 0, 0)
-  return Array.from({ length: 7 }, (_, i) => addDays(startOfWeek, i))
+  const start = new Date(props.currentDate)
+  start.setDate(props.currentDate.getDate() - props.currentDate.getDay())
+  start.setHours(0, 0, 0, 0)
+  return Array.from({ length: 7 }, (_, i) => addDays(start, i))
 })
 
 const windowStart = computed(() => weekDays.value[0])
-const windowEnd = computed(() => {
-  const end = addDays(weekDays.value[6], 1)
-  end.setHours(0, 0, 0, 0)
-  return end
-})
+const windowEnd = computed(() => { const e = addDays(weekDays.value[6], 1); e.setHours(0, 0, 0, 0); return e })
 
-// All-day: allDay flag OR event spans multiple calendar days
 const allDayEvents = computed(() =>
-  props.events.filter((e) => {
-    if (e.allDay) return true
-    if (!e.startAt || !e.endAt) return false
-    return e.startAt.split('T')[0] !== e.endAt.split('T')[0]
-  }),
+  props.events.filter(e => e.allDay || (e.startAt && e.endAt && e.startAt.split('T')[0] !== e.endAt.split('T')[0])),
 )
 
-// Timed events: not all-day, starts and ends on same calendar day
 const timedEvents = computed(() =>
-  props.events.filter((e) => {
-    if (!e.startAt || !e.endAt || e.allDay) return false
-    return e.startAt.split('T')[0] === e.endAt.split('T')[0]
-  }),
+  props.events.filter(e => !e.allDay && e.startAt && e.endAt && e.startAt.split('T')[0] === e.endAt.split('T')[0]),
 )
 
-const overlapLayout = computed(() =>
-  computeOverlapLayout(timedEvents.value, windowStart.value, windowEnd.value),
-)
+const overlapLayout = computed(() => computeOverlapLayout(timedEvents.value, windowStart.value, windowEnd.value))
 
 function getTimedEventsForDay(day: Date): CalendarEvent[] {
-  const dayStr = dateKey(day)
-  return timedEvents.value.filter(e => dateKey(new Date(e.startAt.split('T')[0] + 'T12:00:00')) === dayStr)
+  const k = dateKey(day)
+  return timedEvents.value.filter(e => dateKey(new Date(e.startAt.split('T')[0] + 'T12:00:00')) === k)
 }
 
 function getAllDayEventsForDay(day: Date): CalendarEvent[] {
   const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0)
   const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999)
-  return allDayEvents.value.filter((e) => {
-    const startD = new Date(e.startAt.split('T')[0] + 'T00:00:00')
-    const endD = new Date(e.endAt.split('T')[0] + 'T23:59:59')
-    return startD <= dayEnd && endD >= dayStart
+  return allDayEvents.value.filter(e => {
+    const s = new Date(e.startAt.split('T')[0] + 'T00:00:00')
+    const end = new Date(e.endAt.split('T')[0] + 'T23:59:59')
+    return s <= dayEnd && end >= dayStart
   })
 }
 
-// Event positioning (percentage of GRID_HEIGHT)
-function eventTopPct(event: CalendarEvent): number {
-  const [, time = '00:00:00'] = event.startAt.split('T')
-  const [h, m] = time.split(':').map(Number)
+function eventTopPct(ev: CalendarEvent): number {
+  const [, t = '00:00:00'] = ev.startAt.split('T')
+  const [h, m] = t.split(':').map(Number)
   return (h * 60 + m) / GRID_HEIGHT * 100
 }
 
-function eventHeightPct(event: CalendarEvent): number {
-  const [, st = '00:00:00'] = event.startAt.split('T')
+function eventHeightPct(ev: CalendarEvent): number {
+  const [, st = '00:00:00'] = ev.startAt.split('T')
   const [sh, sm] = st.split(':').map(Number)
-  const [, et = '01:00:00'] = event.endAt.split('T')
+  const [, et = '01:00:00'] = ev.endAt.split('T')
   const [eh, em] = et.split(':').map(Number)
-  const dur = Math.max(30, (eh * 60 + em) - (sh * 60 + sm))
-  return dur / GRID_HEIGHT * 100
+  return Math.max(30, (eh * 60 + em) - (sh * 60 + sm)) / GRID_HEIGHT * 100
 }
 
-function eventLeft(id: string): string {
+function eventLeft(id: string) {
   const l = overlapLayout.value.get(id)
   return l ? `${(l.col / l.total) * 100}%` : '0%'
 }
 
-function eventWidth(id: string): string {
+function eventWidth(id: string) {
   const l = overlapLayout.value.get(id)
   return l ? `${(1 / l.total) * 100 - 1}%` : '99%'
 }
 
-// ── Pointer DnD ───────────────────────────────────────────────────────────────
+// ── Shared pointer coord helpers ──────────────────────────────────────────────
+// getBoundingClientRect() is already viewport-relative and accounts for scroll,
+// so relY = clientY - rect.top gives the correct position within the 1440px grid.
+// Do NOT add scrollTop — that would double-count it.
 
-interface DragState {
+function getGridMinute(clientY: number): number {
+  const rect = gridRef.value!.getBoundingClientRect()
+  const relY = clientY - rect.top
+  return Math.max(0, Math.min(23 * 60 + 59, Math.round(relY / 15) * 15))
+}
+
+function getGridDayIdx(clientX: number): number {
+  const rect = gridRef.value!.getBoundingClientRect()
+  const colWidth = (rect.width - 48) / 7
+  return Math.max(0, Math.min(6, Math.floor((clientX - rect.left - 48) / colWidth)))
+}
+
+// ── Event drag (pointer DnD) ──────────────────────────────────────────────────
+
+interface EventDrag {
   eventId: string
   origStartAt: string
   origEndAt: string
@@ -120,112 +123,173 @@ interface DragState {
   snappedDays: number
 }
 
-const drag = ref<DragState | null>(null)
-const ghostId = ref<string | null>(null)
-// Ghost offset in minutes (for top calc) and days (for column)
-const ghostDeltaMinutes = ref(0)
+const eventDrag = ref<EventDrag | null>(null)
+const ghostEventId = ref<string | null>(null)
+const ghostDeltaMin = ref(0)
 const ghostDeltaDays = ref(0)
-const gridRef = ref<HTMLElement | null>(null)
+// Suppress the click that browsers fire after pointerup when a drag occurred
+const suppressNextClick = ref(false)
 
-function onEventPointerDown(e: PointerEvent, event: CalendarEvent, dayIdx: number) {
+function onEventPointerDown(e: PointerEvent, ev: CalendarEvent) {
   e.preventDefault()
-  e.stopPropagation()
+  e.stopPropagation() // prevent grid from starting range selection
   ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-  drag.value = {
-    eventId: event.id,
-    origStartAt: event.startAt,
-    origEndAt: event.endAt,
-    startY: e.clientY,
-    startX: e.clientX,
-    snappedMinutes: 0,
-    snappedDays: 0,
-  }
-  ghostId.value = event.id
-  ghostDeltaMinutes.value = 0
+  eventDrag.value = { eventId: ev.id, origStartAt: ev.startAt, origEndAt: ev.endAt, startY: e.clientY, startX: e.clientX, snappedMinutes: 0, snappedDays: 0 }
+  ghostEventId.value = ev.id
+  ghostDeltaMin.value = 0
   ghostDeltaDays.value = 0
 }
 
-function onGridPointerMove(e: PointerEvent) {
-  const state = drag.value
-  if (!state || !gridRef.value) return
-  e.preventDefault()
-
-  // pxPerMinute: grid is exactly GRID_HEIGHT px tall
-  const gridRect = gridRef.value.getBoundingClientRect()
-  const pxPerMin = gridRect.height / GRID_HEIGHT
-  const colWidth = (gridRect.width - 48) / 7
-
-  const rawDeltaY = e.clientY - state.startY
-  const snappedMin = Math.round(rawDeltaY / pxPerMin / 15) * 15
-
-  const rawDeltaX = e.clientX - state.startX
-  const snappedDays = Math.round(rawDeltaX / colWidth)
-
-  state.snappedMinutes = snappedMin
-  state.snappedDays = snappedDays
-  ghostDeltaMinutes.value = snappedMin
-  ghostDeltaDays.value = snappedDays
-}
-
-function onGridPointerUp(e: PointerEvent) {
-  const state = drag.value
-  if (!state) return
-
-  const event = props.events.find(ev => ev.id === state.eventId)
-  if (event && (state.snappedMinutes !== 0 || state.snappedDays !== 0)) {
-    const origStart = new Date(event.startAt)
-    const dur = new Date(event.endAt).getTime() - origStart.getTime()
-
-    // Apply day and minute offsets
-    const newStart = new Date(origStart.getTime() + state.snappedDays * 24 * 60 * 60 * 1000)
-    newStart.setMinutes(newStart.getMinutes() + state.snappedMinutes)
-
-    // Clamp to valid range
-    const totalMin = newStart.getHours() * 60 + newStart.getMinutes()
-    if (totalMin < 0) newStart.setHours(0, 0, 0, 0)
-    if (totalMin > 23 * 60 + 30) newStart.setHours(23, 30, 0, 0)
-
-    const newEnd = new Date(newStart.getTime() + dur)
-    emit('eventMove', event.id, toLocalISOString(newStart), toLocalISOString(newEnd))
-  }
-
-  drag.value = null
-  ghostId.value = null
-  ghostDeltaMinutes.value = 0
-  ghostDeltaDays.value = 0
-}
-
-function onGridPointerCancel() {
-  drag.value = null
-  ghostId.value = null
-}
-
-// Ghost position computed from original + delta
-const ghostEvent = computed(() => {
-  if (!ghostId.value || !drag.value) return null
-  return props.events.find(e => e.id === ghostId.value) ?? null
-})
+const ghostEvent = computed(() => ghostEventId.value ? props.events.find(e => e.id === ghostEventId.value) ?? null : null)
 
 function ghostTopPct(): number {
   if (!ghostEvent.value) return 0
-  const [, time = '00:00:00'] = ghostEvent.value.startAt.split('T')
-  const [h, m] = time.split(':').map(Number)
-  const origMin = h * 60 + m
-  const newMin = Math.max(0, Math.min(23 * 60 + 30, origMin + ghostDeltaMinutes.value))
-  return (newMin / GRID_HEIGHT) * 100
+  const [, t = '00:00:00'] = ghostEvent.value.startAt.split('T')
+  const [h, m] = t.split(':').map(Number)
+  return Math.max(0, Math.min(23 * 60 + 30, h * 60 + m + ghostDeltaMin.value)) / GRID_HEIGHT * 100
 }
 
-function ghostDayIdx(): number {
-  if (!ghostEvent.value || !drag.value) return 0
-  // Find which day this event was originally on
+function ghostColIdx(): number {
+  if (!ghostEvent.value) return 0
   const origDayStr = ghostEvent.value.startAt.split('T')[0]
-  const origDayIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(origDayStr + 'T12:00:00')))
-  return Math.max(0, Math.min(6, (origDayIdx === -1 ? 0 : origDayIdx) + ghostDeltaDays.value))
+  const origIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(origDayStr + 'T12:00:00')))
+  return Math.max(0, Math.min(6, (origIdx === -1 ? 0 : origIdx) + ghostDeltaDays.value))
 }
 
-function handleDayClick(e: MouseEvent, day: Date) {
-  const hour = Math.floor((e.offsetY / GRID_HEIGHT) * 24)
-  emit('dayClick', day, hour)
+// ── Range selection (click-drag on empty space) ───────────────────────────────
+
+interface RangeSelection {
+  startMin: number
+  endMin: number
+  dayIdx: number
+}
+
+const selection = ref<RangeSelection | null>(null)
+
+const selectionLabel = computed(() => {
+  if (!selection.value) return ''
+  const { startMin, endMin } = selection.value
+  return `${minutesToTimeLabel(startMin)} – ${minutesToTimeLabel(endMin)}`
+})
+
+function onGridPointerDown(e: PointerEvent) {
+  if (eventDrag.value) return // an event drag is starting (stopPropagation didn't fire yet?)
+  const rect = gridRef.value?.getBoundingClientRect()
+  if (!rect) return
+  // Ignore clicks in the time gutter (left 48px)
+  if (e.clientX - rect.left < 48) return
+
+  e.preventDefault()
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+
+  const dayIdx = getGridDayIdx(e.clientX)
+  const startMin = getGridMinute(e.clientY)
+
+  selection.value = { startMin, endMin: Math.min(24 * 60, startMin + 30), dayIdx }
+}
+
+// ── Unified grid pointermove / pointerup ──────────────────────────────────────
+
+function onGridPointerMove(e: PointerEvent) {
+  // Event drag
+  if (eventDrag.value) {
+    const state = eventDrag.value
+    if (!gridRef.value) return
+    const rect = gridRef.value.getBoundingClientRect()
+    const colWidth = (rect.width - 48) / 7
+
+    const rawDeltaY = e.clientY - state.startY
+    const pxPerMin = rect.height / GRID_HEIGHT
+    const snappedMin = Math.round(rawDeltaY / pxPerMin / 15) * 15
+
+    const rawDeltaX = e.clientX - state.startX
+    const snappedDays = Math.round(rawDeltaX / colWidth)
+
+    state.snappedMinutes = snappedMin
+    state.snappedDays = snappedDays
+    ghostDeltaMin.value = snappedMin
+    ghostDeltaDays.value = snappedDays
+    return
+  }
+
+  // Range selection
+  if (selection.value) {
+    const endMin = Math.max(selection.value.startMin + 15, Math.min(24 * 60, getGridMinute(e.clientY)))
+    selection.value = { ...selection.value, endMin }
+  }
+}
+
+function onGridPointerUp(e: PointerEvent) {
+  // Event drag end
+  if (eventDrag.value) {
+    const state = eventDrag.value
+    const ev = props.events.find(ev => ev.id === state.eventId)
+    const didMove = state.snappedMinutes !== 0 || state.snappedDays !== 0
+    if (ev && didMove) {
+      const origStart = new Date(ev.startAt)
+      const dur = new Date(ev.endAt).getTime() - origStart.getTime()
+      const newStart = new Date(origStart.getTime() + state.snappedDays * 86400000)
+      newStart.setMinutes(newStart.getMinutes() + state.snappedMinutes)
+      const totalMin = newStart.getHours() * 60 + newStart.getMinutes()
+      if (totalMin < 0) newStart.setHours(0, 0, 0, 0)
+      if (totalMin > 23 * 60 + 30) newStart.setHours(23, 30, 0, 0)
+      emit('eventMove', ev.id, toLocalISOString(newStart), toLocalISOString(new Date(newStart.getTime() + dur)))
+    }
+    if (didMove) {
+      // Suppress the click event that fires right after pointerup
+      suppressNextClick.value = true
+      setTimeout(() => { suppressNextClick.value = false }, 300)
+    }
+    eventDrag.value = null
+    ghostEventId.value = null
+    return
+  }
+
+  // Range selection end
+  if (selection.value) {
+    const sel = selection.value
+    const day = weekDays.value[sel.dayIdx]
+    // Only emit if the user actually dragged (endMin > startMin + 0)
+    if (sel.endMin > sel.startMin) {
+      emit('rangeSelect', buildISOAt(day, sel.startMin), buildISOAt(day, Math.min(23 * 60 + 59, sel.endMin)))
+    }
+    selection.value = null
+  }
+}
+
+function onGridPointerCancel() {
+  eventDrag.value = null
+  ghostEventId.value = null
+  selection.value = null
+}
+
+// ── External drop (HTML5 DnD — tasks from panel) ──────────────────────────────
+
+const dragoverDayIdx = ref<number | null>(null)
+const dragoverMinute = ref<number | null>(null)
+
+function onColumnDragOver(e: DragEvent, dayIdx: number) {
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'copy'
+  dragoverDayIdx.value = dayIdx
+  const col = e.currentTarget as HTMLElement
+  dragoverMinute.value = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
+}
+
+function onColumnDragLeave() {
+  dragoverDayIdx.value = null
+  dragoverMinute.value = null
+}
+
+function onColumnDrop(e: DragEvent, day: Date) {
+  e.preventDefault()
+  const data = e.dataTransfer?.getData('application/x-task') || e.dataTransfer?.getData('text/plain')
+  dragoverDayIdx.value = null
+  dragoverMinute.value = null
+  if (!data) return
+  const startMin = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
+  const endMin = Math.min(24 * 60, startMin + 60)
+  emit('externalDrop', buildISOAt(day, startMin), buildISOAt(day, endMin), false, data)
 }
 </script>
 
@@ -254,9 +318,9 @@ function handleDayClick(e: MouseEvent, day: Date) {
       </div>
     </div>
 
-    <!-- All-day band (only when there are all-day events) -->
+    <!-- All-day band -->
     <div
-      v-if="props.events.some(e => e.allDay || e.startAt?.split('T')[0] !== e.endAt?.split('T')[0])"
+      v-if="allDayEvents.length > 0"
       class="grid shrink-0 border-b border-default"
       style="grid-template-columns: 48px repeat(7, 1fr)"
     >
@@ -269,11 +333,11 @@ function handleDayClick(e: MouseEvent, day: Date) {
         class="p-0.5 border-r border-default last:border-r-0 flex flex-col gap-0.5 min-h-8"
       >
         <ProtoCalendarEvent
-          v-for="event in getAllDayEventsForDay(day)"
-          :key="event.id"
-          :event="event"
+          v-for="ev in getAllDayEventsForDay(day)"
+          :key="ev.id"
+          :event="ev"
           view="week"
-          @click="$emit('eventClick', event)"
+          @click="$emit('eventClick', ev)"
         />
       </div>
     </div>
@@ -285,15 +349,16 @@ function handleDayClick(e: MouseEvent, day: Date) {
     >
       <div
         ref="gridRef"
-        class="relative grid"
+        class="relative grid select-none"
         style="grid-template-columns: 48px repeat(7, 1fr); touch-action: none"
         :style="`height: ${GRID_HEIGHT}px`"
+        @pointerdown="onGridPointerDown"
         @pointermove="onGridPointerMove"
         @pointerup="onGridPointerUp"
         @pointercancel="onGridPointerCancel"
       >
         <!-- Time gutter -->
-        <div class="relative border-r border-default">
+        <div class="relative border-r border-default pointer-events-none">
           <div
             v-for="h in HOURS"
             :key="h"
@@ -308,8 +373,10 @@ function handleDayClick(e: MouseEvent, day: Date) {
         <div
           v-for="(day, dayIdx) in weekDays"
           :key="dayIdx"
-          class="relative border-r border-default last:border-r-0"
-          @click.self="handleDayClick($event, day)"
+          class="relative border-r border-default last:border-r-0 cursor-cell"
+          @dragover="onColumnDragOver($event, dayIdx)"
+          @dragleave="onColumnDragLeave"
+          @drop="onColumnDrop($event, day)"
         >
           <!-- Hour lines -->
           <template v-for="h in HOURS" :key="h">
@@ -318,7 +385,6 @@ function handleDayClick(e: MouseEvent, day: Date) {
               style="border-top: 1px solid rgba(128,128,128,0.15)"
               :style="`top: ${h * 60}px`"
             />
-            <!-- Half-hour dashed -->
             <div
               class="absolute w-full pointer-events-none"
               style="border-top: 1px dashed rgba(128,128,128,0.1)"
@@ -328,36 +394,64 @@ function handleDayClick(e: MouseEvent, day: Date) {
 
           <!-- Timed events -->
           <div
-            v-for="event in getTimedEventsForDay(day)"
-            :key="event.id"
+            v-for="ev in getTimedEventsForDay(day)"
+            :key="ev.id"
             class="absolute px-0.5 cursor-grab active:cursor-grabbing"
             :style="{
-              top: `${eventTopPct(event)}%`,
-              height: `${eventHeightPct(event)}%`,
-              left: eventLeft(event.id),
-              width: eventWidth(event.id),
-              opacity: ghostId === event.id ? 0.3 : 1,
-              zIndex: ghostId === event.id ? 0 : 1,
+              top: `${eventTopPct(ev)}%`,
+              height: `${eventHeightPct(ev)}%`,
+              left: eventLeft(ev.id),
+              width: eventWidth(ev.id),
+              opacity: ghostEventId === ev.id ? 0.25 : 1,
+              zIndex: ghostEventId === ev.id ? 0 : 1,
             }"
-            @pointerdown="onEventPointerDown($event, event, dayIdx)"
+            @pointerdown="onEventPointerDown($event, ev)"
+            @click="!suppressNextClick && $emit('eventClick', ev)"
           >
             <ProtoCalendarEvent
-              :event="event"
+              :event="ev"
               view="week"
-              class="h-full"
-              @click="$emit('eventClick', event)"
+              class="h-full pointer-events-none"
             />
           </div>
+
+          <!-- Range selection ghost -->
+          <div
+            v-if="selection && selection.dayIdx === dayIdx"
+            class="absolute pointer-events-none z-10 left-1 right-1 rounded border border-primary/60"
+            style="background: color-mix(in srgb, var(--color-primary-500) 15%, transparent)"
+            :style="{
+              top: `${(selection.startMin / GRID_HEIGHT) * 100}%`,
+              height: `${Math.max(15, selection.endMin - selection.startMin) / GRID_HEIGHT * 100}%`,
+            }"
+          >
+            <span class="text-xs font-medium px-1 pt-0.5 block leading-tight"
+              style="color: var(--color-primary-600)"
+            >
+              {{ selectionLabel }}
+            </span>
+          </div>
+
+          <!-- External drop indicator -->
+          <div
+            v-if="dragoverDayIdx === dayIdx && dragoverMinute !== null"
+            class="absolute pointer-events-none z-10 left-0 right-0 rounded-r border-l-2 border-primary"
+            style="background: color-mix(in srgb, var(--color-primary-500) 12%, transparent)"
+            :style="{
+              top: `${(dragoverMinute / GRID_HEIGHT) * 100}%`,
+              height: `${60 / GRID_HEIGHT * 100}%`,
+            }"
+          />
         </div>
 
-        <!-- Ghost overlay while dragging -->
+        <!-- Event drag ghost overlay -->
         <div
-          v-if="ghostEvent && drag"
+          v-if="ghostEvent && eventDrag"
           class="absolute pointer-events-none opacity-80 z-20 px-0.5"
           :style="{
             top: `${ghostTopPct()}%`,
             height: `${eventHeightPct(ghostEvent)}%`,
-            left: `calc(48px + ${(ghostDayIdx() / 7) * 100}%)`,
+            left: `calc(48px + ${(ghostColIdx() / 7) * 100}%)`,
             width: `calc(${(1 / 7) * 100}% - 2px)`,
           }"
         >

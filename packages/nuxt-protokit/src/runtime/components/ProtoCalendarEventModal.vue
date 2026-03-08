@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref, watch, computed } from 'vue'
 import type { CalendarEvent, CalendarColor } from '../types/calendar'
-import { CALENDAR_EVENT_DEFAULTS, CALENDAR_COLORS } from '../types/calendar'
+import { CALENDAR_EVENT_DEFAULTS, CALENDAR_COLORS, CALENDAR_COLOR_HEX } from '../types/calendar'
 import { toLocalISOString } from '../utils/calendarLayout'
 
 const props = defineProps<{
@@ -104,9 +104,8 @@ function selectColor(color: CalendarColor) {
   formData.value.color = color
 }
 
-// Inline CSS var for each swatch — works without Tailwind scanning
 function swatchStyle(color: CalendarColor) {
-  return { backgroundColor: `var(--color-${color}-500)` }
+  return { backgroundColor: CALENDAR_COLOR_HEX[color] ?? '#3b82f6' }
 }
 </script>
 

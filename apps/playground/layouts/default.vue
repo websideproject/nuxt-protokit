@@ -14,6 +14,7 @@ const navItems = [
   [
     { type: 'label', label: 'Components' },
     { label: 'Calendar', to: '/calendar', icon: 'i-lucide-calendar' },
+    { label: 'Calendar + Tasks', to: '/calendar-tasks', icon: 'i-lucide-calendar-check' },
   ],
   [
     { type: 'label', label: 'Features' },

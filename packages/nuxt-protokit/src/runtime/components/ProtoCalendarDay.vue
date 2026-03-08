@@ -2,8 +2,10 @@
 import { computed, onMounted, ref } from 'vue'
 import type { CalendarEvent } from '../types/calendar'
 import {
+  buildISOAt,
   computeOverlapLayout,
   formatHour,
+  minutesToTimeLabel,
   toLocalISOString,
 } from '../utils/calendarLayout'
 
@@ -13,9 +15,10 @@ const props = defineProps<{
 }>()
 
 const emit = defineEmits<{
-  dayClick: [date: Date, hour: number]
+  rangeSelect: [startAt: string, endAt: string]
   eventClick: [event: CalendarEvent]
   eventMove: [id: string, newStartAt: string, newEndAt: string]
+  externalDrop: [startAt: string, endAt: string, allDay: boolean, data: string]
 }>()
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
@@ -33,161 +36,175 @@ const currentDayStr = computed(() => {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 })
 
-// All-day events: allDay OR multi-day
 const allDayEvents = computed(() =>
-  props.events.filter((e) => {
-    if (e.allDay) return true
-    if (!e.startAt || !e.endAt) return false
-    return e.startAt.split('T')[0] !== e.endAt.split('T')[0]
-  }),
+  props.events.filter(e => e.allDay || (e.startAt && e.endAt && e.startAt.split('T')[0] !== e.endAt.split('T')[0])),
 )
 
-// Today's all-day events
 const todayAllDay = computed(() =>
   allDayEvents.value.filter((e) => {
-    const startD = new Date(e.startAt.split('T')[0] + 'T00:00:00')
-    const endD = new Date(e.endAt.split('T')[0] + 'T23:59:59')
+    const s = new Date(e.startAt.split('T')[0] + 'T00:00:00')
+    const end = new Date(e.endAt.split('T')[0] + 'T23:59:59')
     const dayStart = new Date(props.currentDate); dayStart.setHours(0, 0, 0, 0)
     const dayEnd = new Date(props.currentDate); dayEnd.setHours(23, 59, 59, 999)
-    return startD <= dayEnd && endD >= dayStart
+    return s <= dayEnd && end >= dayStart
   }),
 )
 
-// Timed events for today only
 const timedEvents = computed(() =>
   props.events.filter(e =>
-    !e.allDay
-    && e.startAt
-    && e.endAt
+    !e.allDay && e.startAt && e.endAt
     && e.startAt.split('T')[0] === currentDayStr.value
     && e.startAt.split('T')[0] === e.endAt.split('T')[0],
   ),
 )
 
-const windowStart = computed(() => {
-  const s = new Date(props.currentDate); s.setHours(0, 0, 0, 0); return s
-})
-const windowEnd = computed(() => {
-  const e = new Date(props.currentDate); e.setHours(23, 59, 59, 999); return e
-})
+const windowStart = computed(() => { const s = new Date(props.currentDate); s.setHours(0, 0, 0, 0); return s })
+const windowEnd = computed(() => { const e = new Date(props.currentDate); e.setHours(23, 59, 59, 999); return e })
 
-const overlapLayout = computed(() =>
-  computeOverlapLayout(timedEvents.value, windowStart.value, windowEnd.value),
-)
+const overlapLayout = computed(() => computeOverlapLayout(timedEvents.value, windowStart.value, windowEnd.value))
 
-function eventTopPct(event: CalendarEvent): number {
-  const [, time = '00:00:00'] = event.startAt.split('T')
-  const [h, m] = time.split(':').map(Number)
+function eventTopPct(ev: CalendarEvent): number {
+  const [, t = '00:00:00'] = ev.startAt.split('T')
+  const [h, m] = t.split(':').map(Number)
   return (h * 60 + m) / GRID_HEIGHT * 100
 }
 
-function eventHeightPct(event: CalendarEvent): number {
-  const [, st = '00:00:00'] = event.startAt.split('T')
+function eventHeightPct(ev: CalendarEvent): number {
+  const [, st = '00:00:00'] = ev.startAt.split('T')
   const [sh, sm] = st.split(':').map(Number)
-  const [, et = '01:00:00'] = event.endAt.split('T')
+  const [, et = '01:00:00'] = ev.endAt.split('T')
   const [eh, em] = et.split(':').map(Number)
-  const dur = Math.max(30, (eh * 60 + em) - (sh * 60 + sm))
-  return dur / GRID_HEIGHT * 100
+  return Math.max(30, (eh * 60 + em) - (sh * 60 + sm)) / GRID_HEIGHT * 100
 }
 
-function eventLeft(id: string): string {
-  const l = overlapLayout.value.get(id)
-  return l ? `${(l.col / l.total) * 100}%` : '0%'
+function eventLeft(id: string) { const l = overlapLayout.value.get(id); return l ? `${(l.col / l.total) * 100}%` : '0%' }
+function eventWidth(id: string) { const l = overlapLayout.value.get(id); return l ? `${(1 / l.total) * 100 - 1}%` : '99%' }
+
+// getBoundingClientRect() already accounts for scroll — do NOT add scrollTop.
+function getGridMinute(clientY: number): number {
+  const rect = gridRef.value!.getBoundingClientRect()
+  const relY = clientY - rect.top
+  return Math.max(0, Math.min(23 * 60 + 59, Math.round(relY / 15) * 15))
 }
 
-function eventWidth(id: string): string {
-  const l = overlapLayout.value.get(id)
-  return l ? `${(1 / l.total) * 100 - 1}%` : '99%'
-}
+// ── Event drag ────────────────────────────────────────────────────────────────
 
-// ── Pointer DnD ───────────────────────────────────────────────────────────────
+interface EventDrag { eventId: string; origStartAt: string; origEndAt: string; startY: number; snappedMinutes: number }
 
-interface DragState {
-  eventId: string
-  origStartAt: string
-  origEndAt: string
-  startY: number
-  snappedMinutes: number
-}
+const eventDrag = ref<EventDrag | null>(null)
+const ghostEventId = ref<string | null>(null)
+const ghostDeltaMin = ref(0)
+const suppressNextClick = ref(false)
 
-const drag = ref<DragState | null>(null)
-const ghostId = ref<string | null>(null)
-const ghostDeltaMinutes = ref(0)
-
-function onEventPointerDown(e: PointerEvent, event: CalendarEvent) {
+function onEventPointerDown(e: PointerEvent, ev: CalendarEvent) {
   e.preventDefault()
   e.stopPropagation()
   ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
-  drag.value = {
-    eventId: event.id,
-    origStartAt: event.startAt,
-    origEndAt: event.endAt,
-    startY: e.clientY,
-    snappedMinutes: 0,
-  }
-  ghostId.value = event.id
-  ghostDeltaMinutes.value = 0
+  eventDrag.value = { eventId: ev.id, origStartAt: ev.startAt, origEndAt: ev.endAt, startY: e.clientY, snappedMinutes: 0 }
+  ghostEventId.value = ev.id
+  ghostDeltaMin.value = 0
 }
 
-function onGridPointerMove(e: PointerEvent) {
-  const state = drag.value
-  if (!state || !gridRef.value) return
-  e.preventDefault()
-
-  const gridRect = gridRef.value.getBoundingClientRect()
-  const pxPerMin = gridRect.height / GRID_HEIGHT
-  const rawDelta = e.clientY - state.startY
-  const snapped = Math.round(rawDelta / pxPerMin / 15) * 15
-
-  state.snappedMinutes = snapped
-  ghostDeltaMinutes.value = snapped
-}
-
-function onGridPointerUp() {
-  const state = drag.value
-  if (!state) return
-
-  const event = props.events.find(ev => ev.id === state.eventId)
-  if (event && state.snappedMinutes !== 0) {
-    const origStart = new Date(event.startAt)
-    const dur = new Date(event.endAt).getTime() - origStart.getTime()
-    origStart.setMinutes(origStart.getMinutes() + state.snappedMinutes)
-    const totalMin = origStart.getHours() * 60 + origStart.getMinutes()
-    if (totalMin < 0) origStart.setHours(0, 0, 0, 0)
-    if (totalMin > 23 * 60 + 30) origStart.setHours(23, 30, 0, 0)
-    const newEnd = new Date(origStart.getTime() + dur)
-    emit('eventMove', event.id, toLocalISOString(origStart), toLocalISOString(newEnd))
-  }
-
-  drag.value = null
-  ghostId.value = null
-  ghostDeltaMinutes.value = 0
-}
-
-function onGridPointerCancel() {
-  drag.value = null
-  ghostId.value = null
-  ghostDeltaMinutes.value = 0
-}
-
-const ghostEvent = computed(() => {
-  if (!ghostId.value) return null
-  return props.events.find(e => e.id === ghostId.value) ?? null
-})
+const ghostEvent = computed(() => ghostEventId.value ? props.events.find(e => e.id === ghostEventId.value) ?? null : null)
 
 function ghostTopPct(): number {
   if (!ghostEvent.value) return 0
-  const [, time = '00:00:00'] = ghostEvent.value.startAt.split('T')
-  const [h, m] = time.split(':').map(Number)
-  const origMin = h * 60 + m
-  const newMin = Math.max(0, Math.min(23 * 60 + 30, origMin + ghostDeltaMinutes.value))
-  return (newMin / GRID_HEIGHT) * 100
+  const [, t = '00:00:00'] = ghostEvent.value.startAt.split('T')
+  const [h, m] = t.split(':').map(Number)
+  return Math.max(0, Math.min(23 * 60 + 30, h * 60 + m + ghostDeltaMin.value)) / GRID_HEIGHT * 100
 }
 
-function handleGridClick(e: MouseEvent) {
-  if (drag.value) return
-  const hour = Math.floor((e.offsetY / GRID_HEIGHT) * 24)
-  emit('dayClick', props.currentDate, hour)
+// ── Range selection ───────────────────────────────────────────────────────────
+
+interface RangeSelection { startMin: number; endMin: number }
+const selection = ref<RangeSelection | null>(null)
+
+const selectionLabel = computed(() => {
+  if (!selection.value) return ''
+  return `${minutesToTimeLabel(selection.value.startMin)} – ${minutesToTimeLabel(selection.value.endMin)}`
+})
+
+function onGridPointerDown(e: PointerEvent) {
+  if (eventDrag.value) return
+  const rect = gridRef.value?.getBoundingClientRect()
+  if (!rect || e.clientX - rect.left < 48) return // ignore gutter clicks
+  e.preventDefault()
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+  const startMin = getGridMinute(e.clientY)
+  selection.value = { startMin, endMin: Math.min(24 * 60, startMin + 30) }
+}
+
+function onGridPointerMove(e: PointerEvent) {
+  if (eventDrag.value) {
+    const rect = gridRef.value?.getBoundingClientRect()
+    if (!rect) return
+    const pxPerMin = rect.height / GRID_HEIGHT
+    const rawDelta = e.clientY - eventDrag.value.startY
+    const snapped = Math.round(rawDelta / pxPerMin / 15) * 15
+    eventDrag.value.snappedMinutes = snapped
+    ghostDeltaMin.value = snapped
+    return
+  }
+  if (selection.value) {
+    const endMin = Math.max(selection.value.startMin + 15, Math.min(24 * 60, getGridMinute(e.clientY)))
+    selection.value = { ...selection.value, endMin }
+  }
+}
+
+function onGridPointerUp() {
+  if (eventDrag.value) {
+    const state = eventDrag.value
+    const ev = props.events.find(ev => ev.id === state.eventId)
+    const didMove = state.snappedMinutes !== 0
+    if (ev && didMove) {
+      const origStart = new Date(ev.startAt)
+      const dur = new Date(ev.endAt).getTime() - origStart.getTime()
+      origStart.setMinutes(origStart.getMinutes() + state.snappedMinutes)
+      const totalMin = origStart.getHours() * 60 + origStart.getMinutes()
+      if (totalMin < 0) origStart.setHours(0, 0, 0, 0)
+      if (totalMin > 23 * 60 + 30) origStart.setHours(23, 30, 0, 0)
+      emit('eventMove', ev.id, toLocalISOString(origStart), toLocalISOString(new Date(origStart.getTime() + dur)))
+    }
+    if (didMove) {
+      suppressNextClick.value = true
+      setTimeout(() => { suppressNextClick.value = false }, 300)
+    }
+    eventDrag.value = null
+    ghostEventId.value = null
+    return
+  }
+  if (selection.value) {
+    const sel = selection.value
+    if (sel.endMin > sel.startMin) {
+      emit('rangeSelect', buildISOAt(props.currentDate, sel.startMin), buildISOAt(props.currentDate, Math.min(23 * 60 + 59, sel.endMin)))
+    }
+    selection.value = null
+  }
+}
+
+function onGridPointerCancel() {
+  eventDrag.value = null
+  ghostEventId.value = null
+  selection.value = null
+}
+
+// ── External drop ─────────────────────────────────────────────────────────────
+
+const dragoverMinute = ref<number | null>(null)
+
+function onColumnDragOver(e: DragEvent) {
+  e.preventDefault()
+  e.dataTransfer!.dropEffect = 'copy'
+  dragoverMinute.value = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
+}
+
+function onColumnDrop(e: DragEvent) {
+  e.preventDefault()
+  const data = e.dataTransfer?.getData('application/x-task') || e.dataTransfer?.getData('text/plain')
+  dragoverMinute.value = null
+  if (!data) return
+  const startMin = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
+  emit('externalDrop', buildISOAt(props.currentDate, startMin), buildISOAt(props.currentDate, Math.min(24 * 60, startMin + 60)), false, data)
 }
 </script>
 
@@ -199,11 +216,11 @@ function handleGridClick(e: MouseEvent) {
       class="border-b border-default p-1 shrink-0 flex flex-col gap-0.5"
     >
       <ProtoCalendarEvent
-        v-for="event in todayAllDay"
-        :key="event.id"
-        :event="event"
+        v-for="ev in todayAllDay"
+        :key="ev.id"
+        :event="ev"
         view="day"
-        @click="$emit('eventClick', event)"
+        @click="$emit('eventClick', ev)"
       />
     </div>
 
@@ -214,16 +231,16 @@ function handleGridClick(e: MouseEvent) {
     >
       <div
         ref="gridRef"
-        class="relative grid"
+        class="relative grid select-none"
         style="grid-template-columns: 48px 1fr; touch-action: none"
         :style="`height: ${GRID_HEIGHT}px`"
+        @pointerdown="onGridPointerDown"
         @pointermove="onGridPointerMove"
         @pointerup="onGridPointerUp"
         @pointercancel="onGridPointerCancel"
-        @click.self="handleGridClick"
       >
         <!-- Time gutter -->
-        <div class="relative border-r border-default">
+        <div class="relative border-r border-default pointer-events-none">
           <div
             v-for="h in HOURS"
             :key="h"
@@ -236,10 +253,12 @@ function handleGridClick(e: MouseEvent) {
 
         <!-- Day column -->
         <div
-          class="relative"
-          @click.self="handleGridClick"
+          class="relative cursor-cell"
+          @dragover="onColumnDragOver"
+          @dragleave="dragoverMinute = null"
+          @drop="onColumnDrop"
         >
-          <!-- Hour lines + half-hour dashes -->
+          <!-- Grid lines -->
           <template v-for="h in HOURS" :key="h">
             <div
               class="absolute w-full pointer-events-none"
@@ -253,32 +272,61 @@ function handleGridClick(e: MouseEvent) {
             />
           </template>
 
-          <!-- Timed events -->
+          <!-- Events -->
           <div
-            v-for="event in timedEvents"
-            :key="event.id"
+            v-for="ev in timedEvents"
+            :key="ev.id"
             class="absolute px-1 cursor-grab active:cursor-grabbing"
             :style="{
-              top: `${eventTopPct(event)}%`,
-              height: `${eventHeightPct(event)}%`,
-              left: eventLeft(event.id),
-              width: eventWidth(event.id),
-              opacity: ghostId === event.id ? 0.3 : 1,
-              zIndex: ghostId === event.id ? 0 : 1,
+              top: `${eventTopPct(ev)}%`,
+              height: `${eventHeightPct(ev)}%`,
+              left: eventLeft(ev.id),
+              width: eventWidth(ev.id),
+              opacity: ghostEventId === ev.id ? 0.25 : 1,
+              zIndex: ghostEventId === ev.id ? 0 : 1,
             }"
-            @pointerdown="onEventPointerDown($event, event)"
+            @pointerdown="onEventPointerDown($event, ev)"
+            @click="!suppressNextClick && $emit('eventClick', ev)"
           >
             <ProtoCalendarEvent
-              :event="event"
+              :event="ev"
               view="day"
-              class="h-full"
-              @click="$emit('eventClick', event)"
+              class="h-full pointer-events-none"
             />
           </div>
 
-          <!-- Ghost overlay -->
+          <!-- Range selection ghost -->
           <div
-            v-if="ghostEvent && drag"
+            v-if="selection"
+            class="absolute pointer-events-none z-10 left-1 right-1 rounded border border-primary/60"
+            style="background: color-mix(in srgb, var(--color-primary-500) 15%, transparent)"
+            :style="{
+              top: `${(selection.startMin / GRID_HEIGHT) * 100}%`,
+              height: `${Math.max(15, selection.endMin - selection.startMin) / GRID_HEIGHT * 100}%`,
+            }"
+          >
+            <span
+              class="text-xs font-medium px-1 pt-0.5 block leading-tight"
+              style="color: var(--color-primary-600)"
+            >
+              {{ selectionLabel }}
+            </span>
+          </div>
+
+          <!-- External drop indicator -->
+          <div
+            v-if="dragoverMinute !== null"
+            class="absolute pointer-events-none z-10 left-0 right-0 rounded-r border-l-2 border-primary"
+            style="background: color-mix(in srgb, var(--color-primary-500) 12%, transparent)"
+            :style="{
+              top: `${(dragoverMinute / GRID_HEIGHT) * 100}%`,
+              height: `${60 / GRID_HEIGHT * 100}%`,
+            }"
+          />
+
+          <!-- Event drag ghost -->
+          <div
+            v-if="ghostEvent && eventDrag"
             class="absolute pointer-events-none opacity-80 z-20 px-1"
             :style="{
               top: `${ghostTopPct()}%`,
