@@ -65,6 +65,7 @@ watch(() => props.editData, (data) => {
 // Guard: don't auto-save while showing the resume banner — that would overwrite the real draft with defaults
 let draftTimer: ReturnType<typeof setTimeout> | null = null
 watch(formData, (data) => {
+  if (!isOpen.value) return
   if (props.editData) return
   if (showDraftBanner.value) return
   if (draftTimer) clearTimeout(draftTimer)

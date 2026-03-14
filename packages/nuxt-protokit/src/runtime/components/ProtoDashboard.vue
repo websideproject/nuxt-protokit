@@ -180,7 +180,13 @@ function spanClass(span?: number) {
                 v-else-if="item.type === 'collection' && collections[item.collectionKey]"
                 :class="spanClass(item.span)"
               >
-                <UCard>
+                <VizCollectionCalendar
+                  v-if="item.view === 'calendar'"
+                  :items="collections[item.collectionKey].items.value"
+                  :config="(item as any).calendarConfig"
+                  :on-update="(idx, val) => collections[item.collectionKey].update(idx, val)"
+                />
+                <UCard v-else>
                   <ProtoCrudList
                     v-if="item.view === 'list'"
                     :schema="schema.collections![item.collectionKey]"
@@ -364,7 +370,13 @@ function spanClass(span?: number) {
             v-else-if="item.type === 'collection' && collections[item.collectionKey]"
             :class="spanClass(item.span)"
           >
-            <UCard>
+            <VizCollectionCalendar
+              v-if="item.view === 'calendar'"
+              :items="collections[item.collectionKey].items.value"
+              :config="(item as any).calendarConfig"
+              :on-update="(idx, val) => collections[item.collectionKey].update(idx, val)"
+            />
+            <UCard v-else>
               <ProtoCrudList
                 v-if="item.view === 'list'"
                 :schema="schema.collections![item.collectionKey]"

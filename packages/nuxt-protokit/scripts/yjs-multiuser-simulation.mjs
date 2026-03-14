@@ -33,7 +33,8 @@ function structStats(doc) {
       if (struct.constructor.name === 'GC') {
         gcStructs++
         totalContentLength += struct.length
-      } else {
+      }
+      else {
         items++
         if (struct.deleted) deleted++
         totalContentLength += struct.length
@@ -251,7 +252,7 @@ bidirectionalSync(bob, server)
 console.log()
 const serverTask = Object.fromEntries(
   [...server.getMap('task').entries()]
-    .filter(([k]) => !['comments', 'subtasks'].includes(k))
+    .filter(([k]) => !['comments', 'subtasks'].includes(k)),
 )
 console.log(`  Merged task state:`)
 console.log(`    title:    "${serverTask.title}"`)

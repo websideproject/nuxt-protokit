@@ -59,11 +59,13 @@ function extractData(doc) {
           const item = v.get(j)
           if (item instanceof Y.Map) {
             obj[k].push(Object.fromEntries([...item.entries()].sort((a, b) => a[0].localeCompare(b[0]))))
-          } else {
+          }
+          else {
             obj[k].push(item)
           }
         }
-      } else {
+      }
+      else {
         obj[k] = v
       }
     }
@@ -340,8 +342,8 @@ console.log('══════════════════════�
   // Use seeded PRNG for reproducibility
   let rngState = 42
   function rand() {
-    rngState = (rngState * 1664525 + 1013904223) & 0x7fffffff
-    return rngState / 0x7fffffff
+    rngState = (rngState * 1664525 + 1013904223) & 0x7FFFFFFF
+    return rngState / 0x7FFFFFFF
   }
 
   function createTask(doc, id) {
@@ -369,11 +371,14 @@ console.log('══════════════════════�
       doc.transact(() => {
         if (r < 0.3) {
           t.set('status', ['todo', 'in_progress', 'review', 'done'][Math.floor(rand() * 4)])
-        } else if (r < 0.5) {
+        }
+        else if (r < 0.5) {
           t.set('title', `[Day ${day}] ${(t.get('title') || '').replace(/^\[Day \d+\] /, '')}`)
-        } else if (r < 0.7) {
+        }
+        else if (r < 0.7) {
           t.set('description', makeDesc(day + idx) + `\n\nRevised day ${day}.`)
-        } else if (r < 0.85) {
+        }
+        else if (r < 0.85) {
           let comments = t.get('comments')
           if (!comments) {
             comments = new Y.Array()
@@ -384,7 +389,8 @@ console.log('══════════════════════�
           cm.set('author', ['alice', 'bob', 'carol'][Math.floor(rand() * 3)] + '@co.com')
           cm.set('text', makeComment(day + i))
           cm.set('createdAt', `day-${day}`)
-        } else {
+        }
+        else {
           t.set('priority', ['low', 'medium', 'high', 'critical'][Math.floor(rand() * 4)])
           t.set('assignee', ['alice', 'bob', 'carol'][Math.floor(rand() * 3)] + '@co.com')
         }
@@ -499,7 +505,7 @@ console.log('══════════════════════�
   console.log('  IndexedDB compaction (500 edits on top of 2-year state):')
   const idbDoc = new Y.Doc()
   const updates = []
-  idbDoc.on('update', (u) => updates.push(u))
+  idbDoc.on('update', u => updates.push(u))
   Y.applyUpdate(idbDoc, Y.encodeStateAsUpdate(server))
 
   const idbTasks = idbDoc.getArray('tasks')

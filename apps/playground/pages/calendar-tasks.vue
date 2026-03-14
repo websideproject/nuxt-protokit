@@ -243,6 +243,7 @@ function colorDot(color: CalendarColor) {
           @range-select="onRangeSelect"
           @event-click="onEventClick"
           @event-move="(id, s, e) => moveEvent(id, s, e)"
+          @event-update="(id, patch) => updateEvent(id, patch)"
           @external-drop="onExternalDrop"
         />
 
@@ -255,6 +256,7 @@ function colorDot(color: CalendarColor) {
           @range-select="onRangeSelect"
           @event-click="onEventClick"
           @event-move="(id, s, e) => moveEvent(id, s, e)"
+          @event-update="(id, patch) => updateEvent(id, patch)"
           @external-drop="onExternalDrop"
         />
       </div>

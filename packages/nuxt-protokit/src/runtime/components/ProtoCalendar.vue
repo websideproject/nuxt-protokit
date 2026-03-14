@@ -108,6 +108,10 @@ function onEventMove(id: string, newStartAt: string, newEndAt: string) {
   moveEvent(id, newStartAt, newEndAt)
 }
 
+function onEventUpdate(id: string, patch: Partial<CalendarEvent>) {
+  updateEvent(id, patch)
+}
+
 function onModalSave(event: CalendarEvent) {
   if (selectedEvent.value?.id) {
     updateEvent(event.id, event)
@@ -215,6 +219,7 @@ function onMonthDayClick(date: Date) {
           @range-select="onRangeSelect"
           @event-click="onEventClick"
           @event-move="onEventMove"
+          @event-update="onEventUpdate"
         />
         <ProtoCalendarDay
           v-else
@@ -224,6 +229,7 @@ function onMonthDayClick(date: Date) {
           @range-select="onRangeSelect"
           @event-click="onEventClick"
           @event-move="onEventMove"
+          @event-update="onEventUpdate"
         />
       </template>
     </div>

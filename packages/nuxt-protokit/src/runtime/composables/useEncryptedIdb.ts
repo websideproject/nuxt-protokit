@@ -20,9 +20,9 @@ const META_STORE = 'meta'
 const COMPACT_THRESHOLD = 50
 
 /** Config accepted by EncryptedIdbPersistence. Supply either a password or a pre-derived CryptoKey. */
-export type EncryptionConfig =
-  | { password: string; key?: never }
-  | { key: CryptoKey; password?: never }
+export type EncryptionConfig
+  = | { password: string, key?: never }
+    | { key: CryptoKey, password?: never }
 
 export class EncryptedIdbPersistence {
   private db: IDBDatabase | null = null

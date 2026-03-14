@@ -25,6 +25,10 @@ import { trackTestDb } from '../helpers/browser-setup'
 import { withSetup } from '../helpers/with-setup'
 import { waitFor } from '../helpers/wait'
 
+// ── Helpers ───────────────────────────────────────────────────────────────────
+
+import type { PrototypeSchema } from '../../src/runtime/types/schema'
+
 // ── Stub Nuxt's useRuntimeConfig before importing composables ─────────────────
 // useProtoKitConfig calls useRuntimeConfig(); without Nuxt running this throws.
 // Returning {} causes useProtoKitConfig to fall through to serverSync: disabled.
@@ -36,10 +40,6 @@ beforeAll(() => {
 const { usePrototype } = await import('../../src/runtime/composables/usePrototype')
 const { documentCache, providerCache, refCountCache, isReadyRefCache, clearProtoNamespace, clearProtoKeys }
   = await import('../../src/runtime/composables/useProtoDoc')
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-import type { PrototypeSchema } from '../../src/runtime/types/schema'
 
 const schema: PrototypeSchema = {
   key: 'ns-test-tool',

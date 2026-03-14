@@ -626,11 +626,13 @@ console.log('══════════════════════�
           const item = v.get(j)
           if (item instanceof Y.Map) {
             obj[k].push(Object.fromEntries(item.entries()))
-          } else {
+          }
+          else {
             obj[k].push(item)
           }
         }
-      } else {
+      }
+      else {
         obj[k] = v
       }
     }

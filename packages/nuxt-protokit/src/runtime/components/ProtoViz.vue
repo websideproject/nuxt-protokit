@@ -51,6 +51,15 @@ const shouldShow = computed(() => {
       :unit="(viz.config as any).unit"
     />
 
+    <VizLineChart
+      v-else-if="viz.type === 'line-chart'"
+      :data="(viz.config as any).data(context)"
+      :color="(viz.config as any).color"
+      :show-axes="(viz.config as any).showAxes"
+      :unit="(viz.config as any).unit"
+      :empty-text="(viz.config as any).emptyText"
+    />
+
     <VizComparisonTable
       v-else-if="viz.type === 'comparison-table'"
       :columns="(viz.config as any).columns"
@@ -66,6 +75,36 @@ const shouldShow = computed(() => {
     <VizTimeline
       v-else-if="viz.type === 'timeline'"
       :items="(viz.config as any).items(context)"
+    />
+
+    <VizAreaChart
+      v-else-if="viz.type === 'area-chart'"
+      :series="(viz.config as any).series(context)"
+      :show-axes="(viz.config as any).showAxes"
+      :unit="(viz.config as any).unit"
+      :empty-text="(viz.config as any).emptyText"
+    />
+
+    <VizPieChart
+      v-else-if="viz.type === 'pie-chart' || viz.type === 'donut-chart'"
+      :data="(viz.config as any).data(context)"
+      :donut="viz.type === 'donut-chart'"
+      :unit="(viz.config as any).unit"
+      :show-legend="(viz.config as any).showLegend !== false"
+      :empty-text="(viz.config as any).emptyText"
+    />
+
+    <VizFunnelChart
+      v-else-if="viz.type === 'funnel-chart'"
+      :data="(viz.config as any).data(context)"
+      :unit="(viz.config as any).unit"
+      :show-conversion="(viz.config as any).showConversion !== false"
+    />
+
+    <VizStatCards
+      v-else-if="viz.type === 'stat-cards'"
+      :cards="(viz.config as any).cards(context)"
+      :cols="(viz.config as any).cols"
     />
 
     <component

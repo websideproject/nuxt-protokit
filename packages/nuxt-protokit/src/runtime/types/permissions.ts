@@ -22,10 +22,10 @@ export interface PermissionContext {
  *
  * Omitting a guard means **allow** (open access).
  */
-export type PermissionGuard =
-  | string
-  | string[]
-  | ((ctx: PermissionContext) => boolean)
+export type PermissionGuard
+  = | string
+    | string[]
+    | ((ctx: PermissionContext) => boolean)
 
 /**
  * Per-collection permission guards.

@@ -18,6 +18,7 @@ const emit = defineEmits<{
   rangeSelect: [startAt: string, endAt: string]
   eventClick: [event: CalendarEvent]
   eventMove: [id: string, newStartAt: string, newEndAt: string]
+  eventUpdate: [id: string, patch: Partial<CalendarEvent>]
   externalDrop: [startAt: string, endAt: string, allDay: boolean, data: string]
 }>()
 
@@ -89,12 +90,27 @@ function getGridMinute(clientY: number): number {
 
 // ── Event drag ────────────────────────────────────────────────────────────────
 
-interface EventDrag { eventId: string; origStartAt: string; origEndAt: string; startY: number; snappedMinutes: number }
+interface EventDrag { eventId: string, origStartAt: string, origEndAt: string, startY: number, snappedMinutes: number }
 
 const eventDrag = ref<EventDrag | null>(null)
 const ghostEventId = ref<string | null>(null)
 const ghostDeltaMin = ref(0)
 const suppressNextClick = ref(false)
+
+// ── All-day ↔ timed conversion ────────────────────────────────────────────────
+
+const draggingAllDayId = ref<string | null>(null)
+const isAboveGrid = ref(false)
+
+function onAllDayEventDragStart(e: DragEvent, ev: CalendarEvent) {
+  draggingAllDayId.value = ev.id
+  e.dataTransfer!.effectAllowed = 'move'
+  e.dataTransfer!.setData('application/x-allday-event', ev.id)
+}
+
+function onAllDayEventDragEnd() {
+  draggingAllDayId.value = null
+}
 
 // ── Event resize (bottom-handle drag) ─────────────────────────────────────────
 
@@ -164,7 +180,7 @@ function ghostResizeHeightPct(): number {
 
 // ── Range selection ───────────────────────────────────────────────────────────
 
-interface RangeSelection { startMin: number; endMin: number }
+interface RangeSelection { startMin: number, endMin: number }
 const selection = ref<RangeSelection | null>(null)
 
 const selectionLabel = computed(() => {
@@ -195,6 +211,11 @@ function onGridPointerMove(e: PointerEvent) {
   if (eventDrag.value) {
     const rect = gridRef.value?.getBoundingClientRect()
     if (!rect) return
+    if (e.clientY < rect.top) {
+      isAboveGrid.value = true
+      return
+    }
+    isAboveGrid.value = false
     const pxPerMin = rect.height / GRID_HEIGHT
     const rawDelta = e.clientY - eventDrag.value.startY
     const snapped = Math.round(rawDelta / pxPerMin / 15) * 15
@@ -230,6 +251,19 @@ function onGridPointerUp() {
   if (eventDrag.value) {
     const state = eventDrag.value
     const ev = props.events.find(ev => ev.id === state.eventId)
+
+    if (isAboveGrid.value && ev) {
+      // Dropped in the all-day band → convert to all-day
+      emit('eventUpdate', ev.id, { allDay: true, startAt: buildISOAt(props.currentDate, 0), endAt: buildISOAt(props.currentDate, 0) })
+      suppressNextClick.value = true
+      setTimeout(() => { suppressNextClick.value = false }, 300)
+      eventDrag.value = null
+      ghostEventId.value = null
+      isAboveGrid.value = false
+      return
+    }
+    isAboveGrid.value = false
+
     const didMove = state.snappedMinutes !== 0
     if (ev && didMove) {
       const origStart = new Date(ev.startAt)
@@ -263,6 +297,7 @@ function onGridPointerCancel() {
   eventResize.value = null
   ghostResizeEventId.value = null
   selection.value = null
+  isAboveGrid.value = false
 }
 
 // ── External drop ─────────────────────────────────────────────────────────────
@@ -271,14 +306,29 @@ const dragoverMinute = ref<number | null>(null)
 
 function onColumnDragOver(e: DragEvent) {
   e.preventDefault()
-  e.dataTransfer!.dropEffect = 'copy'
+  // all-day events use effectAllowed='move'; external tasks use 'copy'
+  e.dataTransfer!.dropEffect = e.dataTransfer!.types.includes('application/x-allday-event') ? 'move' : 'copy'
   dragoverMinute.value = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
 }
 
 function onColumnDrop(e: DragEvent) {
   e.preventDefault()
-  const data = e.dataTransfer?.getData('application/x-task') || e.dataTransfer?.getData('text/plain')
   dragoverMinute.value = null
+
+  // All-day event dropped into the time column → convert to timed
+  const allDayId = e.dataTransfer?.getData('application/x-allday-event')
+  if (allDayId) {
+    const ev = props.events.find(ev => ev.id === allDayId)
+    if (ev) {
+      const startMin = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
+      const endMin = Math.min(23 * 60 + 59, startMin + 60)
+      emit('eventUpdate', ev.id, { allDay: false, startAt: buildISOAt(props.currentDate, startMin), endAt: buildISOAt(props.currentDate, endMin) })
+    }
+    draggingAllDayId.value = null
+    return
+  }
+
+  const data = e.dataTransfer?.getData('application/x-task') || e.dataTransfer?.getData('text/plain')
   if (!data) return
   const startMin = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
   emit('externalDrop', buildISOAt(props.currentDate, startMin), buildISOAt(props.currentDate, Math.min(24 * 60, startMin + 60)), false, data)
@@ -287,18 +337,35 @@ function onColumnDrop(e: DragEvent) {
 
 <template>
   <div class="flex flex-col h-full overflow-hidden">
-    <!-- All-day band -->
+    <!-- All-day band (always rendered — serves as drop target for timed→allDay drags) -->
     <div
-      v-if="todayAllDay.length > 0"
-      class="border-b border-default p-1 shrink-0 flex flex-col gap-0.5"
+      class="border-b border-default p-1 shrink-0 flex flex-col gap-0.5 min-h-8 transition-colors"
+      :style="isAboveGrid ? { background: 'color-mix(in srgb, var(--color-primary-500) 8%, transparent)' } : {}"
+      :class="{ 'ring-1 ring-inset ring-primary/40': isAboveGrid }"
     >
-      <ProtoCalendarEvent
+      <!-- Ghost preview when dragging a timed event above the grid -->
+      <div
+        v-if="isAboveGrid && ghostEvent"
+        class="rounded text-xs px-1 py-0.5 opacity-60 pointer-events-none truncate"
+        :style="{ background: 'color-mix(in srgb, var(--color-primary-500) 18%, transparent)', color: 'var(--color-primary-600)' }"
+      >
+        {{ ghostEvent.title }}
+      </div>
+      <div
         v-for="ev in todayAllDay"
         :key="ev.id"
-        :event="ev"
-        view="day"
-        @click="$emit('eventClick', ev)"
-      />
+        draggable="true"
+        class="cursor-grab"
+        :class="{ 'opacity-40': draggingAllDayId === ev.id }"
+        @dragstart="onAllDayEventDragStart($event, ev)"
+        @dragend="onAllDayEventDragEnd"
+      >
+        <ProtoCalendarEvent
+          :event="ev"
+          view="day"
+          @click="$emit('eventClick', ev)"
+        />
+      </div>
     </div>
 
     <!-- Scrollable time grid -->
@@ -336,7 +403,10 @@ function onColumnDrop(e: DragEvent) {
           @drop="onColumnDrop"
         >
           <!-- Grid lines -->
-          <template v-for="h in HOURS" :key="h">
+          <template
+            v-for="h in HOURS"
+            :key="h"
+          >
             <div
               class="absolute w-full pointer-events-none"
               style="border-top: 1px solid rgba(128,128,128,0.15)"
@@ -410,7 +480,7 @@ function onColumnDrop(e: DragEvent) {
 
           <!-- Event drag ghost -->
           <div
-            v-if="ghostEvent && eventDrag"
+            v-if="ghostEvent && eventDrag && !isAboveGrid"
             class="absolute pointer-events-none opacity-80 z-20 px-1"
             :style="{
               top: `${ghostTopPct()}%`,

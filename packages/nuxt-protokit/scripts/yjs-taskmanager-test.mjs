@@ -159,7 +159,8 @@ for (let i = 0; i < tasks.length; i++) {
         const item = v.get(j)
         obj[k].push(item instanceof Y.Map ? Object.fromEntries(item.entries()) : item)
       }
-    } else {
+    }
+    else {
       obj[k] = v
     }
   }

@@ -1,5 +1,5 @@
 export type { FieldDef, SimpleFieldDef, LinkedResponsesFieldDef, CustomFieldDef, CollectionSchema, PrototypeSchema, PresetPack, ProtoAction } from './schema'
-export type { SectionDef, ResultSectionDef, CardDef, VizDef, BuiltInVizDef, CustomVizDef, VizType, VizProgressConfig, VizBenchmarkConfig, VizBarChartConfig, VizComparisonTableConfig, VizFeatureMatrixConfig, VizTimelineConfig, DashboardLayout, DashboardTabDef, InlineTabDef, LayoutRow, LayoutItem } from './brick'
+export type { SectionDef, ResultSectionDef, CardDef, VizDef, BuiltInVizDef, CustomVizDef, VizType, VizProgressConfig, VizBenchmarkConfig, VizBarChartConfig, VizLineChartConfig, VizComparisonTableConfig, VizFeatureMatrixConfig, VizTimelineConfig, CollectionCalendarConfig, DashboardLayout, DashboardTabDef, InlineTabDef, LayoutRow, LayoutItem } from './brick'
 export type { ComputeContext, DerivedDef, ConnectionsDef } from './compute'
 export type { ProtokitExtension, ProtokitExtensionInput, ProtokitFieldExtension, ProtokitVizExtension } from '../utils/defineProtokitExtension'
 export type { PermissionGuard, PermissionContext, PermissionAction, CollectionPermissions, FieldPermissions, CollectionPermissionsResolved, FieldPermissionsResolved } from './permissions'

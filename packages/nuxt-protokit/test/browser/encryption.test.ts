@@ -110,7 +110,7 @@ describe('encryption utilities', () => {
   it('decryptBytes throws when ciphertext is tampered with', async () => {
     const key = await deriveKey('test', generateSalt())
     const encrypted = new Uint8Array(await encryptBytes(key, new Uint8Array([10, 20, 30])))
-    encrypted[20] ^= 0xff // flip a byte in the ciphertext
+    encrypted[20] ^= 0xFF // flip a byte in the ciphertext
     await expect(decryptBytes(key, encrypted.buffer)).rejects.toThrow()
   })
 })
