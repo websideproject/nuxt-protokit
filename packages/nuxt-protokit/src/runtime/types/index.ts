@@ -1,4 +1,4 @@
-export type { FieldDef, SimpleFieldDef, LinkedResponsesFieldDef, CustomFieldDef, CollectionSchema, PrototypeSchema, PresetPack, ProtoAction } from './schema'
+export type { FieldDef, SimpleFieldDef, LinkedResponsesFieldDef, CustomFieldDef, CollectionSchema, PrototypeSchema, PresetPack, ProtoAction, TextTemplatePanelDef, TimeSeriesPanelDef, UrlInputPanelDef, CollectionItemPanel, CollectionItemAction, StatusFieldDef } from './schema'
 export type { SectionDef, ResultSectionDef, CardDef, VizDef, BuiltInVizDef, CustomVizDef, VizType, VizProgressConfig, VizBenchmarkConfig, VizBarChartConfig, VizLineChartConfig, VizComparisonTableConfig, VizFeatureMatrixConfig, VizTimelineConfig, CollectionCalendarConfig, DashboardLayout, DashboardTabDef, InlineTabDef, LayoutRow, LayoutItem } from './brick'
 export type { ComputeContext, DerivedDef, ConnectionsDef } from './compute'
 export type { ProtokitExtension, ProtokitExtensionInput, ProtokitFieldExtension, ProtokitVizExtension } from '../utils/defineProtokitExtension'

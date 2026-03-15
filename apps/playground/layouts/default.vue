@@ -16,6 +16,7 @@ const navItems = [
     { label: 'Calendar', to: '/calendar', icon: 'i-lucide-calendar' },
     { label: 'Calendar + Tasks', to: '/calendar-tasks', icon: 'i-lucide-calendar-check' },
     { label: 'Charts & Analytics', to: '/charts', icon: 'i-lucide-chart-line' },
+    { label: 'Item Panels', to: '/item-panels', icon: 'i-lucide-layout-panel-left' },
   ],
   [
     { type: 'label', label: 'Features' },
