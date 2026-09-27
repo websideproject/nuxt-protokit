@@ -2,18 +2,7 @@
   <div class="max-w-2xl mx-auto px-8 py-14 space-y-10">
     <!-- Hero -->
     <div class="space-y-3">
-      <div class="flex items-center gap-2">
-        <UIcon
-          name="i-lucide-layers"
-          class="w-6 h-6 text-primary"
-        />
-        <UBadge
-          color="primary"
-          variant="subtle"
-        >
-          v0.1.0
-        </UBadge>
-      </div>
+      <ProductLogo class="size-10" />
       <h1 class="text-3xl font-bold text-highlighted">
         nuxt-protokit
       </h1>
