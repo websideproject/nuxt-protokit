@@ -1,9 +1,26 @@
+import { fileURLToPath } from 'node:url'
+import type { Plugin } from 'vite'
 import { defineConfig } from 'vitest/config'
 import vue from '@vitejs/plugin-vue'
 import { playwright } from '@vitest/browser-playwright'
 
+const nuxtImports = fileURLToPath(new URL('./test/helpers/nuxt-imports.ts', import.meta.url))
+
+// Nuxt replaces import.meta.client/server at build time; the runtime only opens IndexedDB on the client.
+// Vite's `define` does not reach import.meta.* in the browser runner, so replace them in the runtime sources.
+const nuxtImportMeta: Plugin = {
+  name: 'nuxt-import-meta',
+  transform(code, id) {
+    if (!id.includes('/src/runtime/') || !code.includes('import.meta.')) return
+    return code.replaceAll('import.meta.client', 'true').replaceAll('import.meta.server', 'false')
+  },
+}
+
 export default defineConfig({
   plugins: [vue()],
+  resolve: {
+    alias: { '#imports': nuxtImports },
+  },
   test: {
     coverage: {
       provider: 'istanbul',
@@ -21,7 +38,10 @@ export default defineConfig({
         },
       },
       {
-        plugins: [vue()],
+        plugins: [vue(), nuxtImportMeta],
+        resolve: {
+          alias: { '#imports': nuxtImports },
+        },
         test: {
           name: 'browser',
           include: ['test/browser/**/*.test.ts'],

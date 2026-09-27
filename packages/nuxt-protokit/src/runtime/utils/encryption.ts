@@ -22,7 +22,7 @@ export async function deriveKey(password: string, salt: Uint8Array): Promise<Cry
     ['deriveKey'],
   )
   return crypto.subtle.deriveKey(
-    { name: 'PBKDF2', salt, iterations: 100_000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: salt as Uint8Array<ArrayBuffer>, iterations: 100_000, hash: 'SHA-256' },
     keyMaterial,
     { name: 'AES-GCM', length: 256 },
     false,
@@ -37,7 +37,7 @@ export async function deriveKey(password: string, salt: Uint8Array): Promise<Cry
 export async function importRawKey(keyBytes: Uint8Array): Promise<CryptoKey> {
   return crypto.subtle.importKey(
     'raw',
-    keyBytes,
+    keyBytes as Uint8Array<ArrayBuffer>,
     { name: 'AES-GCM', length: 256 },
     false,
     ['encrypt', 'decrypt'],
@@ -51,7 +51,7 @@ export async function importRawKey(keyBytes: Uint8Array): Promise<CryptoKey> {
  */
 export async function encryptBytes(key: CryptoKey, data: Uint8Array): Promise<ArrayBuffer> {
   const iv = crypto.getRandomValues(new Uint8Array(12))
-  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data)
+  const ciphertext = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, key, data as Uint8Array<ArrayBuffer>)
   const out = new Uint8Array(12 + ciphertext.byteLength)
   out.set(iv, 0)
   out.set(new Uint8Array(ciphertext), 12)

@@ -104,27 +104,23 @@ const rawState = computed(() => {
                 <label class="text-sm font-medium text-highlighted">Theme</label>
                 <USelect
                   v-model="state.theme.value"
-                  :options="[
+                  :items="[
                     { value: 'system', label: 'System' },
                     { value: 'light', label: 'Light' },
                     { value: 'dark', label: 'Dark' },
                   ]"
-                  value-key="value"
-                  label-key="label"
                 />
               </div>
               <div class="space-y-1.5">
                 <label class="text-sm font-medium text-highlighted">Language</label>
                 <USelect
                   v-model="state.language.value"
-                  :options="[
+                  :items="[
                     { value: 'en', label: 'English' },
                     { value: 'de', label: 'Deutsch' },
                     { value: 'fr', label: 'Français' },
                     { value: 'es', label: 'Español' },
                   ]"
-                  value-key="value"
-                  label-key="label"
                 />
               </div>
             </div>

@@ -116,8 +116,8 @@ const placeholders: Record<string, string> = {
               </code>
               <span class="text-xs text-muted truncate">
                 {{
-                  (tab.key === 'scratch' ? notes.value : meetingNotes.value).slice(0, 60) || '(empty)'
-                }}{{ (tab.key === 'scratch' ? notes.value : meetingNotes.value).length > 60 ? '…' : '' }}
+                  (tab.key === 'scratch' ? notes : meetingNotes).slice(0, 60) || '(empty)'
+                }}{{ (tab.key === 'scratch' ? notes : meetingNotes).length > 60 ? '…' : '' }}
               </span>
             </div>
           </div>
