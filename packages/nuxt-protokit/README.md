@@ -49,6 +49,8 @@ stylesheet (the path is relative to the CSS file):
 ```vue
 <!-- app/pages/estimator.vue -->
 <script setup lang="ts">
+import { formatMoney } from '#protokit/utils/formatters'
+
 const estimator = definePrototype({
   key: 'resource-estimator', // also the IndexedDB key
   title: 'Resource Cost Estimator',
@@ -100,8 +102,9 @@ const estimator = definePrototype({
 ```
 
 A form, a result card with a badge and two stats, and a bar chart. Change a value and reload: it is still there,
-read back from IndexedDB. `definePrototype`, `formatMoney`, the composables and every `Proto*` component are
-auto-imported.
+read back from IndexedDB. `definePrototype`, the composables and every `Proto*` component are auto-imported;
+helpers with generic names, like `formatMoney`, are imported from `#protokit/utils/…` so they never collide with
+your app's own.
 
 Without the UI:
 

@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import { useAutoAnimate } from '@formkit/auto-animate/vue'
 import type { CalendarView, CalendarColor } from '#protokit/types'
+import { formatDayTitle, formatMonthTitle, formatWeekTitle } from '#protokit/utils/calendarLayout'
 
 // ── Calendar events ───────────────────────────────────────────────────────────
 const { doc, events, addEvent, updateEvent, removeEvent, moveEvent, isReady } = useProtoCalendar({

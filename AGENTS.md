@@ -86,16 +86,19 @@ bun run automd
 
 After adding the module to `nuxt.config.ts`, these are globally available:
 
+The list is `PUBLIC_IMPORTS` in `src/module.ts` (guarded by `test/unit/public-imports.test.ts`): only `use*`, `define*`
+and protokit-named functions become globals. Other utils are imported explicitly, e.g.
+`import { formatMoney } from '#protokit/utils/formatters'`.
+
 **Utils** (from `runtime/utils/`)
-- `definePrototype` — type-safe schema definition helper
-- `defineCollection` — type-safe collection schema helper
-- `formatMoney`, `formatPercent`, `formatNumber`, `formatDate`
+- `definePrototype`, `defineCollection`, `defineHeadlessSchema`, `defineProtokitExtension`
 
 **Composables** (from `runtime/composables/`)
 - `usePrototype` — high-level facade (fields, derived, collections, reset, isReady)
 - `useProtoDoc` — Y.js document lifecycle (IndexedDB, BroadcastChannel, server sync)
 - `useProtoMap`, `useProtoList`, `useProtoCollection`, `useProtoDerived`
-- `useProtoOutputs`, `useProtoDraft`, `useProtoCorruption`, `useProtoRegistry`
+- `useProtoOutputs`, `useProtoDraft`, `useProtoCorruption`, `useProtoRegistry`, `useProtoText`, `useProtoCalendar`
+- `clearProtoNamespace`, `clearProtoKeys`, `configureProtoPermissions`
 
 **Components** (globally registered from `runtime/components/`)
 - `ProtoTool` — full tool renderer

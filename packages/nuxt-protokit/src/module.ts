@@ -1,4 +1,4 @@
-import { defineNuxtModule, addImportsDir, addComponentsDir, createResolver } from '@nuxt/kit'
+import { defineNuxtModule, addImports, addImportsDir, addComponentsDir, createResolver } from '@nuxt/kit'
 
 declare module '@nuxt/schema' {
   interface NuxtHooks {
@@ -22,6 +22,34 @@ export interface ModuleOptions {
     baseUrl?: string
   }
 }
+
+/** Everything the module auto-imports into an app: `[export name, file under runtime/]`. */
+export const PUBLIC_IMPORTS: Array<[name: string, file: string]> = [
+  ['usePrototype', 'composables/usePrototype'],
+  ['useProtoDoc', 'composables/useProtoDoc'],
+  ['clearProtoNamespace', 'composables/useProtoDoc'],
+  ['clearProtoKeys', 'composables/useProtoDoc'],
+  ['useProtoMap', 'composables/useProtoMap'],
+  ['useProtoList', 'composables/useProtoList'],
+  ['useProtoText', 'composables/useProtoText'],
+  ['useProtoCollection', 'composables/useProtoCollection'],
+  ['useProtoCalendar', 'composables/useProtoCalendar'],
+  ['useProtoDerived', 'composables/useProtoDerived'],
+  ['useProtoOutputs', 'composables/useProtoOutputs'],
+  ['useProtoConnections', 'composables/useProtoConnections'],
+  ['useProtoDraft', 'composables/useProtoDraft'],
+  ['useProtoPermissions', 'composables/useProtoPermissions'],
+  ['configureProtoPermissions', 'composables/useProtoPermissions'],
+  ['useProtoCorruption', 'composables/useProtoCorruption'],
+  ['useProtoDebugInfo', 'composables/useProtoDebugInfo'],
+  ['useProtoRegistry', 'composables/useProtoRegistry'],
+  ['useProtoExtensionRegistry', 'composables/useProtoExtensionRegistry'],
+  ['useProtoKitConfig', 'composables/useProtoKitConfig'],
+  ['definePrototype', 'utils/definePrototype'],
+  ['defineCollection', 'utils/defineCollection'],
+  ['defineHeadlessSchema', 'utils/defineHeadlessSchema'],
+  ['defineProtokitExtension', 'utils/defineProtokitExtension'],
+]
 
 export default defineNuxtModule<ModuleOptions>({
   meta: {
@@ -76,8 +104,10 @@ export default defineNuxtModule<ModuleOptions>({
     })
 
     // ── Auto-imports ──────────────────────────────────────────────────────────
-    addImportsDir(resolver.resolve('./runtime/composables'))
-    addImportsDir(resolver.resolve('./runtime/utils'))
+    // Only the public API becomes a global in the app: the composables and the define* helpers. Internal helpers
+    // with generic names (formatDate, addDays, isToday, deepClone, documentCache, …) would otherwise collide with the
+    // app's own; they stay importable from '#protokit/utils/<file>' and '#protokit/composables/<file>'.
+    addImports(PUBLIC_IMPORTS.map(([name, file]) => ({ name, from: resolver.resolve(`./runtime/${file}`) })))
 
     // Auto-import ALL components (fields + bricks)
     // global: true so <component :is="'ProtoXxx'"> works at runtime
