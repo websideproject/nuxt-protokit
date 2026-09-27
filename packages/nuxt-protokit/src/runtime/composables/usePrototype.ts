@@ -105,6 +105,7 @@ export function usePrototype(
   const { state, reset: resetMap, fieldPermissions } = useProtoMap(doc, schema.key, schema.fields, {
     version: schema.version,
     migrations: schema.migrations,
+    isReady,
   })
 
   // Initialize collections

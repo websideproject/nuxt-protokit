@@ -63,7 +63,7 @@ function seedIDB(key: string, data: Record<string, unknown>): Promise<void> {
     const doc = new Y.Doc()
     const idb = new IndexeddbPersistence(key, doc)
     idb.on('synced', async () => {
-      for (const [k, v] of Object.entries(data)) doc.getMap('fields').set(k, v)
+      for (const [k, v] of Object.entries(data)) doc.getMap(schema.key).set(k, v)
       await new Promise(r => setTimeout(r, 50))
       await idb.destroy()
       doc.destroy()
@@ -79,7 +79,7 @@ function readIDB(key: string): Promise<Record<string, unknown>> {
     const idb = new IndexeddbPersistence(key, doc)
     idb.on('synced', async () => {
       const result: Record<string, unknown> = {}
-      doc.getMap('fields').forEach((v, k) => { result[k] = v })
+      doc.getMap(schema.key).forEach((v, k) => { result[k] = v })
       await idb.destroy()
       doc.destroy()
       resolve(result)

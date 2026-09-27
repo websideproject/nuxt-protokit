@@ -26,6 +26,10 @@ export interface UseProtoMapReturn<S extends Record<string, FieldDef>> {
 /**
  * Bidirectional sync between a Y.Map and reactive Refs.
  * Schema defines the fields, their defaults, and types.
+ *
+ * Defaults are never written into the Y.Map: a field that was never set reads as its default. Writing them would
+ * race the stored data — a default set before IndexedDB (or another peer) delivers the saved value is a concurrent
+ * edit, and Y.js resolves concurrent map writes by client ID, so the default won about half of the time.
  */
 export function useProtoMap<S extends Record<string, FieldDef>>(
   doc: Y.Doc,
@@ -34,6 +38,11 @@ export function useProtoMap<S extends Record<string, FieldDef>>(
   options?: {
     version?: number
     migrations?: SchemaMigrations
+    /**
+     * Pass the doc's `isReady` (from `useProtoDoc`) so migrations run on the stored data once it has loaded.
+     * Without it, migrations run immediately — correct only for a doc that is already loaded.
+     */
+    isReady?: Ref<boolean>
   },
 ): UseProtoMapReturn<S> {
   const dataMap = doc.getMap(mapKey)
@@ -44,17 +53,18 @@ export function useProtoMap<S extends Record<string, FieldDef>>(
 
   // ── Migration ────────────────────────────────────────────────────────────
   // Version is tracked as a special key inside the same Y.Map.
-  if (options?.version !== undefined) {
+  const migrate = () => {
+    if (options?.version === undefined) return
     const storedVersion = (dataMap.get('__proto_version__') as number) ?? 0
     const currentVersion = options.version
 
     if (storedVersion < currentVersion && options.migrations) {
-      // Snapshot current values for all schema keys
+      // Snapshot every stored value, including fields the current schema no longer has, so a migration can
+      // read the old field it replaces
       const snapshot: Record<string, any> = {}
-      for (const key of Object.keys(schema)) {
-        const val = dataMap.get(key)
-        if (val !== undefined) snapshot[key] = val
-      }
+      dataMap.forEach((val, key) => {
+        if (key !== '__proto_version__' && val !== undefined) snapshot[key] = val
+      })
 
       const migrated = runMigrations(snapshot, storedVersion, currentVersion, options.migrations)
 
@@ -70,15 +80,21 @@ export function useProtoMap<S extends Record<string, FieldDef>>(
     }
   }
 
-  // Initialize refs from schema defaults, then override with Y.Map values
+  if (!options?.isReady || options.isReady.value) {
+    migrate()
+  }
+  else {
+    const stop = watch(options.isReady, (ready) => {
+      if (!ready) return
+      stop()
+      migrate()
+    })
+  }
+
+  // Initialize refs from Y.Map values, falling back to the schema defaults
   for (const [key, fieldDef] of Object.entries(schema)) {
     const existing = dataMap.get(key)
     const initial = existing !== undefined ? existing : deepClone(fieldDef.default)
-
-    // Set default into Y.Map if not present
-    if (existing === undefined) {
-      dataMap.set(key, deepClone(fieldDef.default))
-    }
 
     const fieldRef = ref(initial)
     ;(state as any)[key] = fieldRef
