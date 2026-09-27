@@ -1,6 +1,8 @@
 import { ref, onUnmounted, type Ref } from 'vue'
 import * as Y from 'yjs'
 import { IndexeddbPersistence } from 'y-indexeddb'
+// ofetch, the library behind Nuxt's $fetch: Nuxt 5 no longer provides $fetch as a global
+import { $fetch } from 'ofetch'
 import { useProtoCorruption } from './useProtoCorruption'
 import { EncryptedIdbPersistence, type EncryptionConfig } from './useEncryptedIdb'
 import { useProtoKitConfig } from './useProtoKitConfig'
