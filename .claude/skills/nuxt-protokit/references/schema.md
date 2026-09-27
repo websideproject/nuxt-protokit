@@ -354,4 +354,4 @@ migrations: {
 },
 ```
 
-Use `runMigrations(data, migrations, targetVersion)` for manual use.
+For manual use: `import { runMigrations } from '#protokit/utils/runMigrations'` — `runMigrations(data, storedVersion, currentVersion, migrations)`.
