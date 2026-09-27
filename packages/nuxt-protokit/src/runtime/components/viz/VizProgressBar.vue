@@ -1,14 +1,20 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
-const props = defineProps({
-  value: { type: Number, required: true },
-  max: { type: Number, required: false, default: 100 },
-  label: { type: String, required: false },
-  thresholds: { type: Array, required: false },
+
+const props = withDefaults(defineProps<{
+  value: number
+  max?: number
+  label?: string
+  thresholds?: Array<{ value: number, color: string, label?: string }>
+}>(), {
+  max: 100,
 })
-const percentage = computed(() => Math.min(100, Math.max(0, props.value / props.max * 100)))
+
+const percentage = computed(() => Math.min(100, Math.max(0, (props.value / props.max) * 100)))
+
 const barColor = computed(() => {
   if (!props.thresholds || props.thresholds.length === 0) return 'bg-primary'
+  // Find the matching threshold (last one where value >= threshold value)
   const sorted = [...props.thresholds].sort((a, b) => a.value - b.value)
   let color = sorted[0]?.color || 'bg-primary'
   for (const t of sorted) {
@@ -16,6 +22,7 @@ const barColor = computed(() => {
   }
   return color
 })
+
 const thresholdLabel = computed(() => {
   if (!props.thresholds) return null
   const sorted = [...props.thresholds].sort((a, b) => a.value - b.value)

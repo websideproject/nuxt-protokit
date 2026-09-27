@@ -1,22 +1,39 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
+import type * as Y from 'yjs'
+import type { CollectionSchema, PresetPack } from '../types/schema'
 
-const props = defineProps({
-  schema: { type: Object, required: true },
-  items: { type: Array, required: true },
-  searchQuery: { type: String, required: false, default: '' },
-  doc: { type: null, required: false },
-  collectionItems: { type: Object, required: false },
+const props = withDefaults(defineProps<{
+  schema: CollectionSchema
+  items: any[]
+  searchQuery?: string
+  doc?: Y.Doc
+  collectionItems?: Record<string, any[]>
+}>(), {
+  searchQuery: '',
 })
-const emit = defineEmits(['add', 'update', 'remove', 'move'])
+
+const emit = defineEmits<{
+  add: [item: any]
+  update: [index: number, item: any]
+  remove: [index: number]
+  move: [from: number, to: number]
+}>()
+
 const isModalMode = computed(() => props.schema.editMode === 'modal')
+
+// Inline form state
 const showForm = ref(false)
-const editingIndex = ref(null)
-const editData = ref(null)
+const editingIndex = ref<number | null>(null)
+const editData = ref<Record<string, any> | null>(null)
+
+// Modal state
 const showModal = ref(false)
-const modalEditingIndex = ref(null)
-const modalEditData = ref(null)
+const modalEditingIndex = ref<number | null>(null)
+const modalEditData = ref<Record<string, any> | null>(null)
+
 const search = ref(props.searchQuery)
+
 const filteredItems = computed(() => {
   if (!search.value || !props.schema.searchable) return props.items
   const q = search.value.toLowerCase()
@@ -28,6 +45,7 @@ const filteredItems = computed(() => {
     })
   })
 })
+
 function startAdd() {
   if (isModalMode.value) {
     modalEditingIndex.value = null
@@ -40,7 +58,8 @@ function startAdd() {
     showForm.value = true
   }
 }
-function startEdit(index) {
+
+function startEdit(index: number) {
   if (isModalMode.value) {
     modalEditingIndex.value = index
     modalEditData.value = { ...props.items[index] }
@@ -52,7 +71,8 @@ function startEdit(index) {
     showForm.value = true
   }
 }
-function onSave(item) {
+
+function onSave(item: Record<string, any>) {
   if (editingIndex.value !== null) {
     emit('update', editingIndex.value, item)
   }
@@ -61,7 +81,8 @@ function onSave(item) {
   }
   closeForm()
 }
-function onModalSave(item) {
+
+function onModalSave(item: Record<string, any>) {
   if (modalEditingIndex.value !== null) {
     emit('update', modalEditingIndex.value, item)
   }
@@ -72,17 +93,22 @@ function onModalSave(item) {
   modalEditingIndex.value = null
   modalEditData.value = null
 }
+
 function closeForm() {
   showForm.value = false
   editingIndex.value = null
   editData.value = null
 }
-function removeItem(index) {
+
+function removeItem(index: number) {
   emit('remove', index)
 }
+
+// Preset packs
 const showPresetConfirm = ref(false)
-const pendingPreset = ref(null)
-function applyPreset(preset) {
+const pendingPreset = ref<PresetPack | null>(null)
+
+function applyPreset(preset: PresetPack) {
   if (props.items.length > 0) {
     pendingPreset.value = preset
     showPresetConfirm.value = true
@@ -91,6 +117,7 @@ function applyPreset(preset) {
     loadPreset(preset)
   }
 }
+
 function confirmLoadPreset() {
   if (pendingPreset.value) {
     loadPreset(pendingPreset.value)
@@ -98,7 +125,8 @@ function confirmLoadPreset() {
   showPresetConfirm.value = false
   pendingPreset.value = null
 }
-function loadPreset(preset) {
+
+function loadPreset(preset: PresetPack) {
   const existingIds = new Set(props.items.map(i => i.id || i.text || JSON.stringify(i)))
   for (const item of preset.items) {
     const itemId = item.id || item.text || JSON.stringify(item)
@@ -107,13 +135,16 @@ function loadPreset(preset) {
     }
   }
 }
+
 const hasPresets = computed(() => (props.schema.presets?.length ?? 0) > 0)
-const showOnboardingPresets = computed(
-  () => props.schema.onboardingPresets && props.items.length === 0 && hasPresets.value,
+const showOnboardingPresets = computed(() =>
+  props.schema.onboardingPresets && props.items.length === 0 && hasPresets.value,
 )
-const showCompactPresets = computed(
-  () => hasPresets.value && props.items.length > 0,
+const showCompactPresets = computed(() =>
+  hasPresets.value && props.items.length > 0,
 )
+
+// Draft key for modal
 const draftKey = computed(() => props.schema.key)
 </script>
 
@@ -159,7 +190,7 @@ const draftKey = computed(() => props.schema.key)
         :key="preset.id"
         size="xs"
         variant="subtle"
-        :color="preset.color || 'neutral'"
+        :color="(preset.color as any) || 'neutral'"
         :icon="preset.icon"
         @click="applyPreset(preset)"
       >
@@ -181,7 +212,7 @@ const draftKey = computed(() => props.schema.key)
       <template #header>
         <div class="flex items-center justify-between">
           <h4 class="font-medium">
-            {{ editingIndex !== null ? "Edit" : "Add" }}
+            {{ editingIndex !== null ? 'Edit' : 'Add' }}
           </h4>
           <UButton
             variant="ghost"
@@ -222,7 +253,7 @@ const draftKey = computed(() => props.schema.key)
     >
       <template #body>
         <p class="text-sm text-muted">
-          You already have {{ items.length }} item{{ items.length !== 1 ? "s" : "" }}.
+          You already have {{ items.length }} item{{ items.length !== 1 ? 's' : '' }}.
           Load <strong>{{ pendingPreset?.label }}</strong> and add {{ pendingPreset?.items.length }} more
           (duplicates skipped)?
         </p>
@@ -232,8 +263,7 @@ const draftKey = computed(() => props.schema.key)
           </UButton>
           <UButton
             variant="ghost"
-            @click="showPresetConfirm = false;
-                    pendingPreset = null"
+            @click="showPresetConfirm = false; pendingPreset = null"
           >
             Cancel
           </UButton>

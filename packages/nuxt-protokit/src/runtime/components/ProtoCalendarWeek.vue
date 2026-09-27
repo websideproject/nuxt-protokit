@@ -1,5 +1,6 @@
-<script setup>
+<script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import type { CalendarEvent } from '../types/calendar'
 import {
   addDays,
   buildISOAt,
@@ -11,111 +12,165 @@ import {
   toLocalISOString,
 } from '../utils/calendarLayout'
 
-const props = defineProps({
-  events: { type: Array, required: true },
-  currentDate: { type: Date, required: true },
-})
-const emit = defineEmits(['rangeSelect', 'eventClick', 'eventMove', 'eventUpdate', 'externalDrop'])
+const props = defineProps<{
+  events: CalendarEvent[]
+  currentDate: Date
+}>()
+
+const emit = defineEmits<{
+  rangeSelect: [startAt: string, endAt: string]
+  eventClick: [event: CalendarEvent]
+  eventMove: [id: string, newStartAt: string, newEndAt: string]
+  eventUpdate: [id: string, patch: Partial<CalendarEvent>]
+  externalDrop: [startAt: string, endAt: string, allDay: boolean, data: string]
+}>()
+
 const HOURS = Array.from({ length: 24 }, (_, i) => i)
-const GRID_HEIGHT = 1440
-const scrollRef = ref(null)
-const gridRef = ref(null)
+const GRID_HEIGHT = 1440 // 1px per minute
+const scrollRef = ref<HTMLElement | null>(null)
+const gridRef = ref<HTMLElement | null>(null)
+
 onMounted(() => {
   if (scrollRef.value) scrollRef.value.scrollTop = 480
 })
+
+// Week days Sun–Sat
 const weekDays = computed(() => {
   const start = new Date(props.currentDate)
   start.setDate(props.currentDate.getDate() - props.currentDate.getDay())
   start.setHours(0, 0, 0, 0)
   return Array.from({ length: 7 }, (_, i) => addDays(start, i))
 })
+
 const windowStart = computed(() => weekDays.value[0])
-const windowEnd = computed(() => {
-  const e = addDays(weekDays.value[6], 1)
-  e.setHours(0, 0, 0, 0)
-  return e
-})
-const allDayEvents = computed(
-  () => props.events.filter(e => e.allDay || e.startAt && e.endAt && e.startAt.split('T')[0] !== e.endAt.split('T')[0]),
+const windowEnd = computed(() => { const e = addDays(weekDays.value[6], 1); e.setHours(0, 0, 0, 0); return e })
+
+const allDayEvents = computed(() =>
+  props.events.filter(e => e.allDay || (e.startAt && e.endAt && e.startAt.split('T')[0] !== e.endAt.split('T')[0])),
 )
-const timedEvents = computed(
-  () => props.events.filter(e => !e.allDay && e.startAt && e.endAt && e.startAt.split('T')[0] === e.endAt.split('T')[0]),
+
+const timedEvents = computed(() =>
+  props.events.filter(e => !e.allDay && e.startAt && e.endAt && e.startAt.split('T')[0] === e.endAt.split('T')[0]),
 )
+
 const overlapLayout = computed(() => computeOverlapLayout(timedEvents.value, windowStart.value, windowEnd.value))
-function getTimedEventsForDay(day) {
+
+function getTimedEventsForDay(day: Date): CalendarEvent[] {
   const k = dateKey(day)
-  return timedEvents.value.filter(e => dateKey(/* @__PURE__ */ new Date(e.startAt.split('T')[0] + 'T12:00:00')) === k)
+  return timedEvents.value.filter(e => dateKey(new Date(e.startAt.split('T')[0] + 'T12:00:00')) === k)
 }
-function getAllDayEventsForDay(day) {
-  const dayStart = new Date(day)
-  dayStart.setHours(0, 0, 0, 0)
-  const dayEnd = new Date(day)
-  dayEnd.setHours(23, 59, 59, 999)
+
+function getAllDayEventsForDay(day: Date): CalendarEvent[] {
+  const dayStart = new Date(day); dayStart.setHours(0, 0, 0, 0)
+  const dayEnd = new Date(day); dayEnd.setHours(23, 59, 59, 999)
   return allDayEvents.value.filter((e) => {
-    const s = /* @__PURE__ */ new Date(e.startAt.split('T')[0] + 'T00:00:00')
-    const end = /* @__PURE__ */ new Date(e.endAt.split('T')[0] + 'T23:59:59')
+    const s = new Date(e.startAt.split('T')[0] + 'T00:00:00')
+    const end = new Date(e.endAt.split('T')[0] + 'T23:59:59')
     return s <= dayEnd && end >= dayStart
   })
 }
-function eventTopPct(ev) {
+
+function eventTopPct(ev: CalendarEvent): number {
   const [, t = '00:00:00'] = ev.startAt.split('T')
   const [h, m] = t.split(':').map(Number)
   return (h * 60 + m) / GRID_HEIGHT * 100
 }
-function eventHeightPct(ev) {
+
+function eventHeightPct(ev: CalendarEvent): number {
   const [, st = '00:00:00'] = ev.startAt.split('T')
   const [sh, sm] = st.split(':').map(Number)
   const [, et = '01:00:00'] = ev.endAt.split('T')
   const [eh, em] = et.split(':').map(Number)
-  return Math.max(30, eh * 60 + em - (sh * 60 + sm)) / GRID_HEIGHT * 100
+  return Math.max(30, (eh * 60 + em) - (sh * 60 + sm)) / GRID_HEIGHT * 100
 }
-function eventLeft(id) {
+
+function eventLeft(id: string) {
   const l = overlapLayout.value.get(id)
-  return l ? `${l.col / l.total * 100}%` : '0%'
+  return l ? `${(l.col / l.total) * 100}%` : '0%'
 }
-function eventWidth(id) {
+
+function eventWidth(id: string) {
   const l = overlapLayout.value.get(id)
-  return l ? `${1 / l.total * 100 - 1}%` : '99%'
+  return l ? `${(1 / l.total) * 100 - 1}%` : '99%'
 }
-function getGridMinute(clientY) {
-  const rect = gridRef.value.getBoundingClientRect()
+
+// ── Shared pointer coord helpers ──────────────────────────────────────────────
+// getBoundingClientRect() is already viewport-relative and accounts for scroll,
+// so relY = clientY - rect.top gives the correct position within the 1440px grid.
+// Do NOT add scrollTop — that would double-count it.
+
+function getGridMinute(clientY: number): number {
+  const rect = gridRef.value!.getBoundingClientRect()
   const relY = clientY - rect.top
   return Math.max(0, Math.min(23 * 60 + 59, Math.round(relY / 15) * 15))
 }
-function getGridDayIdx(clientX) {
-  const rect = gridRef.value.getBoundingClientRect()
+
+function getGridDayIdx(clientX: number): number {
+  const rect = gridRef.value!.getBoundingClientRect()
   const colWidth = (rect.width - 48) / 7
   return Math.max(0, Math.min(6, Math.floor((clientX - rect.left - 48) / colWidth)))
 }
-const eventDrag = ref(null)
-const ghostEventId = ref(null)
+
+// ── Event drag (pointer DnD) ──────────────────────────────────────────────────
+
+interface EventDrag {
+  eventId: string
+  origStartAt: string
+  origEndAt: string
+  startY: number
+  startX: number
+  snappedMinutes: number
+  snappedDays: number
+}
+
+const eventDrag = ref<EventDrag | null>(null)
+const ghostEventId = ref<string | null>(null)
 const ghostDeltaMin = ref(0)
 const ghostDeltaDays = ref(0)
+// Suppress the click that browsers fire after pointerup when a drag occurred
 const suppressNextClick = ref(false)
-const draggingAllDayId = ref(null)
+
+// ── All-day ↔ timed conversion ────────────────────────────────────────────────
+
+const draggingAllDayId = ref<string | null>(null)
+// True while a timed-event drag is above the time grid (in the all-day band area)
 const isAboveGrid = ref(false)
 const aboveGridDayIdx = ref(0)
-function onAllDayEventDragStart(e, ev) {
+
+function onAllDayEventDragStart(e: DragEvent, ev: CalendarEvent) {
   draggingAllDayId.value = ev.id
-  e.dataTransfer.effectAllowed = 'move'
-  e.dataTransfer.setData('application/x-allday-event', ev.id)
+  e.dataTransfer!.effectAllowed = 'move'
+  e.dataTransfer!.setData('application/x-allday-event', ev.id)
 }
+
 function onAllDayEventDragEnd() {
   draggingAllDayId.value = null
 }
-const allDayResize = ref(null)
-const allDayBandRef = ref(null)
-function isLastDayOfEvent(ev, day) {
-  const endDateStr = ev.endAt.split('T')[0]
-  return dateKey(day) === dateKey(/* @__PURE__ */ new Date(endDateStr + 'T12:00:00'))
+
+// ── All-day event resize (right-edge drag across days) ────────────────────────
+
+interface AllDayResize {
+  eventId: string
+  origEndDateStr: string
+  origStartDateStr: string
+  hoveredColIdx: number
 }
-function onAllDayResizePointerDown(e, ev) {
+
+const allDayResize = ref<AllDayResize | null>(null)
+const allDayBandRef = ref<HTMLElement | null>(null)
+
+function isLastDayOfEvent(ev: CalendarEvent, day: Date): boolean {
+  const endDateStr = ev.endAt.split('T')[0]
+  return dateKey(day) === dateKey(new Date(endDateStr + 'T12:00:00'))
+}
+
+function onAllDayResizePointerDown(e: PointerEvent, ev: CalendarEvent) {
   e.preventDefault()
   e.stopPropagation()
-  e.target.setPointerCapture(e.pointerId)
+  ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
   const origEndDateStr = ev.endAt.split('T')[0]
   const origStartDateStr = ev.startAt.split('T')[0]
-  const colIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(/* @__PURE__ */ new Date(origEndDateStr + 'T12:00:00')))
+  const colIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(origEndDateStr + 'T12:00:00')))
   allDayResize.value = {
     eventId: ev.id,
     origEndDateStr,
@@ -123,14 +178,17 @@ function onAllDayResizePointerDown(e, ev) {
     hoveredColIdx: colIdx === -1 ? 0 : colIdx,
   }
 }
-function onAllDayBandPointerMove(e) {
+
+function onAllDayBandPointerMove(e: PointerEvent) {
   if (!allDayResize.value || !allDayBandRef.value) return
   const rect = allDayBandRef.value.getBoundingClientRect()
   const colWidth = (rect.width - 48) / 7
   const col = Math.max(0, Math.min(6, Math.floor((e.clientX - rect.left - 48) / colWidth)))
-  const startColIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(/* @__PURE__ */ new Date(allDayResize.value.origStartDateStr + 'T12:00:00')))
+  // Don't allow resizing before start
+  const startColIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(allDayResize.value!.origStartDateStr + 'T12:00:00')))
   allDayResize.value.hoveredColIdx = Math.max(startColIdx === -1 ? 0 : startColIdx, col)
 }
+
 function onAllDayBandPointerUp() {
   if (!allDayResize.value) return
   const state = allDayResize.value
@@ -144,96 +202,140 @@ function onAllDayBandPointerUp() {
   }
   allDayResize.value = null
 }
+
 function onAllDayBandPointerCancel() {
   allDayResize.value = null
 }
+
 const allDayGhostEndColIdx = computed(() => allDayResize.value?.hoveredColIdx ?? -1)
+
 const allDayResizeStartColIdx = computed(() => {
   if (!allDayResize.value) return -1
-  return weekDays.value.findIndex(d => dateKey(d) === dateKey(/* @__PURE__ */ new Date(allDayResize.value.origStartDateStr + 'T12:00:00')))
+  return weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(allDayResize.value!.origStartDateStr + 'T12:00:00')))
 })
-function isAllDayResizeHighlighted(colIdx) {
+
+function isAllDayResizeHighlighted(colIdx: number): boolean {
   if (!allDayResize.value) return false
   return colIdx >= allDayResizeStartColIdx.value && colIdx <= allDayGhostEndColIdx.value
 }
-const eventResize = ref(null)
-const ghostResizeEventId = ref(null)
+
+// ── Event resize (bottom-handle drag) ─────────────────────────────────────────
+
+interface EventResize {
+  eventId: string
+  startMin: number
+  origEndMin: number
+  snappedEndMin: number
+}
+
+const eventResize = ref<EventResize | null>(null)
+const ghostResizeEventId = ref<string | null>(null)
 const ghostResizeEndMin = ref(0)
-function onEventPointerDown(e, ev) {
+
+function onEventPointerDown(e: PointerEvent, ev: CalendarEvent) {
   e.preventDefault()
-  e.stopPropagation()
-  e.target.setPointerCapture(e.pointerId)
+  e.stopPropagation() // prevent grid from starting range selection
+  ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
   eventDrag.value = { eventId: ev.id, origStartAt: ev.startAt, origEndAt: ev.endAt, startY: e.clientY, startX: e.clientX, snappedMinutes: 0, snappedDays: 0 }
   ghostEventId.value = ev.id
   ghostDeltaMin.value = 0
   ghostDeltaDays.value = 0
 }
-function onResizePointerDown(e, ev) {
+
+function onResizePointerDown(e: PointerEvent, ev: CalendarEvent) {
   e.preventDefault()
   e.stopPropagation()
-  e.target.setPointerCapture(e.pointerId)
+  ;(e.target as HTMLElement).setPointerCapture(e.pointerId)
+
   const [, st = '00:00:00'] = ev.startAt.split('T')
   const [sh, sm] = st.split(':').map(Number)
   const [, et = '01:00:00'] = ev.endAt.split('T')
   const [eh, em] = et.split(':').map(Number)
   const startMin = sh * 60 + sm
   const origEndMin = eh * 60 + em
+
   eventResize.value = { eventId: ev.id, startMin, origEndMin, snappedEndMin: origEndMin }
   ghostResizeEventId.value = ev.id
   ghostResizeEndMin.value = origEndMin
 }
+
 const ghostEvent = computed(() => ghostEventId.value ? props.events.find(e => e.id === ghostEventId.value) ?? null : null)
-function ghostTopPct() {
+
+function ghostTopPct(): number {
   if (!ghostEvent.value) return 0
   const [, t = '00:00:00'] = ghostEvent.value.startAt.split('T')
   const [h, m] = t.split(':').map(Number)
   return Math.max(0, Math.min(23 * 60 + 30, h * 60 + m + ghostDeltaMin.value)) / GRID_HEIGHT * 100
 }
-function ghostColIdx() {
+
+function ghostColIdx(): number {
   if (!ghostEvent.value) return 0
   const origDayStr = ghostEvent.value.startAt.split('T')[0]
-  const origIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(/* @__PURE__ */ new Date(origDayStr + 'T12:00:00')))
+  const origIdx = weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(origDayStr + 'T12:00:00')))
   return Math.max(0, Math.min(6, (origIdx === -1 ? 0 : origIdx) + ghostDeltaDays.value))
 }
-const ghostResizeEvent = computed(
-  () => ghostResizeEventId.value ? props.events.find(e => e.id === ghostResizeEventId.value) ?? null : null,
+
+const ghostResizeEvent = computed(() =>
+  ghostResizeEventId.value ? props.events.find(e => e.id === ghostResizeEventId.value) ?? null : null,
 )
-function ghostResizeTopPct() {
+
+function ghostResizeTopPct(): number {
   if (!ghostResizeEvent.value) return 0
   const [, t = '00:00:00'] = ghostResizeEvent.value.startAt.split('T')
   const [h, m] = t.split(':').map(Number)
   return (h * 60 + m) / GRID_HEIGHT * 100
 }
-function ghostResizeHeightPct() {
+
+function ghostResizeHeightPct(): number {
   if (!ghostResizeEvent.value) return 0
   const [, st = '00:00:00'] = ghostResizeEvent.value.startAt.split('T')
   const [sh, sm] = st.split(':').map(Number)
   return Math.max(15, ghostResizeEndMin.value - (sh * 60 + sm)) / GRID_HEIGHT * 100
 }
-function ghostResizeColIdx() {
+
+function ghostResizeColIdx(): number {
   if (!ghostResizeEvent.value) return 0
   const dayStr = ghostResizeEvent.value.startAt.split('T')[0]
-  const idx = weekDays.value.findIndex(d => dateKey(d) === dateKey(/* @__PURE__ */ new Date(dayStr + 'T12:00:00')))
+  const idx = weekDays.value.findIndex(d => dateKey(d) === dateKey(new Date(dayStr + 'T12:00:00')))
   return idx === -1 ? 0 : idx
 }
-const selection = ref(null)
+
+// ── Range selection (click-drag on empty space) ───────────────────────────────
+
+interface RangeSelection {
+  startMin: number
+  endMin: number
+  dayIdx: number
+}
+
+const selection = ref<RangeSelection | null>(null)
+
 const selectionLabel = computed(() => {
   if (!selection.value) return ''
   const { startMin, endMin } = selection.value
-  return `${minutesToTimeLabel(startMin)} \u2013 ${minutesToTimeLabel(endMin)}`
+  return `${minutesToTimeLabel(startMin)} – ${minutesToTimeLabel(endMin)}`
 })
-function onGridPointerDown(e) {
-  if (eventDrag.value) return
+
+function onGridPointerDown(e: PointerEvent) {
+  if (eventDrag.value) return // an event drag is starting (stopPropagation didn't fire yet?)
   const rect = gridRef.value?.getBoundingClientRect()
   if (!rect) return
+  // Ignore clicks in the time gutter (left 48px)
   if (e.clientX - rect.left < 48) return
+
   e.preventDefault()
-  e.currentTarget.setPointerCapture(e.pointerId)
+  ;(e.currentTarget as HTMLElement).setPointerCapture(e.pointerId)
+
   const dayIdx = getGridDayIdx(e.clientX)
   const startMin = getGridMinute(e.clientY)
+
   selection.value = { startMin, endMin: Math.min(24 * 60, startMin + 30), dayIdx }
 }
-function onGridPointerMove(e) {
+
+// ── Unified grid pointermove / pointerup ──────────────────────────────────────
+
+function onGridPointerMove(e: PointerEvent) {
+  // Event resize
   if (eventResize.value) {
     const raw = getGridMinute(e.clientY)
     const snapped = Math.min(23 * 60 + 45, Math.max(eventResize.value.startMin + 15, Math.round(raw / 15) * 15))
@@ -241,73 +343,84 @@ function onGridPointerMove(e) {
     ghostResizeEndMin.value = snapped
     return
   }
+
+  // Event drag
   if (eventDrag.value) {
     const state = eventDrag.value
     if (!gridRef.value) return
     const rect = gridRef.value.getBoundingClientRect()
+
+    // Detect if pointer moved above the time grid (into the all-day band)
     if (e.clientY < rect.top) {
       isAboveGrid.value = true
       aboveGridDayIdx.value = getGridDayIdx(e.clientX)
       return
     }
     isAboveGrid.value = false
+
     const colWidth = (rect.width - 48) / 7
     const rawDeltaY = e.clientY - state.startY
     const pxPerMin = rect.height / GRID_HEIGHT
     const snappedMin = Math.round(rawDeltaY / pxPerMin / 15) * 15
     const rawDeltaX = e.clientX - state.startX
     const snappedDays = Math.round(rawDeltaX / colWidth)
+
     state.snappedMinutes = snappedMin
     state.snappedDays = snappedDays
     ghostDeltaMin.value = snappedMin
     ghostDeltaDays.value = snappedDays
     return
   }
+
+  // Range selection
   if (selection.value) {
     const endMin = Math.max(selection.value.startMin + 15, Math.min(24 * 60, getGridMinute(e.clientY)))
     selection.value = { ...selection.value, endMin }
   }
 }
-function onGridPointerUp(e) {
+
+function onGridPointerUp(e: PointerEvent) {
+  // Event resize end
   if (eventResize.value) {
     const state = eventResize.value
-    const ev = props.events.find(ev2 => ev2.id === state.eventId)
+    const ev = props.events.find(ev => ev.id === state.eventId)
     const didResize = state.snappedEndMin !== state.origEndMin
     if (ev && didResize) {
-      const eventDate = /* @__PURE__ */ new Date(ev.startAt.split('T')[0] + 'T12:00:00')
+      const eventDate = new Date(ev.startAt.split('T')[0] + 'T12:00:00')
       emit('eventMove', ev.id, ev.startAt, buildISOAt(eventDate, state.snappedEndMin))
     }
     if (didResize) {
       suppressNextClick.value = true
-      setTimeout(() => {
-        suppressNextClick.value = false
-      }, 300)
+      setTimeout(() => { suppressNextClick.value = false }, 300)
     }
     eventResize.value = null
     ghostResizeEventId.value = null
     return
   }
+
+  // Event drag end
   if (eventDrag.value) {
     const state = eventDrag.value
-    const ev = props.events.find(ev2 => ev2.id === state.eventId)
+    const ev = props.events.find(ev => ev.id === state.eventId)
+
     if (isAboveGrid.value && ev) {
+      // Dropped in the all-day band → convert to all-day
       const day = weekDays.value[Math.max(0, Math.min(6, aboveGridDayIdx.value))]
       emit('eventUpdate', ev.id, { allDay: true, startAt: buildISOAt(day, 0), endAt: buildISOAt(day, 0) })
       suppressNextClick.value = true
-      setTimeout(() => {
-        suppressNextClick.value = false
-      }, 300)
+      setTimeout(() => { suppressNextClick.value = false }, 300)
       eventDrag.value = null
       ghostEventId.value = null
       isAboveGrid.value = false
       return
     }
     isAboveGrid.value = false
+
     const didMove = state.snappedMinutes !== 0 || state.snappedDays !== 0
     if (ev && didMove) {
       const origStart = new Date(ev.startAt)
       const dur = new Date(ev.endAt).getTime() - origStart.getTime()
-      const newStart = new Date(origStart.getTime() + state.snappedDays * 864e5)
+      const newStart = new Date(origStart.getTime() + state.snappedDays * 86400000)
       newStart.setMinutes(newStart.getMinutes() + state.snappedMinutes)
       const totalMin = newStart.getHours() * 60 + newStart.getMinutes()
       if (totalMin < 0) newStart.setHours(0, 0, 0, 0)
@@ -316,14 +429,14 @@ function onGridPointerUp(e) {
     }
     if (didMove) {
       suppressNextClick.value = true
-      setTimeout(() => {
-        suppressNextClick.value = false
-      }, 300)
+      setTimeout(() => { suppressNextClick.value = false }, 300)
     }
     eventDrag.value = null
     ghostEventId.value = null
     return
   }
+
+  // Range selection end
   if (selection.value) {
     const sel = selection.value
     const day = weekDays.value[sel.dayIdx]
@@ -333,6 +446,7 @@ function onGridPointerUp(e) {
     selection.value = null
   }
 }
+
 function onGridPointerCancel() {
   eventDrag.value = null
   ghostEventId.value = null
@@ -341,33 +455,44 @@ function onGridPointerCancel() {
   selection.value = null
   isAboveGrid.value = false
 }
-const dragoverDayIdx = ref(null)
-const dragoverMinute = ref(null)
-function onColumnDragOver(e, dayIdx) {
+
+// ── External drop (HTML5 DnD — tasks from panel) ──────────────────────────────
+
+const dragoverDayIdx = ref<number | null>(null)
+const dragoverMinute = ref<number | null>(null)
+
+function onColumnDragOver(e: DragEvent, dayIdx: number) {
   e.preventDefault()
-  e.dataTransfer.dropEffect = e.dataTransfer.types.includes('application/x-allday-event') ? 'move' : 'copy'
+  // all-day events use effectAllowed='move'; external tasks use 'copy'
+  e.dataTransfer!.dropEffect = e.dataTransfer!.types.includes('application/x-allday-event') ? 'move' : 'copy'
   dragoverDayIdx.value = dayIdx
   dragoverMinute.value = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
 }
+
 function onColumnDragLeave() {
   dragoverDayIdx.value = null
   dragoverMinute.value = null
 }
-function onColumnDrop(e, day) {
+
+function onColumnDrop(e: DragEvent, day: Date) {
   e.preventDefault()
   dragoverDayIdx.value = null
   dragoverMinute.value = null
+
+  // All-day event dropped into the time grid → convert to timed
   const allDayId = e.dataTransfer?.getData('application/x-allday-event')
   if (allDayId) {
-    const ev = props.events.find(ev2 => ev2.id === allDayId)
+    const ev = props.events.find(ev => ev.id === allDayId)
     if (ev) {
-      const startMin2 = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
-      const endMin2 = Math.min(23 * 60 + 59, startMin2 + 60)
-      emit('eventUpdate', ev.id, { allDay: false, startAt: buildISOAt(day, startMin2), endAt: buildISOAt(day, endMin2) })
+      const startMin = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
+      const endMin = Math.min(23 * 60 + 59, startMin + 60)
+      emit('eventUpdate', ev.id, { allDay: false, startAt: buildISOAt(day, startMin), endAt: buildISOAt(day, endMin) })
     }
     draggingAllDayId.value = null
     return
   }
+
+  // External task drop
   const data = e.dataTransfer?.getData('application/x-task') || e.dataTransfer?.getData('text/plain')
   if (!data) return
   const startMin = Math.max(0, Math.min(23 * 60, Math.round(e.offsetY / 15) * 15))
@@ -390,7 +515,7 @@ function onColumnDrop(e, day) {
         class="py-2 text-center border-r border-default last:border-r-0"
       >
         <p class="text-xs text-muted uppercase tracking-wide">
-          {{ ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"][day.getDay()] }}
+          {{ ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][day.getDay()] }}
         </p>
         <span
           class="inline-flex items-center justify-center w-7 h-7 rounded-full text-sm font-semibold mt-0.5"
@@ -482,7 +607,7 @@ function onColumnDrop(e, day) {
             class="absolute w-full text-right pr-2"
             :style="`top: ${h * 60 - 8}px`"
           >
-            <span class="text-xs text-muted/70 leading-none">{{ h === 0 ? "" : formatHour(h) }}</span>
+            <span class="text-xs text-muted/70 leading-none">{{ h === 0 ? '' : formatHour(h) }}</span>
           </div>
         </div>
 
@@ -548,7 +673,7 @@ function onColumnDrop(e, day) {
             class="absolute pointer-events-none z-10 left-1 right-1 rounded border border-primary/60"
             style="background: color-mix(in srgb, var(--color-primary-500) 15%, transparent)"
             :style="{
-              top: `${selection.startMin / GRID_HEIGHT * 100}%`,
+              top: `${(selection.startMin / GRID_HEIGHT) * 100}%`,
               height: `${Math.max(15, selection.endMin - selection.startMin) / GRID_HEIGHT * 100}%`,
             }"
           >
@@ -566,7 +691,7 @@ function onColumnDrop(e, day) {
             class="absolute pointer-events-none z-10 left-0 right-0 rounded-r border-l-2 border-primary"
             style="background: color-mix(in srgb, var(--color-primary-500) 12%, transparent)"
             :style="{
-              top: `${dragoverMinute / GRID_HEIGHT * 100}%`,
+              top: `${(dragoverMinute / GRID_HEIGHT) * 100}%`,
               height: `${60 / GRID_HEIGHT * 100}%`,
             }"
           />
@@ -579,8 +704,8 @@ function onColumnDrop(e, day) {
           :style="{
             top: `${ghostTopPct()}%`,
             height: `${eventHeightPct(ghostEvent)}%`,
-            left: `calc(48px + ${ghostColIdx() / 7 * 100}%)`,
-            width: `calc(${1 / 7 * 100}% - 2px)`,
+            left: `calc(48px + ${(ghostColIdx() / 7) * 100}%)`,
+            width: `calc(${(1 / 7) * 100}% - 2px)`,
           }"
         >
           <ProtoCalendarEvent
@@ -597,8 +722,8 @@ function onColumnDrop(e, day) {
           :style="{
             top: `${ghostResizeTopPct()}%`,
             height: `${ghostResizeHeightPct()}%`,
-            left: `calc(48px + ${ghostResizeColIdx() / 7 * 100}%)`,
-            width: `calc(${1 / 7 * 100}% - 2px)`,
+            left: `calc(48px + ${(ghostResizeColIdx() / 7) * 100}%)`,
+            width: `calc(${(1 / 7) * 100}% - 2px)`,
           }"
         >
           <ProtoCalendarEvent

@@ -1,13 +1,24 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  data: { type: Array, required: true },
-  donut: { type: Boolean, required: false, default: false },
-  unit: { type: String, required: false, default: '' },
-  emptyText: { type: String, required: false },
-  showLegend: { type: Boolean, required: false, default: true },
+interface Slice {
+  label: string
+  value: number
+  color?: string
+}
+
+const props = withDefaults(defineProps<{
+  data: Slice[]
+  donut?: boolean
+  unit?: string
+  emptyText?: string
+  showLegend?: boolean
+}>(), {
+  donut: false,
+  unit: '',
+  showLegend: true,
 })
+
 const PALETTE = [
   'var(--color-primary-500, #3b82f6)',
   'var(--color-violet-500, #8b5cf6)',
@@ -18,29 +29,36 @@ const PALETTE = [
   'var(--color-teal-500, #14b8a6)',
   'var(--color-orange-500, #f97316)',
 ]
+
 const CX = 100
 const CY = 100
 const R = 80
 const INNER_R = props.donut ? 50 : 0
+
 const total = computed(() => props.data.reduce((s, d) => s + d.value, 0))
+
 const slices = computed(() => {
   if (total.value === 0) return []
-  let angle = -Math.PI / 2
+  let angle = -Math.PI / 2 // start at top
   return props.data.map((d, i) => {
-    const sweep = d.value / total.value * 2 * Math.PI
+    const sweep = (d.value / total.value) * 2 * Math.PI
     const startAngle = angle
     angle += sweep
     const endAngle = angle
+
     const cos1 = Math.cos(startAngle)
     const sin1 = Math.sin(startAngle)
     const cos2 = Math.cos(endAngle)
     const sin2 = Math.sin(endAngle)
+
     const x1 = CX + R * cos1
     const y1 = CY + R * sin1
     const x2 = CX + R * cos2
     const y2 = CY + R * sin2
+
     const largeArc = sweep > Math.PI ? 1 : 0
-    let pathD
+
+    let pathD: string
     if (INNER_R > 0) {
       const ix1 = CX + INNER_R * cos1
       const iy1 = CY + INNER_R * sin1
@@ -51,13 +69,14 @@ const slices = computed(() => {
     else {
       pathD = `M${CX} ${CY} L${x1.toFixed(2)} ${y1.toFixed(2)} A${R} ${R} 0 ${largeArc} 1 ${x2.toFixed(2)} ${y2.toFixed(2)} Z`
     }
+
     const midAngle = startAngle + sweep / 2
     return {
       d: pathD,
       color: d.color || PALETTE[i % PALETTE.length],
       label: d.label,
       value: d.value,
-      pct: Math.round(d.value / total.value * 100),
+      pct: Math.round((d.value / total.value) * 100),
       midAngle,
     }
   })
@@ -70,7 +89,7 @@ const slices = computed(() => {
       v-if="total === 0"
       class="flex items-center justify-center text-xs text-muted italic h-24"
     >
-      {{ emptyText || "No data" }}
+      {{ emptyText || 'No data' }}
     </div>
     <template v-else>
       <svg

@@ -1,17 +1,35 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  cards: { type: Array, required: true },
-  cols: { type: Number, required: false, default: 3 },
+export interface StatCard {
+  label: string
+  value: string | number
+  subLabel?: string
+  /** Positive = up, negative = down, 0 = neutral */
+  trend?: number
+  trendLabel?: string
+  unit?: string
+  icon?: string
+  color?: 'primary' | 'emerald' | 'rose' | 'amber' | 'violet' | 'sky' | 'neutral'
+  /** Small sparkline data */
+  sparkline?: number[]
+}
+
+const props = withDefaults(defineProps<{
+  cards: StatCard[]
+  cols?: 1 | 2 | 3 | 4
+}>(), {
+  cols: 3,
 })
+
 const gridClass = computed(() => ({
   1: 'grid-cols-1',
   2: 'grid-cols-1 sm:grid-cols-2',
   3: 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3',
   4: 'grid-cols-2 lg:grid-cols-4',
-})[props.cols])
-const colorMap = {
+}[props.cols]))
+
+const colorMap: Record<string, { bg: string, text: string, icon: string }> = {
   primary: { bg: 'bg-primary/10', text: 'text-primary', icon: 'text-primary' },
   emerald: { bg: 'bg-emerald-500/10', text: 'text-emerald-600 dark:text-emerald-400', icon: 'text-emerald-500' },
   rose: { bg: 'bg-rose-500/10', text: 'text-rose-600 dark:text-rose-400', icon: 'text-rose-500' },
@@ -20,20 +38,25 @@ const colorMap = {
   sky: { bg: 'bg-sky-500/10', text: 'text-sky-600 dark:text-sky-400', icon: 'text-sky-500' },
   neutral: { bg: 'bg-muted', text: 'text-default', icon: 'text-muted' },
 }
-function getColor(card) {
+
+function getColor(card: StatCard) {
   return colorMap[card.color ?? 'neutral'] ?? colorMap.neutral
 }
-function trendIcon(trend) {
+
+function trendIcon(trend: number) {
   if (trend > 0) return 'i-lucide-trending-up'
   if (trend < 0) return 'i-lucide-trending-down'
   return 'i-lucide-minus'
 }
-function trendClass(trend) {
+
+function trendClass(trend: number) {
   if (trend > 0) return 'text-emerald-600 dark:text-emerald-400'
   if (trend < 0) return 'text-rose-600 dark:text-rose-400'
   return 'text-muted'
 }
-function buildSparkline(data) {
+
+// Tiny SVG sparkline
+function buildSparkline(data: number[]): string {
   if (data.length < 2) return ''
   const max = Math.max(...data)
   const min = Math.min(...data)
@@ -41,8 +64,8 @@ function buildSparkline(data) {
   const W = 80
   const H = 24
   const pts = data.map((v, i) => ({
-    x: i / (data.length - 1) * W,
-    y: H - (v - min) / range * (H - 4) - 2,
+    x: (i / (data.length - 1)) * W,
+    y: H - ((v - min) / range) * (H - 4) - 2,
   }))
   return pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
 }
@@ -113,7 +136,7 @@ function buildSparkline(data) {
 
       <!-- Trend row -->
       <div
-        v-if="card.trend !== void 0"
+        v-if="card.trend !== undefined"
         class="flex items-center gap-1"
       >
         <UIcon
@@ -125,7 +148,7 @@ function buildSparkline(data) {
           class="text-xs font-medium"
           :class="trendClass(card.trend)"
         >
-          {{ card.trend > 0 ? "+" : "" }}{{ card.trend }}%
+          {{ card.trend > 0 ? '+' : '' }}{{ card.trend }}%
         </span>
         <span
           v-if="card.trendLabel"

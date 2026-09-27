@@ -1,15 +1,18 @@
-<script setup>
-defineProps({
-  modelValue: { type: Number, required: true },
-  max: { type: Number, required: false },
-})
-const emit = defineEmits(['update:modelValue'])
+<script setup lang="ts">
+defineProps<{
+  modelValue: number
+  max?: number
+}>()
+
+const emit = defineEmits<{
+  'update:modelValue': [value: number]
+}>()
 </script>
 
 <template>
   <div class="flex gap-1">
     <button
-      v-for="star in max || 5"
+      v-for="star in (max || 5)"
       :key="star"
       type="button"
       class="transition-colors"
