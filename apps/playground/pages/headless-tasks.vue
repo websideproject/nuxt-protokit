@@ -122,13 +122,11 @@ const stats = computed(() => ({
           />
           <USelect
             v-model="newPriority"
-            :options="[
+            :items="[
               { value: 'low', label: 'Low' },
               { value: 'medium', label: 'Medium' },
               { value: 'high', label: 'High' },
             ]"
-            value-key="value"
-            label-key="label"
             class="w-32"
           />
           <UButton

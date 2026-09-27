@@ -1,7 +1,9 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import type { CalendarEvent, CalendarColor } from '../../types/calendar'
+import { CALENDAR_COLOR_HEX } from '../../types/calendar'
 import type { CollectionCalendarConfig } from '../../types/brick'
+import { formatMonthTitle, formatWeekTitle } from '../../utils/calendarLayout'
 
 const props = defineProps<{
   items: any[]
@@ -235,11 +237,15 @@ const undatedItems = computed(() =>
           </p>
           <UBadge
             v-if="item.status"
-            :color="config.statusColorMap?.[item.status] ?? 'neutral'"
+            color="neutral"
             variant="soft"
             size="sm"
             class="mt-1"
           >
+            <span
+              class="size-1.5 rounded-full"
+              :style="{ backgroundColor: CALENDAR_COLOR_HEX[config.statusColorMap?.[item.status] ?? 'neutral'] }"
+            />
             {{ item.status }}
           </UBadge>
         </button>

@@ -241,8 +241,8 @@ console.log()
 console.log('  Bob syncs (stale — missed Alice\'s 5 description rewrites):')
 const bobToServer = syncDocs(bob, server)
 const serverToBob = syncDocs(server, bob)
-console.log(`    Bob → Server: ${fmt(bobToServer)} diff (Bob\'s comments + status changes)`)
-console.log(`    Server → Bob: ${fmt(serverToBob)} diff (Alice\'s description rewrites)`)
+console.log(`    Bob → Server: ${fmt(bobToServer)} diff (Bob's comments + status changes)`)
+console.log(`    Server → Bob: ${fmt(serverToBob)} diff (Alice's description rewrites)`)
 printStatus('  Server (after Bob sync)', server)
 
 // Final convergence
@@ -366,11 +366,6 @@ console.log(`    Server → Bob: ${fmt(compactedToBob)} (Alice's 50 title edits 
 bidirectionalSync(compactedServer, alice)
 bidirectionalSync(compactedServer, bob)
 bidirectionalSync(compactedServer, carol)
-
-const finalServer = server.getMap('task').get('status')
-const finalAlice = alice.getMap('task').get('status')
-const finalBob = bob.getMap('task').get('status')
-const finalCarol = carol.getMap('task').get('status')
 
 // Compare full task state
 const srvJson = JSON.stringify(Object.fromEntries([...compactedServer.getMap('task').entries()].filter(([k]) => !['comments', 'subtasks'].includes(k))))
