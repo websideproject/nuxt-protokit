@@ -25,11 +25,13 @@ const barColor = computed(() => {
 
 const thresholdLabel = computed(() => {
   if (!props.thresholds) return null
+  // The same threshold as the colour: the last one the value has reached
   const sorted = [...props.thresholds].sort((a, b) => a.value - b.value)
+  let label: string | null = null
   for (const t of sorted) {
-    if (props.value >= t.value && t.label) return t.label
+    if (props.value >= t.value && t.label) label = t.label
   }
-  return null
+  return label
 })
 </script>
 

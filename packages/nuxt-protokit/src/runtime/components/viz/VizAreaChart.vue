@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 
 interface Series {
   label: string
@@ -17,7 +17,8 @@ const props = withDefaults(defineProps<{
   unit: '',
 })
 
-const uid = Math.random().toString(36).slice(2, 7)
+// Stable across server and client render: SVG gradient ids must match for hydration
+const uid = useId()
 
 const PALETTE = [
   'var(--color-primary-500, #3b82f6)',
@@ -29,8 +30,28 @@ const PALETTE = [
 
 const VW = 400
 const VH = computed(() => props.showAxes ? 130 : 80)
+// Global max (or stacked max): the top of the y axis
+const maxValue = computed(() => {
+  const n = props.series[0]?.data.length ?? 0
+  let max = 0
+  if (props.stacked) {
+    for (let i = 0; i < n; i++) {
+      const stackSum = props.series.reduce((s, ser) => s + (ser.data[i]?.value ?? 0), 0)
+      max = Math.max(max, stackSum)
+    }
+  }
+  else {
+    for (const ser of props.series) {
+      for (const d of ser.data) max = Math.max(max, d.value)
+    }
+  }
+  return max
+})
+
+// The y-axis labels are right-aligned in the left padding: make it as wide as the longest one (~5.5 units per
+// character at font-size 9), so a label like "22,935$" is not cut off.
 const PAD = computed(() => props.showAxes
-  ? { top: 12, right: 10, bottom: 28, left: 38 }
+  ? { top: 12, right: 10, bottom: 28, left: Math.max(38, 8 + `${maxValue.value.toLocaleString()}${props.unit}`.length * 5.5) }
   : { top: 8, right: 8, bottom: 8, left: 8 },
 )
 
@@ -50,19 +71,7 @@ const chart = computed(() => {
   const iH = VH.value - top - bottom
   const baseY = top + iH
 
-  // Find global max (or stacked max)
-  let maxVal = 0
-  if (props.stacked) {
-    for (let i = 0; i < n; i++) {
-      const stackSum = props.series.reduce((s, ser) => s + (ser.data[i]?.value ?? 0), 0)
-      maxVal = Math.max(maxVal, stackSum)
-    }
-  }
-  else {
-    for (const ser of props.series) {
-      for (const d of ser.data) maxVal = Math.max(maxVal, d.value)
-    }
-  }
+  const maxVal = maxValue.value
   if (maxVal === 0) return null
 
   const seriesPaths = props.series.map((ser, si) => {

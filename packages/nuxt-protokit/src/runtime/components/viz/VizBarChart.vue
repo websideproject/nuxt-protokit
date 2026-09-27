@@ -13,6 +13,8 @@ const max = computed(() => {
   if (props.maxValue) return props.maxValue
   return Math.max(...props.data.map(d => d.value), 1)
 })
+// At most two decimals: computed values (ratios, averages) otherwise print every digit, e.g. 9.14285714285714
+const fmt = (n: number) => Math.round(n * 100) / 100
 </script>
 
 <template>
@@ -24,7 +26,7 @@ const max = computed(() => {
     >
       <div class="flex justify-between text-sm">
         <span class="text-muted truncate mr-2">{{ item.label }}</span>
-        <span class="font-medium text-highlighted shrink-0">{{ item.value }}{{ unit }}</span>
+        <span class="font-medium text-highlighted shrink-0">{{ fmt(item.value) }}{{ unit }}</span>
       </div>
       <div class="h-2.5 bg-muted rounded-full overflow-hidden">
         <div

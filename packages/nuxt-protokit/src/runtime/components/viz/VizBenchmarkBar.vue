@@ -21,6 +21,8 @@ const valueColor = computed(() => {
   if (props.value >= props.median) return 'bg-emerald-500'
   return 'bg-amber-500'
 })
+// At most two decimals: computed values (ratios, averages) otherwise print every digit, e.g. 9.14285714285714
+const fmt = (n: number) => Math.round(n * 100) / 100
 </script>
 
 <template>
@@ -30,7 +32,7 @@ const valueColor = computed(() => {
       class="flex justify-between text-sm"
     >
       <span class="text-muted">{{ label }}</span>
-      <span class="font-medium text-highlighted">{{ value }}{{ unit || '' }}</span>
+      <span class="font-medium text-highlighted">{{ fmt(value) }}{{ unit || '' }}</span>
     </div>
     <div class="relative h-4 bg-muted rounded-full overflow-hidden">
       <!-- Value bar -->
@@ -46,9 +48,9 @@ const valueColor = computed(() => {
       />
     </div>
     <div class="flex justify-between text-xs text-muted">
-      <span>{{ min }}{{ unit || '' }}</span>
-      <span>Median: {{ median }}{{ unit || '' }}</span>
-      <span>{{ max }}{{ unit || '' }}</span>
+      <span>{{ fmt(min) }}{{ unit || '' }}</span>
+      <span>Median: {{ fmt(median) }}{{ unit || '' }}</span>
+      <span>{{ fmt(max) }}{{ unit || '' }}</span>
     </div>
   </div>
 </template>

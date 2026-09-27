@@ -3,16 +3,19 @@ import { computed, ref } from 'vue'
 
 // ── Sample data ───────────────────────────────────────────────────────────────
 
+// Fixed noise instead of Math.random(): the page is server-rendered, and the client must draw the same numbers
+const noise = (i: number, salt: number) => ((Math.sin(i * 12.9898 + salt * 78.233) * 43758.5453) % 1 + 1) % 1
+
 const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
 
 const revenueData = months.map((label, i) => ({
   label,
-  value: 12000 + Math.round(Math.sin(i * 0.6) * 4000 + i * 800 + Math.random() * 1500),
+  value: 12000 + Math.round(Math.sin(i * 0.6) * 4000 + i * 800 + noise(i, 1) * 1500),
 }))
 
 const usersData = months.map((label, i) => ({
   label,
-  value: 800 + Math.round(i * 120 + Math.sin(i * 0.8) * 200 + Math.random() * 100),
+  value: 800 + Math.round(i * 120 + Math.sin(i * 0.8) * 200 + noise(i, 2) * 100),
 }))
 
 const revenueAreaSeries = [

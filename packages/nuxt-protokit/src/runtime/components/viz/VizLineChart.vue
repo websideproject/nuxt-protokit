@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, useId } from 'vue'
 
 const props = withDefaults(defineProps<{
   data: Array<{ label: string, value: number }>
@@ -11,13 +11,20 @@ const props = withDefaults(defineProps<{
   unit: '',
 })
 
-const uid = Math.random().toString(36).slice(2, 7)
+// Stable across server and client render: SVG gradient ids must match for hydration
+const uid = useId()
 const gradientId = `vlc-${uid}`
 
 const VW = 400
 const VH = computed(() => props.showAxes ? 120 : 56)
+// The y-axis labels are right-aligned in the left padding: make it as wide as the longest one (~5.5 units per
+// character at font-size 9), so a label like "22,935$" is not cut off.
+const axisLabelWidth = computed(() => {
+  const max = Math.max(0, ...props.data.map(d => d.value))
+  return 8 + `${max.toLocaleString()}${props.unit ?? ''}`.length * 5.5
+})
 const PAD = computed(() => props.showAxes
-  ? { top: 12, right: 10, bottom: 26, left: 36 }
+  ? { top: 12, right: 10, bottom: 26, left: Math.max(36, axisLabelWidth.value) }
   : { top: 6, right: 6, bottom: 6, left: 6 },
 )
 
