@@ -1,21 +1,21 @@
-<script setup lang="ts">
-defineProps<{
-  modelValue: any
-  options?: Array<string | { label: string, value: any, icon?: string }>
-  placeholder?: string
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: any]
-}>()
+<script setup>
+defineProps({
+  modelValue: { type: null, required: true },
+  options: { type: Array, required: false },
+  placeholder: { type: String, required: false },
+  multiple: { type: Boolean, required: false },
+})
+const emit = defineEmits(['update:modelValue'])
 </script>
 
 <template>
-  <USelect
+  <USelectMenu
     :model-value="modelValue"
     class="w-full"
     :items="options"
     :placeholder="placeholder"
+    :multiple="multiple"
+    value-key="value"
     @update:model-value="emit('update:modelValue', $event)"
   />
 </template>

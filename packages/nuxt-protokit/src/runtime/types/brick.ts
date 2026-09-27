@@ -44,13 +44,13 @@ export interface CardDef {
 
 // --- Visualization Definitions ---
 
-export type VizType = 'progress' | 'benchmark' | 'bar-chart' | 'comparison-table' | 'feature-matrix' | 'timeline'
+export type VizType = 'progress' | 'benchmark' | 'bar-chart' | 'line-chart' | 'area-chart' | 'pie-chart' | 'donut-chart' | 'funnel-chart' | 'stat-cards' | 'comparison-table' | 'feature-matrix' | 'timeline'
 
 export interface BuiltInVizDef {
   type: VizType
   title?: string
   showWhen?: (ctx: import('./compute').ComputeContext) => boolean
-  config: VizProgressConfig | VizBenchmarkConfig | VizBarChartConfig | VizComparisonTableConfig | VizFeatureMatrixConfig | VizTimelineConfig
+  config: VizProgressConfig | VizBenchmarkConfig | VizBarChartConfig | VizLineChartConfig | VizAreaChartConfig | VizPieChartConfig | VizFunnelChartConfig | VizStatCardsConfig | VizComparisonTableConfig | VizFeatureMatrixConfig | VizTimelineConfig
 }
 
 export interface CustomVizDef {
@@ -87,6 +87,15 @@ export interface VizBarChartConfig {
   unit?: string
 }
 
+export interface VizLineChartConfig {
+  type: 'line-chart'
+  data: (ctx: import('./compute').ComputeContext) => Array<{ label: string, value: number }>
+  color?: string
+  showAxes?: boolean
+  unit?: string
+  emptyText?: string
+}
+
 export interface VizComparisonTableConfig {
   type: 'comparison-table'
   columns: Array<{ key: string, label: string }>
@@ -111,6 +120,72 @@ export interface VizTimelineConfig {
     status?: 'done' | 'current' | 'upcoming'
     icon?: string
   }>
+}
+
+export interface VizAreaChartConfig {
+  type: 'area-chart'
+  series: (ctx: import('./compute').ComputeContext) => Array<{
+    label: string
+    data: Array<{ label: string, value: number }>
+    color?: string
+  }>
+  showAxes?: boolean
+  unit?: string
+  emptyText?: string
+}
+
+export interface VizPieChartConfig {
+  type: 'pie-chart' | 'donut-chart'
+  data: (ctx: import('./compute').ComputeContext) => Array<{ label: string, value: number, color?: string }>
+  unit?: string
+  showLegend?: boolean
+  emptyText?: string
+}
+
+export interface VizFunnelChartConfig {
+  type: 'funnel-chart'
+  data: (ctx: import('./compute').ComputeContext) => Array<{ label: string, value: number, color?: string }>
+  unit?: string
+  showConversion?: boolean
+}
+
+export interface VizStatCardsConfig {
+  type: 'stat-cards'
+  cards: (ctx: import('./compute').ComputeContext) => Array<{
+    label: string
+    value: string | number
+    subLabel?: string
+    trend?: number
+    trendLabel?: string
+    unit?: string
+    icon?: string
+    color?: 'primary' | 'emerald' | 'rose' | 'amber' | 'violet' | 'sky' | 'neutral'
+    sparkline?: number[]
+  }>
+  cols?: 1 | 2 | 3 | 4
+}
+
+// --- Collection Calendar Config ---
+
+export interface CollectionCalendarConfig {
+  /** Field holding the primary date value (e.g. 'plannedDate'). */
+  dateField: string
+  /** Field to use as the event title (e.g. 'title'). */
+  titleField: string
+  /** Custom id field; defaults to '_id'. */
+  idField?: string
+  /** Optional separate end-date field. */
+  endDateField?: string
+  /** Optional time field for timed events (HH:mm, e.g. 'plannedTime'). */
+  timeField?: string
+  /** Optional end-time field (HH:mm, e.g. 'plannedEndTime'). */
+  endTimeField?: string
+  /** Boolean field indicating all-day; when absent, events default to all-day. */
+  allDayField?: string
+  /** Map item status values to CalendarColor names. */
+  statusColorMap?: Record<string, import('../types/calendar').CalendarColor>
+  /** Fallback color when no status matches. Defaults to 'neutral'. */
+  defaultColor?: import('../types/calendar').CalendarColor
 }
 
 // --- Dashboard Layout ---
@@ -147,5 +222,6 @@ export type LayoutItem
     | { type: 'viz', vizIndex: number, span?: number }
     | { type: 'card', cardIndex: number, span?: number }
     | { type: 'collection', collectionKey: string, view: 'list' | 'table', span?: number }
+    | { type: 'collection', collectionKey: string, view: 'calendar', calendarConfig: CollectionCalendarConfig, span?: number }
     | { type: 'section', title: string, items: LayoutItem[], span?: number }
     | { type: 'tabs', tabs: InlineTabDef[], span?: number }

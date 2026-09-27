@@ -1,4 +1,7 @@
 <script setup lang="ts">
+import { ref } from 'vue'
+import { useProtoDebugInfo } from '../composables/useProtoDebugInfo'
+import { useProtoKitConfig } from '../composables/useProtoKitConfig'
 const { activeDocs: docs, getDocJson, refresh } = useProtoDebugInfo()
 const { serverSync } = useProtoKitConfig()
 

@@ -1,20 +1,16 @@
-<script setup lang="ts">
-const props = withDefaults(defineProps<{
-  value: number
-  median: number
-  min?: number
-  max?: number
-  label?: string
-  unit?: string
-}>(), {
-  min: 0,
-  max: 100,
+<script setup>
+import { computed } from 'vue'
+const props = defineProps({
+  value: { type: Number, required: true },
+  median: { type: Number, required: true },
+  min: { type: Number, required: false, default: 0 },
+  max: { type: Number, required: false, default: 100 },
+  label: { type: String, required: false },
+  unit: { type: String, required: false },
 })
-
 const range = computed(() => props.max - props.min)
-const valuePos = computed(() => Math.min(100, Math.max(0, ((props.value - props.min) / range.value) * 100)))
-const medianPos = computed(() => Math.min(100, Math.max(0, ((props.median - props.min) / range.value) * 100)))
-
+const valuePos = computed(() => Math.min(100, Math.max(0, (props.value - props.min) / range.value * 100)))
+const medianPos = computed(() => Math.min(100, Math.max(0, (props.median - props.min) / range.value * 100)))
 const valueColor = computed(() => {
   if (props.value >= props.median) return 'bg-emerald-500'
   return 'bg-amber-500'
@@ -28,7 +24,7 @@ const valueColor = computed(() => {
       class="flex justify-between text-sm"
     >
       <span class="text-muted">{{ label }}</span>
-      <span class="font-medium text-highlighted">{{ value }}{{ unit || '' }}</span>
+      <span class="font-medium text-highlighted">{{ value }}{{ unit || "" }}</span>
     </div>
     <div class="relative h-4 bg-muted rounded-full overflow-hidden">
       <!-- Value bar -->
@@ -44,9 +40,9 @@ const valueColor = computed(() => {
       />
     </div>
     <div class="flex justify-between text-xs text-muted">
-      <span>{{ min }}{{ unit || '' }}</span>
-      <span>Median: {{ median }}{{ unit || '' }}</span>
-      <span>{{ max }}{{ unit || '' }}</span>
+      <span>{{ min }}{{ unit || "" }}</span>
+      <span>Median: {{ median }}{{ unit || "" }}</span>
+      <span>{{ max }}{{ unit || "" }}</span>
     </div>
   </div>
 </template>

@@ -2,11 +2,16 @@ import { ref, onUnmounted, type Ref } from 'vue'
 import * as Y from 'yjs'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { useProtoCorruption } from './useProtoCorruption'
+import { EncryptedIdbPersistence, type EncryptionConfig } from './useEncryptedIdb'
+import { useProtoKitConfig } from './useProtoKitConfig'
+
+export type { EncryptionConfig }
 
 // Document cache to prevent duplicates across components
 export const documentCache = new Map<string, Y.Doc>()
 export const providerCache = new Map<string, {
   indexeddb?: IndexeddbPersistence
+  encryptedIdb?: EncryptedIdbPersistence
   broadcast?: BroadcastChannel
   // Stored so we can remove it on destroy or successful sync
   idbErrorHandler?: (e: PromiseRejectionEvent) => void
@@ -122,6 +127,129 @@ async function pullFromServer(fullKey: string, doc: Y.Doc, base: string): Promis
   }
 }
 
+// ─── Namespace cleanup ────────────────────────────────────────────────────────
+
+/**
+ * Delete all Y.js documents and IndexedDB stores associated with a namespace.
+ * Call this on logout (or tenant switch) when you want to ensure the next user
+ * cannot access data left behind by a previous user on the same device.
+ *
+ * What it does:
+ * - Tears down all in-memory docs, BroadcastChannels, and debounce timers
+ *   whose key starts with `proto:<namespace>:`
+ * - Deletes matching IndexedDB databases, including stores created in previous
+ *   sessions that are no longer held in memory
+ *
+ * Browser support note: discovering databases by prefix uses
+ * `indexedDB.databases()`, which is available in Chromium and Safari but not
+ * in Firefox. On Firefox, only the currently open (in-memory) stores are
+ * cleaned up; stores from previous page loads remain on disk.
+ * If full cleanup across all browsers matters, track your schema keys
+ * explicitly and call `clearProtoKeys(namespace, schemaKeys)` instead.
+ *
+ * @example
+ * // In your logout handler:
+ * async function logout() {
+ *   await clearProtoNamespace(`${tenantId}:${userId}`)
+ *   await navigateTo('/login')
+ * }
+ */
+export async function clearProtoNamespace(namespace: string): Promise<void> {
+  const prefix = `proto:${namespace}:`
+  const encPrefix = `proto:enc:${namespace}:`
+
+  // Tear down all in-memory docs whose key matches either prefix
+  const keysToRemove = [...documentCache.keys()].filter(
+    k => k.startsWith(prefix) || k.startsWith(encPrefix),
+  )
+  for (const fullKey of keysToRemove) {
+    const providers = providerCache.get(fullKey)
+    if (providers) {
+      if (providers.serverPushTimer) clearTimeout(providers.serverPushTimer)
+      if (providers.idbErrorHandler && typeof window !== 'undefined') {
+        window.removeEventListener('unhandledrejection', providers.idbErrorHandler)
+      }
+      try { providers.broadcast?.close() }
+      catch {}
+      try { await providers.indexeddb?.destroy() }
+      catch {}
+      try { await providers.encryptedIdb?.destroy() }
+      catch {}
+    }
+    try { documentCache.get(fullKey)?.destroy() }
+    catch {}
+    documentCache.delete(fullKey)
+    providerCache.delete(fullKey)
+    refCountCache.delete(fullKey)
+    isReadyRefCache.delete(fullKey)
+  }
+
+  // Also delete IDB databases from previous sessions (not in current cache).
+  // indexedDB.databases() is Chromium + Safari only; not available in Firefox.
+  if (typeof indexedDB !== 'undefined' && typeof (indexedDB as any).databases === 'function') {
+    try {
+      const dbs: Array<{ name?: string }> = await (indexedDB as any).databases()
+      await Promise.all(
+        dbs
+          .filter(db => db.name?.startsWith(prefix) || db.name?.startsWith(encPrefix))
+          .map(db => new Promise<void>((resolve) => {
+            const req = indexedDB.deleteDatabase(db.name!)
+            req.onsuccess = () => resolve()
+            req.onerror = () => resolve()
+            req.onblocked = () => setTimeout(resolve, 1_000)
+          })),
+      )
+    }
+    catch {
+      // Silently ignore: browser may restrict IDB enumeration in some contexts
+    }
+  }
+}
+
+/**
+ * Delete Y.js documents and IndexedDB stores for a specific set of schema keys
+ * within a namespace. Use this when `indexedDB.databases()` is unavailable
+ * (e.g. Firefox) and you need guaranteed cross-browser cleanup.
+ *
+ * @example
+ * import { mySchema, otherSchema } from '~/schemas'
+ *
+ * await clearProtoKeys(`${tenantId}:${userId}`, [mySchema.key, otherSchema.key])
+ */
+export async function clearProtoKeys(namespace: string, schemaKeys: string[]): Promise<void> {
+  for (const key of schemaKeys) {
+    // Handle both unencrypted and encrypted variants of each key
+    for (const fullKey of [`proto:${namespace}:${key}`, `proto:enc:${namespace}:${key}`]) {
+      const providers = providerCache.get(fullKey)
+      if (providers) {
+        if (providers.serverPushTimer) clearTimeout(providers.serverPushTimer)
+        if (providers.idbErrorHandler && typeof window !== 'undefined') {
+          window.removeEventListener('unhandledrejection', providers.idbErrorHandler)
+        }
+        try { providers.broadcast?.close() }
+        catch {}
+        try { await providers.indexeddb?.destroy() }
+        catch {}
+        try { await providers.encryptedIdb?.destroy() }
+        catch {}
+      }
+      try { documentCache.get(fullKey)?.destroy() }
+      catch {}
+      documentCache.delete(fullKey)
+      providerCache.delete(fullKey)
+      refCountCache.delete(fullKey)
+      isReadyRefCache.delete(fullKey)
+
+      await new Promise<void>((resolve) => {
+        const req = indexedDB.deleteDatabase(fullKey)
+        req.onsuccess = () => resolve()
+        req.onerror = () => resolve()
+        req.onblocked = () => setTimeout(resolve, 1_000)
+      })
+    }
+  }
+}
+
 // ─────────────────────────────────────────────────────────────────────────────
 
 export interface UseProtoDocReturn {
@@ -157,6 +285,24 @@ export function useProtoDoc(
      * scratch pads that should never touch the server.
      */
     disableSync?: boolean
+    /**
+     * Encrypt all IndexedDB updates with AES-GCM.
+     *
+     * Supply either a `password` (key derived via PBKDF2, salt stored in IDB)
+     * or a pre-derived `key` (CryptoKey, for apps that manage key derivation
+     * externally, e.g. from a server-issued token or WebAuthn).
+     *
+     * When encryption is enabled:
+     * - The IDB database is keyed `proto:enc:<docKey>` (separate from the
+     *   unencrypted store — changing encryption settings starts fresh)
+     * - Server sync sends the **raw in-memory** Y.js state (unencrypted).
+     *   For true end-to-end encryption, combine with `disableSync: true`.
+     * - Losing the key/password means losing access to the stored data.
+     *
+     * @example
+     * useProtoDoc('my-tool', { encryption: { password: userPassword } })
+     */
+    encryption?: EncryptionConfig
   },
 ): UseProtoDocReturn {
   const {
@@ -164,6 +310,7 @@ export function useProtoDoc(
     enableBroadcast = true,
     skipAutoCleanup = false,
     disableSync = false,
+    encryption,
   } = options ?? {}
 
   // Read server sync config — only call during setup (composable context).
@@ -172,7 +319,8 @@ export function useProtoDoc(
   const syncEnabled = !disableSync && serverSync.enabled
   const syncBase = serverSync.baseUrl
 
-  const fullKey = `proto:${docKey}`
+  // Encrypted docs use a distinct IDB key so they never mix with unencrypted data.
+  const fullKey = encryption ? `proto:enc:${docKey}` : `proto:${docKey}`
   let doc: Y.Doc
 
   if (documentCache.has(fullKey)) {
@@ -199,8 +347,42 @@ export function useProtoDoc(
   }
   const isReady = isReadyRefCache.get(fullKey)!
 
-  // ── IndexedDB persistence ──────────────────────────────────────────────────
-  if (enableIndexedDB && !providers.indexeddb && import.meta.client) {
+  // ── Encrypted IndexedDB persistence ───────────────────────────────────────
+  if (enableIndexedDB && encryption && !providers.encryptedIdb && import.meta.client) {
+    const encProvider = new EncryptedIdbPersistence(fullKey, doc, encryption)
+    providers.encryptedIdb = encProvider
+
+    encProvider.whenSynced.then(() => {
+      isReady.value = true
+      // Server sync sends raw in-memory state — encryption is local-only.
+      if (syncEnabled) {
+        pushDocToServer(fullKey, doc, providers.clientId!, syncBase).then(() =>
+          createServerSnapshot(fullKey, syncBase),
+        )
+      }
+    }).catch((err: unknown) => {
+      console.warn(`[useProtoDoc] Encrypted IDB failed for "${fullKey}":`, err)
+      isReady.value = true // unblock the UI even on failure
+    })
+
+    // Debounced server push on updates (same as unencrypted path)
+    doc.on('update', (_update: Uint8Array, origin: any) => {
+      if (!isReady.value) return
+      if (origin === 'broadcast' || origin === 'encrypted-idb') return
+      if (!syncEnabled) return
+      const existing = providers.serverPushTimer
+      if (existing) clearTimeout(existing)
+      providers.serverPushTimer = setTimeout(() => {
+        providers.serverPushTimer = undefined
+        pushDocToServer(fullKey, doc, providers.clientId!, syncBase).then(() =>
+          createServerSnapshot(fullKey, syncBase),
+        )
+      }, 30_000)
+    })
+  }
+
+  // ── Unencrypted IndexedDB persistence ─────────────────────────────────────
+  if (enableIndexedDB && !encryption && !providers.indexeddb && import.meta.client) {
     const idbProvider = new IndexeddbPersistence(fullKey, doc)
     providers.indexeddb = idbProvider
 
@@ -366,6 +548,7 @@ export function useProtoDoc(
   else if (!enableIndexedDB) {
     isReady.value = true
   }
+  // encryption path: isReady set by whenSynced.then() above
 
   // ── BroadcastChannel tab sync ──────────────────────────────────────────────
   if (enableBroadcast && !providers.broadcast && import.meta.client) {
@@ -416,6 +599,9 @@ export function useProtoDoc(
       }
       if (providers.indexeddb) {
         providers.indexeddb.destroy()
+      }
+      if (providers.encryptedIdb) {
+        providers.encryptedIdb.destroy()
       }
       doc.destroy()
       documentCache.delete(fullKey)

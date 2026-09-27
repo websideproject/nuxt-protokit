@@ -1,8 +1,10 @@
 import { computed, ref, type Ref, type ComputedRef } from 'vue'
 import type * as Y from 'yjs'
 import type { CollectionSchema } from '../types/schema'
+import type { CollectionPermissionsResolved } from '../types/permissions'
 import { useProtoDoc } from './useProtoDoc'
 import { useProtoList } from './useProtoList'
+import { useProtoPermissions } from './useProtoPermissions'
 
 export interface UseProtoCollectionReturn {
   doc: Y.Doc
@@ -19,6 +21,15 @@ export interface UseProtoCollectionReturn {
   sorted: ComputedRef<any[]>
   reset: () => void
   isReady: Ref<boolean>
+  /**
+   * Reactive CRUD permission flags derived from `schema.permissions`.
+   * All flags are `true` when no permissions are defined on the schema.
+   *
+   * ⚠️ Frontend guard only — use these to drive UI visibility/disabled
+   * states. Enforce collection access on the server for real security.
+   */
+  permissions: CollectionPermissionsResolved
+  destroy: () => void
 }
 
 /**
@@ -30,19 +41,24 @@ export function useProtoCollection(
   options?: {
     docKey?: string
     existingDoc?: Y.Doc
+    disableSync?: boolean
   },
 ): UseProtoCollectionReturn {
   let doc: Y.Doc
   let isReady: Ref<boolean>
+  let destroy: () => void = () => {}
 
   if (options?.existingDoc) {
     doc = options.existingDoc
     isReady = ref(true) as Ref<boolean>
   }
   else {
-    const protoDoc = useProtoDoc(options?.docKey ?? `collection-${schema.key}`)
+    const protoDoc = useProtoDoc(options?.docKey ?? `collection-${schema.key}`, {
+      disableSync: options?.disableSync,
+    })
     doc = protoDoc.doc
     isReady = protoDoc.isReady
+    destroy = protoDoc.destroy
   }
 
   const list = useProtoList(doc, schema.key, {
@@ -52,6 +68,9 @@ export function useProtoCollection(
     migrations: schema.migrations,
     waitFor: isReady,
   })
+
+  const { resolveCollectionPermissions } = useProtoPermissions()
+  const permissions = resolveCollectionPermissions(schema.permissions, schema.key)
 
   // Search
   const search = ref('')
@@ -98,5 +117,7 @@ export function useProtoCollection(
     sorted,
     reset: list.reset,
     isReady,
+    permissions,
+    destroy,
   }
 }

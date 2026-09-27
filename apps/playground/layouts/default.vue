@@ -12,12 +12,26 @@ const navItems = [
     { label: 'Competitor Tracker', to: '/competitors', icon: 'i-lucide-users' },
   ],
   [
+    { type: 'label', label: 'Components' },
+    { label: 'Calendar', to: '/calendar', icon: 'i-lucide-calendar' },
+    { label: 'Calendar + Tasks', to: '/calendar-tasks', icon: 'i-lucide-calendar-check' },
+    { label: 'Charts & Analytics', to: '/charts', icon: 'i-lucide-chart-line' },
+    { label: 'Item Panels', to: '/item-panels', icon: 'i-lucide-layout-panel-left' },
+  ],
+  [
     { type: 'label', label: 'Features' },
     { label: 'Real-time Sync', to: '/tab-sync', icon: 'i-lucide-refresh-cw' },
     { label: 'Bricks Gallery', to: '/bricks-gallery', icon: 'i-lucide-blocks' },
     { label: 'Corruption Recovery', to: '/corruption-recovery', icon: 'i-lucide-database-zap' },
     { label: 'Custom Extensions', to: '/custom-extensions', icon: 'i-lucide-puzzle' },
     { label: 'Schema Migration', to: '/schema-migration', icon: 'i-lucide-arrow-up-circle' },
+    { label: 'Permissions', to: '/permissions', icon: 'i-lucide-shield' },
+  ],
+  [
+    { type: 'label', label: 'Headless Mode' },
+    { label: 'Settings Store', to: '/headless-settings', icon: 'i-lucide-sliders-horizontal' },
+    { label: 'Custom Task List', to: '/headless-tasks', icon: 'i-lucide-list-todo' },
+    { label: 'Notes (useProtoText)', to: '/headless-notes', icon: 'i-lucide-file-text' },
   ],
 ]
 </script>

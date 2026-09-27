@@ -1,14 +1,26 @@
 import { ref, watch, onUnmounted, type Ref } from 'vue'
 import type * as Y from 'yjs'
 import type { FieldDef, SchemaMigrations } from '../types/schema'
+import type { FieldPermissionsResolved } from '../types/permissions'
 import { deepClone } from '../utils/deepClone'
 import { runMigrations } from '../utils/runMigrations'
+import { useProtoPermissions } from './useProtoPermissions'
 
 export interface UseProtoMapReturn<S extends Record<string, FieldDef>> {
   state: Record<keyof S, Ref>
   reset: () => void
   dataMap: Y.Map<any>
   set: (key: string, value: any) => void
+  /**
+   * Per-field reactive permission flags derived from each field's
+   * `permissions` definition in the schema.
+   *
+   * Use `fieldPermissions.myField.canRead` to conditionally render a field
+   * and `fieldPermissions.myField.canWrite` to disable its input.
+   *
+   * ⚠️ Frontend only — the Y.js map value is always accessible.
+   */
+  fieldPermissions: Record<keyof S, FieldPermissionsResolved>
 }
 
 /**
@@ -27,6 +39,8 @@ export function useProtoMap<S extends Record<string, FieldDef>>(
   const dataMap = doc.getMap(mapKey)
   const state = {} as Record<keyof S, Ref>
   const suppressSync = new Set<string>()
+  const { resolveFieldPermissions } = useProtoPermissions()
+  const fieldPermissions = {} as Record<keyof S, FieldPermissionsResolved>
 
   // ── Migration ────────────────────────────────────────────────────────────
   // Version is tracked as a special key inside the same Y.Map.
@@ -68,6 +82,10 @@ export function useProtoMap<S extends Record<string, FieldDef>>(
 
     const fieldRef = ref(initial)
     ;(state as any)[key] = fieldRef
+    ;(fieldPermissions as any)[key] = resolveFieldPermissions(
+      (fieldDef as any).permissions,
+      { field: key },
+    )
 
     // Watch ref → sync to Y.Map
     watch(fieldRef, (newVal) => {
@@ -116,5 +134,5 @@ export function useProtoMap<S extends Record<string, FieldDef>>(
     dataMap.set(key, value)
   }
 
-  return { state, reset, dataMap, set }
+  return { state, reset, dataMap, set, fieldPermissions }
 }

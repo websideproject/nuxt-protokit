@@ -1,44 +1,32 @@
-<script setup lang="ts">
-import type { Ref } from 'vue'
-import type { FieldDef, SectionDef } from '../types'
-import type { ComputeContext } from '../types/compute'
+<script setup>
+import { computed } from 'vue'
 import { useProtoExtensionRegistry } from '../composables/useProtoExtensionRegistry'
 
 const { getFieldComponent } = useProtoExtensionRegistry()
-
-const props = withDefaults(defineProps<{
-  fields: Record<string, FieldDef>
-  model: Record<string, Ref>
-  sections?: SectionDef[]
-  cols?: 1 | 2 | 3 | 4
-  computeContext?: ComputeContext
-  collectionItems?: Record<string, any[]>
-  /** When true, sections render without UCard wrapper (parent is responsible for the card) */
-  noCard?: boolean
-  /** Field-level validation errors — key is the field name, value is the error message */
-  errors?: Record<string, string>
-}>(), {
-  cols: 2,
-  noCard: false,
+const props = defineProps({
+  fields: { type: Object, required: true },
+  model: { type: Object, required: true },
+  sections: { type: Array, required: false },
+  cols: { type: Number, required: false, default: 2 },
+  computeContext: { type: Object, required: false },
+  collectionItems: { type: Object, required: false },
+  noCard: { type: Boolean, required: false, default: false },
+  errors: { type: Object, required: false },
 })
-
-// Get all visible fields (respecting showWhen)
-function isVisible(key: string, fieldDef: FieldDef): boolean {
-  if (!(fieldDef as any).showWhen) return true
-  const values: Record<string, any> = {}
+function isVisible(key, fieldDef) {
+  if (!fieldDef.showWhen) return true
+  const values = {}
   for (const [k, v] of Object.entries(props.model)) {
     values[k] = v.value
   }
-  return (fieldDef as any).showWhen(values)
+  return fieldDef.showWhen(values)
 }
-
-function resolveLabel(fieldDef: FieldDef, value: any): string {
-  if (typeof fieldDef.label === 'function') return (fieldDef.label as Function)(value)
+function resolveLabel(fieldDef, value) {
+  if (typeof fieldDef.label === 'function') return fieldDef.label(value)
   return fieldDef.label
 }
-
 const gridClass = computed(() => {
-  const colMap: Record<number, string> = {
+  const colMap = {
     1: 'grid-cols-1',
     2: 'md:grid-cols-2',
     3: 'md:grid-cols-3',
@@ -46,10 +34,9 @@ const gridClass = computed(() => {
   }
   return `grid ${colMap[props.cols] || 'md:grid-cols-2'} gap-4`
 })
-
-function sectionGridClass(section: SectionDef) {
+function sectionGridClass(section) {
   const c = section.cols || props.cols
-  const colMap: Record<number, string> = {
+  const colMap = {
     1: 'grid-cols-1',
     2: 'md:grid-cols-2',
     3: 'md:grid-cols-3',
@@ -57,21 +44,15 @@ function sectionGridClass(section: SectionDef) {
   }
   return `grid ${colMap[c] || 'md:grid-cols-2'} gap-4`
 }
-
-// Flat mode: all fields not in sections
 const flatFields = computed(() => {
   if (props.sections) return []
   return Object.entries(props.fields).filter(([key, fd]) => isVisible(key, fd))
 })
-
-// Section mode
 const sectionedFields = computed(() => {
   if (!props.sections) return []
   return props.sections.map(section => ({
     ...section,
-    visibleFields: section.fields
-      .filter(key => props.fields[key] && isVisible(key, props.fields[key]))
-      .map(key => ({ key, def: props.fields[key] })),
+    visibleFields: section.fields.filter(key => props.fields[key] && isVisible(key, props.fields[key])).map(key => ({ key, def: props.fields[key] })),
   }))
 })
 </script>
@@ -86,48 +67,48 @@ const sectionedFields = computed(() => {
       v-for="[key, fieldDef] in flatFields"
       :key="key"
       :label="resolveLabel(fieldDef, model[key]?.value)"
-      :hint="(fieldDef as any).hint"
+      :hint="fieldDef.hint"
       :error="errors?.[key]"
       :class="fieldDef.type === 'linked-responses' ? 'col-span-full' : ''"
     >
       <ProtoFieldNumber
         v-if="fieldDef.type === 'number'"
         v-model="model[key].value"
-        :placeholder="(fieldDef as any).placeholder"
-        :min="(fieldDef as any).min"
-        :max="(fieldDef as any).max"
-        :step="(fieldDef as any).step"
-        :leading="(fieldDef as any).leading"
-        :trailing="(fieldDef as any).trailing"
+        :placeholder="fieldDef.placeholder"
+        :min="fieldDef.min"
+        :max="fieldDef.max"
+        :step="fieldDef.step"
+        :leading="fieldDef.leading"
+        :trailing="fieldDef.trailing"
       />
       <ProtoFieldText
         v-else-if="fieldDef.type === 'text'"
         v-model="model[key].value"
-        :placeholder="(fieldDef as any).placeholder"
+        :placeholder="fieldDef.placeholder"
       />
       <ProtoFieldTextarea
         v-else-if="fieldDef.type === 'textarea'"
         v-model="model[key].value"
-        :placeholder="(fieldDef as any).placeholder"
+        :placeholder="fieldDef.placeholder"
       />
       <ProtoFieldSelect
         v-else-if="fieldDef.type === 'select'"
         v-model="model[key].value"
-        :options="(fieldDef as any).options"
-        :placeholder="(fieldDef as any).placeholder"
+        :options="fieldDef.options"
+        :placeholder="fieldDef.placeholder"
       />
       <ProtoFieldRange
         v-else-if="fieldDef.type === 'range'"
         v-model="model[key].value"
-        :min="(fieldDef as any).min"
-        :max="(fieldDef as any).max"
-        :step="(fieldDef as any).step"
-        :range-labels="(fieldDef as any).rangeLabels"
+        :min="fieldDef.min"
+        :max="fieldDef.max"
+        :step="fieldDef.step"
+        :range-labels="fieldDef.rangeLabels"
       />
       <ProtoFieldTags
         v-else-if="fieldDef.type === 'tags'"
         v-model="model[key].value"
-        :placeholder="(fieldDef as any).placeholder"
+        :placeholder="fieldDef.placeholder"
       />
       <ProtoFieldToggle
         v-else-if="fieldDef.type === 'toggle'"
@@ -136,17 +117,17 @@ const sectionedFields = computed(() => {
       <ProtoFieldSegmented
         v-else-if="fieldDef.type === 'segmented'"
         v-model="model[key].value"
-        :options="(fieldDef as any).options"
+        :options="fieldDef.options"
       />
       <ProtoFieldRating
         v-else-if="fieldDef.type === 'rating'"
         v-model="model[key].value"
-        :max="(fieldDef as any).max"
+        :max="fieldDef.max"
       />
       <ProtoFieldDate
         v-else-if="fieldDef.type === 'date'"
         v-model="model[key].value"
-        :placeholder="(fieldDef as any).placeholder"
+        :placeholder="fieldDef.placeholder"
       />
       <ProtoFieldColor
         v-else-if="fieldDef.type === 'color'"
@@ -155,20 +136,20 @@ const sectionedFields = computed(() => {
       <ProtoFieldLinkedResponses
         v-else-if="fieldDef.type === 'linked-responses'"
         v-model="model[key].value"
-        :field-def="fieldDef as any"
+        :field-def="fieldDef"
         :collection-items="collectionItems"
       />
       <component
         :is="getFieldComponent(fieldDef.type)"
         v-else-if="getFieldComponent(fieldDef.type)"
         v-model="model[key].value"
-        v-bind="(fieldDef as any).props ?? {}"
+        v-bind="fieldDef.props ?? {}"
       />
       <template
-        v-if="(fieldDef as any).help"
+        v-if="fieldDef.help"
         #help
       >
-        <span class="text-xs text-muted">{{ (fieldDef as any).help }}</span>
+        <span class="text-xs text-muted">{{ fieldDef.help }}</span>
       </template>
     </UFormField>
   </div>
@@ -205,48 +186,48 @@ const sectionedFields = computed(() => {
           v-for="{ key, def } in section.visibleFields"
           :key="key"
           :label="resolveLabel(def, model[key]?.value)"
-          :hint="(def as any).hint"
+          :hint="def.hint"
           :error="errors?.[key]"
           :class="def.type === 'linked-responses' ? 'col-span-full' : ''"
         >
           <ProtoFieldNumber
             v-if="def.type === 'number'"
             v-model="model[key].value"
-            :placeholder="(def as any).placeholder"
-            :min="(def as any).min"
-            :max="(def as any).max"
-            :step="(def as any).step"
-            :leading="(def as any).leading"
-            :trailing="(def as any).trailing"
+            :placeholder="def.placeholder"
+            :min="def.min"
+            :max="def.max"
+            :step="def.step"
+            :leading="def.leading"
+            :trailing="def.trailing"
           />
           <ProtoFieldText
             v-else-if="def.type === 'text'"
             v-model="model[key].value"
-            :placeholder="(def as any).placeholder"
+            :placeholder="def.placeholder"
           />
           <ProtoFieldTextarea
             v-else-if="def.type === 'textarea'"
             v-model="model[key].value"
-            :placeholder="(def as any).placeholder"
+            :placeholder="def.placeholder"
           />
           <ProtoFieldSelect
             v-else-if="def.type === 'select'"
             v-model="model[key].value"
-            :options="(def as any).options"
-            :placeholder="(def as any).placeholder"
+            :options="def.options"
+            :placeholder="def.placeholder"
           />
           <ProtoFieldRange
             v-else-if="def.type === 'range'"
             v-model="model[key].value"
-            :min="(def as any).min"
-            :max="(def as any).max"
-            :step="(def as any).step"
-            :range-labels="(def as any).rangeLabels"
+            :min="def.min"
+            :max="def.max"
+            :step="def.step"
+            :range-labels="def.rangeLabels"
           />
           <ProtoFieldTags
             v-else-if="def.type === 'tags'"
             v-model="model[key].value"
-            :placeholder="(def as any).placeholder"
+            :placeholder="def.placeholder"
           />
           <ProtoFieldToggle
             v-else-if="def.type === 'toggle'"
@@ -255,17 +236,17 @@ const sectionedFields = computed(() => {
           <ProtoFieldSegmented
             v-else-if="def.type === 'segmented'"
             v-model="model[key].value"
-            :options="(def as any).options"
+            :options="def.options"
           />
           <ProtoFieldRating
             v-else-if="def.type === 'rating'"
             v-model="model[key].value"
-            :max="(def as any).max"
+            :max="def.max"
           />
           <ProtoFieldDate
             v-else-if="def.type === 'date'"
             v-model="model[key].value"
-            :placeholder="(def as any).placeholder"
+            :placeholder="def.placeholder"
           />
           <ProtoFieldColor
             v-else-if="def.type === 'color'"
@@ -274,20 +255,20 @@ const sectionedFields = computed(() => {
           <ProtoFieldLinkedResponses
             v-else-if="def.type === 'linked-responses'"
             v-model="model[key].value"
-            :field-def="def as any"
+            :field-def="def"
             :collection-items="collectionItems"
           />
           <component
             :is="getFieldComponent(def.type)"
             v-else-if="getFieldComponent(def.type)"
             v-model="model[key].value"
-            v-bind="(def as any).props ?? {}"
+            v-bind="def.props ?? {}"
           />
           <template
-            v-if="(def as any).help"
+            v-if="def.help"
             #help
           >
-            <span class="text-xs text-muted">{{ (def as any).help }}</span>
+            <span class="text-xs text-muted">{{ def.help }}</span>
           </template>
         </UFormField>
       </div>
@@ -308,48 +289,48 @@ const sectionedFields = computed(() => {
         v-for="{ key, def } in section.visibleFields"
         :key="key"
         :label="resolveLabel(def, model[key]?.value)"
-        :hint="(def as any).hint"
+        :hint="def.hint"
         :error="errors?.[key]"
         :class="def.type === 'linked-responses' ? 'col-span-full' : ''"
       >
         <ProtoFieldNumber
           v-if="def.type === 'number'"
           v-model="model[key].value"
-          :placeholder="(def as any).placeholder"
-          :min="(def as any).min"
-          :max="(def as any).max"
-          :step="(def as any).step"
-          :leading="(def as any).leading"
-          :trailing="(def as any).trailing"
+          :placeholder="def.placeholder"
+          :min="def.min"
+          :max="def.max"
+          :step="def.step"
+          :leading="def.leading"
+          :trailing="def.trailing"
         />
         <ProtoFieldText
           v-else-if="def.type === 'text'"
           v-model="model[key].value"
-          :placeholder="(def as any).placeholder"
+          :placeholder="def.placeholder"
         />
         <ProtoFieldTextarea
           v-else-if="def.type === 'textarea'"
           v-model="model[key].value"
-          :placeholder="(def as any).placeholder"
+          :placeholder="def.placeholder"
         />
         <ProtoFieldSelect
           v-else-if="def.type === 'select'"
           v-model="model[key].value"
-          :options="(def as any).options"
-          :placeholder="(def as any).placeholder"
+          :options="def.options"
+          :placeholder="def.placeholder"
         />
         <ProtoFieldRange
           v-else-if="def.type === 'range'"
           v-model="model[key].value"
-          :min="(def as any).min"
-          :max="(def as any).max"
-          :step="(def as any).step"
-          :range-labels="(def as any).rangeLabels"
+          :min="def.min"
+          :max="def.max"
+          :step="def.step"
+          :range-labels="def.rangeLabels"
         />
         <ProtoFieldTags
           v-else-if="def.type === 'tags'"
           v-model="model[key].value"
-          :placeholder="(def as any).placeholder"
+          :placeholder="def.placeholder"
         />
         <ProtoFieldToggle
           v-else-if="def.type === 'toggle'"
@@ -358,17 +339,17 @@ const sectionedFields = computed(() => {
         <ProtoFieldSegmented
           v-else-if="def.type === 'segmented'"
           v-model="model[key].value"
-          :options="(def as any).options"
+          :options="def.options"
         />
         <ProtoFieldRating
           v-else-if="def.type === 'rating'"
           v-model="model[key].value"
-          :max="(def as any).max"
+          :max="def.max"
         />
         <ProtoFieldDate
           v-else-if="def.type === 'date'"
           v-model="model[key].value"
-          :placeholder="(def as any).placeholder"
+          :placeholder="def.placeholder"
         />
         <ProtoFieldColor
           v-else-if="def.type === 'color'"
@@ -377,20 +358,20 @@ const sectionedFields = computed(() => {
         <ProtoFieldLinkedResponses
           v-else-if="def.type === 'linked-responses'"
           v-model="model[key].value"
-          :field-def="def as any"
+          :field-def="def"
           :collection-items="collectionItems"
         />
         <component
           :is="getFieldComponent(def.type)"
           v-else-if="getFieldComponent(def.type)"
           v-model="model[key].value"
-          v-bind="(def as any).props ?? {}"
+          v-bind="def.props ?? {}"
         />
         <template
-          v-if="(def as any).help"
+          v-if="def.help"
           #help
         >
-          <span class="text-xs text-muted">{{ (def as any).help }}</span>
+          <span class="text-xs text-muted">{{ def.help }}</span>
         </template>
       </UFormField>
     </div>

@@ -1,12 +1,15 @@
 import { computed, ref, type Ref, type ComputedRef } from 'vue'
 import type * as Y from 'yjs'
 import type { PrototypeSchema } from '../types/schema'
+import type { EncryptionConfig } from './useProtoDoc'
 import type { ComputeContext } from '../types/compute'
+import type { CollectionPermissionsResolved, FieldPermissionsResolved } from '../types/permissions'
 import { useProtoDoc } from './useProtoDoc'
 import { useProtoMap } from './useProtoMap'
 import { useProtoList, type UseProtoListReturn } from './useProtoList'
 import { useProtoDerived } from './useProtoDerived'
 import { useProtoOutputs } from './useProtoOutputs'
+import { useProtoPermissions } from './useProtoPermissions'
 
 export interface UsePrototypeReturn {
   state: Record<string, Ref>
@@ -16,6 +19,20 @@ export interface UsePrototypeReturn {
   reset: () => void
   isReady: Ref<boolean>
   doc: Y.Doc
+  /**
+   * Per-field reactive permission flags for the prototype's top-level fields.
+   * Driven by `schema.fields[key].permissions`.
+   *
+   * ⚠️ Frontend only.
+   */
+  fieldPermissions: Record<string, FieldPermissionsResolved>
+  /**
+   * Per-collection reactive CRUD permission flags.
+   * Driven by `schema.collections[key].permissions`.
+   *
+   * ⚠️ Frontend only — also enforce on the server for real security.
+   */
+  collectionPermissions: Record<string, CollectionPermissionsResolved>
 }
 
 /**
@@ -32,6 +49,37 @@ export function usePrototype(
      * `protokit.serverSync` config. Useful for public demo tools or scratch pads.
      */
     disableSync?: boolean
+    /**
+     * Namespace prefix that is prepended to the doc key, creating fully
+     * isolated IndexedDB stores and BroadcastChannels per namespace.
+     *
+     * Compose this from whatever segments your app needs:
+     *
+     * ```ts
+     * // Tenant-shared (all users in the org see the same doc)
+     * namespace: tenantId
+     *
+     * // Private per user within a tenant
+     * namespace: `${tenantId}:${userId}`
+     *
+     * // Private per user, no multi-tenancy
+     * namespace: userId
+     * ```
+     *
+     * Resulting key: `<namespace>:<docKey>`
+     *
+     * When the namespace changes (e.g. user switches tenant), the composable
+     * is re-mounted with a different key, so data never bleeds across namespaces.
+     */
+    namespace?: string
+    /**
+     * Encrypt all IndexedDB updates with AES-GCM.
+     * See `useProtoDoc` for full documentation and security notes.
+     *
+     * @example
+     * usePrototype(schema, { encryption: { password: userPassword } })
+     */
+    encryption?: EncryptionConfig
   },
 ): UsePrototypeReturn {
   // Get or create document
@@ -43,21 +91,27 @@ export function usePrototype(
     isReady = ref(true) as Ref<boolean>
   }
   else {
-    const protoDoc = useProtoDoc(options?.docKey ?? schema.key, {
+    const baseKey = options?.docKey ?? schema.key
+    const resolvedKey = options?.namespace ? `${options.namespace}:${baseKey}` : baseKey
+    const protoDoc = useProtoDoc(resolvedKey, {
       disableSync: options?.disableSync,
+      encryption: options?.encryption,
     })
     doc = protoDoc.doc
     isReady = protoDoc.isReady
   }
 
   // Initialize map state from schema fields
-  const { state, reset: resetMap } = useProtoMap(doc, schema.key, schema.fields, {
+  const { state, reset: resetMap, fieldPermissions } = useProtoMap(doc, schema.key, schema.fields, {
     version: schema.version,
     migrations: schema.migrations,
   })
 
   // Initialize collections
   const collections: Record<string, UseProtoListReturn<any>> = {}
+  const { resolveCollectionPermissions } = useProtoPermissions()
+  const collectionPermissions: Record<string, CollectionPermissionsResolved> = {}
+
   if (schema.collections) {
     for (const [key, collSchema] of Object.entries(schema.collections)) {
       collections[key] = useProtoList(doc, `${schema.key}:${collSchema.key}`, {
@@ -66,6 +120,7 @@ export function usePrototype(
         version: collSchema.version,
         migrations: collSchema.migrations,
       })
+      collectionPermissions[key] = resolveCollectionPermissions(collSchema.permissions, collSchema.key)
     }
   }
 
@@ -112,5 +167,7 @@ export function usePrototype(
     reset,
     isReady,
     doc,
+    fieldPermissions,
+    collectionPermissions,
   }
 }

@@ -1,34 +1,28 @@
-<script setup lang="ts">
-import type * as Y from 'yjs'
-import type { PrototypeSchema } from '../types/schema'
+<script setup>
+import { computed } from 'vue'
 import { usePrototype } from '../composables/usePrototype'
 
-const props = defineProps<{
-  schema: PrototypeSchema
-  doc?: Y.Doc
-  docKey?: string
-  /**
-   * Force this tool's document to be local-only (no server sync),
-   * regardless of the global `protokit.serverSync` config.
-   * Useful for public demo tools or scratch pads.
-   *
-   * @example <ProtoTool :schema="demoSchema" disable-sync />
-   */
-  disableSync?: boolean
-}>()
-
+const props = defineProps({
+  schema: { type: Object, required: true },
+  doc: { type: null, required: false },
+  docKey: { type: String, required: false },
+  namespace: { type: String, required: false },
+  encryptionPassword: { type: String, required: false },
+  disableSync: { type: Boolean, required: false },
+})
+const encryption = computed(
+  () => props.encryptionPassword ? { password: props.encryptionPassword } : void 0,
+)
 const { state, collections, derived, computeContext, reset, isReady, doc } = usePrototype(props.schema, {
   docKey: props.docKey,
   existingDoc: props.doc,
+  namespace: props.namespace,
+  encryption: encryption.value,
   disableSync: props.disableSync,
 })
-
-// Default layout: if schema has a layout, use ProtoDashboard; otherwise render in order
 const hasLayout = computed(() => !!props.schema.layout)
-
-// Unwrap collection items for passing to child components
 const collectionItems = computed(() => {
-  const result: Record<string, any[]> = {}
+  const result = {}
   for (const [k, v] of Object.entries(collections)) {
     result[k] = v.items.value
   }
@@ -58,7 +52,7 @@ const collectionItems = computed(() => {
       :state="state"
       :collections="collections"
       :compute-context="computeContext"
-      :derived="(derived as any)"
+      :derived="derived"
       :doc="doc"
       :collection-items="collectionItems"
       @reset="reset"
@@ -119,7 +113,7 @@ const collectionItems = computed(() => {
               </h3>
               <ProtoBadge
                 v-if="result.badge?.(computeContext)"
-                v-bind="result.badge!(computeContext)!"
+                v-bind="result.badge(computeContext)"
               />
             </div>
           </template>

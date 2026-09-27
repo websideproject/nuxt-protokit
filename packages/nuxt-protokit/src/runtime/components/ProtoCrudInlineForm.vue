@@ -1,30 +1,18 @@
-<script setup lang="ts">
-import { ref, computed, type WritableComputedRef } from 'vue'
-import type { FieldDef } from '../types/schema'
+<script setup>
+import { ref, computed } from 'vue'
 
-const props = withDefaults(defineProps<{
-  fields: Record<string, FieldDef>
-  defaults: Record<string, any>
-  cols?: 1 | 2 | 3 | 4
-  editData?: Record<string, any> | null
-  addLabel?: string
-  editLabel?: string
-  collectionItems?: Record<string, any[]>
-  validate?: (item: Record<string, any>) => boolean | string | Record<string, string>
-}>(), {
-  cols: 2,
-  addLabel: 'Add',
-  editLabel: 'Save',
+const props = defineProps({
+  fields: { type: Object, required: true },
+  defaults: { type: Object, required: true },
+  cols: { type: Number, required: false, default: 2 },
+  editData: { type: [Object, null], required: false },
+  addLabel: { type: String, required: false, default: 'Add' },
+  editLabel: { type: String, required: false, default: 'Save' },
+  collectionItems: { type: Object, required: false },
+  validate: { type: Function, required: false },
 })
-
-const emit = defineEmits<{
-  save: [item: Record<string, any>]
-  cancel: []
-}>()
-
-const formData = ref<Record<string, any>>({ ...props.defaults })
-
-// When editData changes, populate form
+const emit = defineEmits(['save', 'cancel'])
+const formData = ref({ ...props.defaults })
 watch(() => props.editData, (data) => {
   if (data) {
     formData.value = { ...data }
@@ -33,22 +21,20 @@ watch(() => props.editData, (data) => {
     formData.value = { ...props.defaults }
   }
 }, { immediate: true })
-
-// Create writable computed refs for ProtoForm compatibility
 const model = computed(() => {
-  const result: Record<string, WritableComputedRef<any>> = {}
+  const result = {}
   for (const key of Object.keys(props.fields)) {
     result[key] = computed({
       get: () => formData.value[key],
-      set: (v) => { formData.value[key] = v },
+      set: (v) => {
+        formData.value[key] = v
+      },
     })
   }
   return result
 })
-
-const validationError = ref<string | null>(null)
-const fieldErrors = ref<Record<string, string>>({})
-
+const validationError = ref(null)
+const fieldErrors = ref({})
 function save() {
   if (props.validate) {
     const result = props.validate(formData.value)
@@ -69,7 +55,6 @@ function save() {
   emit('save', { ...formData.value })
   formData.value = { ...props.defaults }
 }
-
 function cancel() {
   formData.value = { ...props.defaults }
   emit('cancel')

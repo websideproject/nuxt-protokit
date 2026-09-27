@@ -1,14 +1,10 @@
-<script setup lang="ts">
-defineProps<{
-  modelValue: any
-  options?: Array<string | { label: string, value: any, icon?: string }>
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: any]
-}>()
-
-function getItems(options: Array<string | { label: string, value: any, icon?: string }> | undefined) {
+<script setup>
+defineProps({
+  modelValue: { type: null, required: true },
+  options: { type: Array, required: false },
+})
+const emit = defineEmits(['update:modelValue'])
+function getItems(options) {
   if (!options) return []
   return options.map(o => typeof o === 'string' ? { label: o, value: o } : o)
 }

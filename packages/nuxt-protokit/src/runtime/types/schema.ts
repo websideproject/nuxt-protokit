@@ -1,5 +1,6 @@
 import type { ComputeContext, DerivedDef, ConnectionsDef } from './compute'
 import type { DashboardLayout, CardDef, VizDef, ResultSectionDef, SectionDef } from './brick'
+import type { CollectionPermissions, FieldPermissions } from './permissions'
 
 // --- Field Definitions ---
 
@@ -21,6 +22,13 @@ export type SimpleFieldDef<T = any> = {
   showWhen?: (values: Record<string, any>) => boolean
   format?: 'money' | 'percent' | 'number' | 'date' | ((v: T) => string)
   deep?: boolean
+  /**
+   * Frontend visibility/editability guards for this field.
+   *
+   * ⚠️ **Frontend only** — the Y.js document value is always present.
+   * See {@link FieldPermissions} for details.
+   */
+  permissions?: FieldPermissions
 }
 
 export type LinkedResponsesFieldDef = {
@@ -32,6 +40,13 @@ export type LinkedResponsesFieldDef = {
   sourceBadge?: (item: Record<string, any>) => string
   answerPlaceholder?: string
   answerRows?: number
+  /**
+   * Frontend visibility/editability guards for this field.
+   *
+   * ⚠️ **Frontend only** — the Y.js document value is always present.
+   * See {@link FieldPermissions} for details.
+   */
+  permissions?: FieldPermissions
 }
 
 export type CustomFieldDef<T = any> = {
@@ -42,6 +57,13 @@ export type CustomFieldDef<T = any> = {
   showWhen?: (values: Record<string, any>) => boolean
   help?: string
   hint?: string
+  /**
+   * Frontend visibility/editability guards for this field.
+   *
+   * ⚠️ **Frontend only** — the Y.js document value is always present.
+   * See {@link FieldPermissions} for details.
+   */
+  permissions?: FieldPermissions
 }
 
 export type FieldDef<T = any> = SimpleFieldDef<T> | LinkedResponsesFieldDef | CustomFieldDef<T>
@@ -64,6 +86,54 @@ export interface PresetPack {
   description?: string
   color?: string
   items: Record<string, any>[]
+}
+
+// --- Collection Item Actions ---
+
+export type CollectionItemAction
+  = | {
+    type: 'open-url'
+    id: string
+    icon: string
+    label?: string
+    title?: string
+    color?: string
+    variant?: string
+    showWhen?: (item: Record<string, any>) => boolean
+    disabledWhen?: (item: Record<string, any>) => boolean
+    url: (item: Record<string, any>, collections: Record<string, any[]>) => string | null
+  }
+  | {
+    type: 'status-set'
+    id: string
+    icon: string
+    label?: string
+    title?: string
+    color?: string
+    toStatus: string
+    showWhen?: (item: Record<string, any>) => boolean
+  }
+  | {
+    type: 'custom'
+    id: string
+    icon: string
+    label?: string
+    title?: string
+    color?: string
+    variant?: string
+    showWhen?: (item: Record<string, any>) => boolean
+    disabledWhen?: (item: Record<string, any>) => boolean
+  }
+
+// --- Status Field ---
+
+export interface StatusFieldDef {
+  key: string
+  states: Record<string, {
+    label: string
+    color: 'neutral' | 'info' | 'success' | 'warning' | 'error'
+    icon?: string
+  }>
 }
 
 // --- Collection Schema (CRUD) ---
@@ -102,6 +172,19 @@ export interface CollectionSchema {
   version?: number
   /** Step functions keyed by target version. See SchemaMigrations. */
   migrations?: SchemaMigrations
+  /**
+   * Frontend CRUD guards for this collection.
+   *
+   * The UI hides or disables controls based on these guards.
+   * For true access control, also enforce these rules on the server.
+   */
+  permissions?: CollectionPermissions
+  /** Show a colored status badge per item based on a field value. */
+  statusField?: StatusFieldDef
+  /** Per-item action buttons rendered in the item row. */
+  itemActions?: CollectionItemAction[]
+  /** Per-item expandable panels toggled from the item row. */
+  itemPanels?: CollectionItemPanel[]
 }
 
 // --- Action Definitions ---
@@ -131,6 +214,52 @@ export type ProtoAction
     icon?: string
     showWhen?: (ctx: ComputeContext) => boolean
   }
+
+// --- Collection Item Panels ---
+
+export interface TimeSeriesPanelDef {
+  type: 'time-series'
+  id: string
+  label: string
+  icon?: string
+  historyKey: string
+  metrics: Array<{
+    key: string
+    label: string
+    showWhen?: (item: Record<string, any>) => boolean
+  }>
+  showWhen?: (item: Record<string, any>) => boolean
+}
+
+export interface TextTemplatePanelDef {
+  type: 'text-template'
+  id: string
+  label: string
+  icon?: string
+  sections: Array<{
+    id: string
+    label: string
+    template: (item: Record<string, any>, ctx: { collections: Record<string, any[]> }) => string
+    charLimit?: number
+    hint?: string
+    tip?: string
+  }>
+  tip?: string | ((item: Record<string, any>, ctx: { collections: Record<string, any[]> }) => string | undefined)
+  showWhen?: (item: Record<string, any>) => boolean
+}
+
+export interface UrlInputPanelDef {
+  type: 'url-input'
+  id: string
+  label: string
+  icon?: string
+  field: string
+  placeholder?: string
+  onConfirm?: (url: string, item: Record<string, any>) => Partial<Record<string, any>>
+  showWhen?: (item: Record<string, any>) => boolean
+}
+
+export type CollectionItemPanel = TimeSeriesPanelDef | TextTemplatePanelDef | UrlInputPanelDef
 
 // --- Prototype Schema (Complete Tool) ---
 

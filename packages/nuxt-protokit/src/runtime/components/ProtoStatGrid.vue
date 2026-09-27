@@ -1,27 +1,12 @@
-<script setup lang="ts">
-interface StatItem {
-  label: string
-  value: string | number
-  subLabel?: string
-  valueClass?: string
-  bgClass?: string
-}
-
-const props = withDefaults(defineProps<{
-  stats: StatItem[]
-  cols?: 2 | 3 | 4
-  size?: 'sm' | 'md'
-}>(), {
-  cols: 4,
-  size: 'md',
+<script setup>
+import { computed } from 'vue'
+const props = defineProps({
+  stats: { type: Array, required: true },
+  cols: { type: Number, required: false, default: 4 },
+  size: { type: String, required: false, default: 'md' },
 })
-
 const gridClass = computed(() => {
-  const base = props.cols === 2
-    ? 'grid-cols-2'
-    : props.cols === 3
-      ? 'grid-cols-3'
-      : 'grid-cols-2 md:grid-cols-4'
+  const base = props.cols === 2 ? 'grid-cols-2' : props.cols === 3 ? 'grid-cols-3' : 'grid-cols-2 md:grid-cols-4'
   return `grid ${base} gap-4`
 })
 </script>
