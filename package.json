@@ -6,7 +6,7 @@
     "type": "git",
     "url": "git+https://github.com/websideproject/nuxt-protokit.git"
   },
-  "author": "HugoRCD",
+  "author": "Benjamin Gervan",
   "license": "MIT",
   "packageManager": "bun@1.2.4",
   "scripts": {
