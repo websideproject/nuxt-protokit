@@ -7,7 +7,7 @@
  * returned 500 on every page with a <ProtoTool> for exactly this reason.
  *
  * The check is lexical: calls to a Vue API, a Nuxt composable or one of the module's own composables/utils that the
- * file neither imports nor defines. `$fetch` is a global in Nuxt and is not checked.
+ * file neither imports nor defines. `$fetch` counts: Nuxt 4 declares it as a global, Nuxt 5 no longer does.
  */
 import { readdirSync, readFileSync, statSync } from 'node:fs'
 import { join, relative } from 'node:path'
@@ -35,7 +35,7 @@ const moduleExports = new Set(
 const VUE = ['ref', 'computed', 'watch', 'watchEffect', 'reactive', 'readonly', 'shallowRef', 'toRef', 'toRefs', 'toRaw',
   'unref', 'isRef', 'nextTick', 'onMounted', 'onUnmounted', 'onBeforeUnmount', 'onBeforeMount', 'provide', 'inject',
   'defineComponent', 'h', 'markRaw', 'triggerRef', 'customRef', 'useSlots', 'useAttrs', 'getCurrentInstance']
-const NUXT = ['useRuntimeConfig', 'useState', 'useNuxtApp', 'navigateTo', 'useRoute', 'useRouter', 'useToast',
+const NUXT = ['$fetch', 'useRuntimeConfig', 'useState', 'useNuxtApp', 'navigateTo', 'useRoute', 'useRouter', 'useToast',
   'useFetch', 'useAsyncData', 'useHead', 'useCookie', 'useColorMode', 'useOverlay']
 const AUTO_IMPORTED = new Set([...VUE, ...NUXT, ...moduleExports])
 
@@ -53,7 +53,7 @@ function missingImports(file: string): string[] {
   }
   for (const m of script.matchAll(/(?:function|const|let|var|class)\s+(\w+)/g)) available.add(m[1]!)
 
-  const called = new Set([...code.matchAll(/(?<![\w.$])(\w+)\s*\(/g)].map(m => m[1]!))
+  const called = new Set([...code.matchAll(/(?<![\w.$])(\$?\w+)\s*\(/g)].map(m => m[1]!))
   return [...called].filter(name => AUTO_IMPORTED.has(name) && !available.has(name)).sort()
 }
 
