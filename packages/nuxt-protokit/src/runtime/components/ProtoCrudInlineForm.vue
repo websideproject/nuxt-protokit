@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, type WritableComputedRef } from 'vue'
+import { ref, computed, watch, type WritableComputedRef } from 'vue'
 import type { FieldDef } from '../types/schema'
 
 const props = withDefaults(defineProps<{
