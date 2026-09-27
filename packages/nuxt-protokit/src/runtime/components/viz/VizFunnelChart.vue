@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatNumber } from '../../utils/formatters'
 
 interface FunnelStep {
   label: string
@@ -61,7 +62,7 @@ const steps = computed(() => props.data.map((d, i) => ({
           <div class="flex justify-between items-baseline mb-1">
             <span class="text-sm text-muted truncate mr-2">{{ step.label }}</span>
             <span class="text-sm font-semibold text-highlighted shrink-0">
-              {{ step.value.toLocaleString() }}{{ unit }}
+              {{ formatNumber(step.value) }}{{ unit }}
             </span>
           </div>
           <div

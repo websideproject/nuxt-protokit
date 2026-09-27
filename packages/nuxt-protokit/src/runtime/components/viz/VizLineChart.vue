@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
+import { formatNumber } from '../../utils/formatters'
 
 const props = withDefaults(defineProps<{
   data: Array<{ label: string, value: number }>
@@ -21,7 +22,7 @@ const VH = computed(() => props.showAxes ? 120 : 56)
 // character at font-size 9), so a label like "22,935$" is not cut off.
 const axisLabelWidth = computed(() => {
   const max = Math.max(0, ...props.data.map(d => d.value))
-  return 8 + `${max.toLocaleString()}${props.unit ?? ''}`.length * 5.5
+  return 8 + `${formatNumber(max)}${props.unit ?? ''}`.length * 5.5
 })
 const PAD = computed(() => props.showAxes
   ? { top: 12, right: 10, bottom: 26, left: Math.max(36, axisLabelWidth.value) }
@@ -140,7 +141,7 @@ const chart = computed(() => {
           class="text-muted"
           opacity="0.55"
         >
-          {{ chart.max.toLocaleString() }}{{ unit }}
+          {{ formatNumber(chart.max) }}{{ unit }}
         </text>
         <text
           :x="chart.left - 4"
@@ -151,7 +152,7 @@ const chart = computed(() => {
           class="text-muted"
           opacity="0.4"
         >
-          {{ Math.round(chart.max / 2).toLocaleString() }}
+          {{ formatNumber(Math.round(chart.max / 2)) }}
         </text>
         <text
           :x="chart.left - 4"
@@ -202,7 +203,7 @@ const chart = computed(() => {
         stroke="white"
         stroke-width="1.5"
       >
-        <title>{{ pt.label }}: {{ pt.value.toLocaleString() }}{{ unit }}</title>
+        <title>{{ pt.label }}: {{ formatNumber(pt.value) }}{{ unit }}</title>
       </circle>
     </svg>
   </div>

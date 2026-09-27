@@ -3,6 +3,13 @@
  * Copied from saaskit to avoid cross-module dependencies.
  */
 
+/**
+ * One fixed locale for every number and date protokit prints. Components render on the server too (charts, dashboards),
+ * and `toLocaleString()` without a locale formats with the server's locale there and the visitor's in the browser — a
+ * hydration mismatch for anyone whose locale differs ("22,935" vs "22.935").
+ */
+const LOCALE = 'en-US'
+
 export function formatMoney(
   v: number | null | undefined,
   opts?: { kDecimals?: number, compact?: boolean },
@@ -16,13 +23,13 @@ export function formatMoney(
   const sign = v < 0 ? '-' : ''
 
   if (!compact) {
-    return `${sign}$${abs.toLocaleString()}`
+    return `${sign}$${abs.toLocaleString(LOCALE)}`
   }
 
   if (abs >= 1_000_000_000) return `${sign}$${(abs / 1_000_000_000).toFixed(1)}B`
   if (abs >= 1_000_000) return `${sign}$${(abs / 1_000_000).toFixed(1)}M`
   if (abs >= 1_000) return `${sign}$${(abs / 1_000).toFixed(kDec)}K`
-  return `${sign}$${abs.toLocaleString()}`
+  return `${sign}$${abs.toLocaleString(LOCALE)}`
 }
 
 export function formatPercent(v: number, decimals = 1): string {
@@ -36,13 +43,13 @@ export function formatPercentFromRatio(v: number, decimals = 1): string {
 
 export function formatNumber(v: number): string {
   if (v === Infinity || v === -Infinity) return 'N/A'
-  return v.toLocaleString()
+  return v.toLocaleString(LOCALE)
 }
 
 export function formatDate(v: string | Date): string {
   if (!v) return '--'
   const d = typeof v === 'string' ? new Date(v) : v
-  return d.toLocaleDateString()
+  return d.toLocaleDateString(LOCALE)
 }
 
 /**

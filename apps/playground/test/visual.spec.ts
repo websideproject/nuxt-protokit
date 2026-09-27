@@ -252,3 +252,19 @@ for (const viewport of VIEWPORTS) {
     }
   })
 }
+
+// The server renders with its own locale; a visitor's browser may use another. Everything protokit prints on a
+// server-rendered page must come out the same in both, or the page hydrates with mismatches.
+test.describe('another locale', () => {
+  test.use({ locale: 'de-DE', viewport: VIEWPORTS[0] })
+
+  test('the charts page hydrates without mismatches in de-DE', async ({ page }) => {
+    const mismatches: string[] = []
+    page.on('console', (m) => {
+      if (/hydration/i.test(m.text())) mismatches.push(m.text().slice(0, 200))
+    })
+    await page.goto('/charts', { waitUntil: 'networkidle' })
+    await expect(page.locator('main')).toContainText('Q4 Kickoff')
+    expect(mismatches).toEqual([])
+  })
+})
