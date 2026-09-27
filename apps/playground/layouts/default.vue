@@ -45,15 +45,14 @@ const navItems = [
         to="/"
         class="h-14 px-4 flex items-center gap-2.5 border-b border-default hover:bg-muted/50 transition-colors"
       >
-        <div class="flex items-center justify-center w-7 h-7 rounded-lg bg-primary/10 shrink-0">
-          <UIcon
-            name="i-lucide-layers"
-            class="w-4 h-4 text-primary"
-          />
-        </div>
+        <ProductLogo class="size-8" />
         <div class="min-w-0">
-          <p class="text-sm font-semibold text-highlighted leading-tight truncate">nuxt-protokit</p>
-          <p class="text-xs text-muted leading-tight">playground</p>
+          <p class="text-sm font-semibold text-highlighted leading-tight truncate">
+            nuxt-protokit
+          </p>
+          <p class="text-xs text-muted leading-tight">
+            by <ColourfulText class="font-semibold" />
+          </p>
         </div>
       </NuxtLink>
 
@@ -68,10 +67,19 @@ const navItems = [
       </div>
 
       <!-- Footer -->
-      <div class="px-3 py-3 border-t border-default">
-        <p class="text-xs text-muted truncate text-center">
-          @websideproject/nuxt-protokit
+      <div class="px-3 py-2 border-t border-default flex items-center justify-between gap-2">
+        <p class="text-xs text-muted truncate">
+          Playground · by <ColourfulText class="font-semibold" />
         </p>
+        <UButton
+          to="https://github.com/websideproject/nuxt-protokit"
+          target="_blank"
+          icon="i-simple-icons-github"
+          aria-label="GitHub"
+          color="neutral"
+          variant="ghost"
+          size="xs"
+        />
       </div>
     </aside>
 

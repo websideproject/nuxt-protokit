@@ -1,2 +1,23 @@
 @import "tailwindcss";
 @import "@nuxt/ui";
+
+/* The module's components are styled with Tailwind classes; they live outside this app, so scan them.
+   (An app that installs the package points this at node_modules/@websideproject/nuxt-protokit instead.) */
+@source "../../../../packages/nuxt-protokit/src/runtime";
+
+/* websideproject: the primary colour is ink, black on light and white on dark; colour comes from the logo */
+:root {
+  --ui-primary: black;
+}
+
+.dark {
+  --ui-primary: white;
+  --ui-bg: var(--ui-color-neutral-950);
+  --ui-bg-muted: var(--ui-color-neutral-900);
+  --ui-bg-elevated: var(--ui-color-neutral-900);
+  --ui-bg-accented: var(--ui-color-neutral-800);
+}
+
+::selection {
+  background: color-mix(in srgb, #ffbd7a 40%, transparent);
+}
