@@ -1,8 +1,9 @@
-- 📋 **Schema-driven** — define fields, derived values, collections, and visualizations in one TypeScript object
-- 📴 **Offline-first** — Y.js + IndexedDB means every write is local-first; data is safe without a server
+- 📋 **Schema-driven** — fields, derived values, collections, result cards and visualizations in one TypeScript object
+- 📴 **Offline-first** — Y.js + IndexedDB: every edit is saved locally; tabs stay in sync over BroadcastChannel
 - 🧮 **12 field types** — number, text, textarea, select, segmented, toggle, range, rating, color, date, tags, linked-responses
-- 📊 **5 visualization types** — progress bar, benchmark bar, bar chart, comparison table, feature matrix, timeline
-- 🔗 **Connected prototypes** — `produces`/`consumes` wire prototypes together via a reactive CRDT data graph
-- 🛡️ **Corruption recovery** — auto-detect IndexedDB corruption; restore from server snapshots when a sync backend is present
-- 🔄 **Multi-tab sync** — BroadcastChannel propagates edits across open tabs without a server round-trip
-- 🧩 **Extensible** — register custom field types and viz types via `defineProtokitExtension` without modifying the module
+- 📊 **12 visualization types** — progress, benchmark, bar, line, area, pie, donut and funnel charts, stat cards, comparison table, feature matrix, timeline
+- 🗓️ **Calendar, item panels, dashboards** — ready-made components driven by the same schema
+- 🧱 **Headless mode** — the persistence layer (`usePrototype`, `useProtoMap`, `useProtoList`, `useProtoText`) without any UI
+- 🔐 **Migrations, namespaces, encryption** — versioned schemas, per-tenant isolation, AES-GCM encrypted storage
+- 🛡️ **Corruption recovery** — detects a corrupt IndexedDB document; restores from server snapshots when a backend is configured
+- 🧩 **Extensible** — custom field and visualization types via `defineProtokitExtension`
