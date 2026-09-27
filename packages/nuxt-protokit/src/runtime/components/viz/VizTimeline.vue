@@ -13,8 +13,9 @@ function statusColor(status?: string) {
   switch (status) {
     case 'done': return 'bg-emerald-500'
     case 'current': return 'bg-[var(--ui-primary)]'
-    case 'upcoming': return 'bg-muted'
-    default: return 'bg-muted'
+    // accented, not muted: a muted dot is the colour of the card behind it
+    case 'upcoming': return 'bg-accented'
+    default: return 'bg-accented'
   }
 }
 

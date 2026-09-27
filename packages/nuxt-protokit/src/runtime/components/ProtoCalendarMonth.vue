@@ -82,18 +82,24 @@ function onEventPointerDown(e: PointerEvent, ev: CalendarEvent) {
     origEndAt: ev.endAt,
     ghostX: e.clientX,
     ghostY: e.clientY,
-    targetDateKey: ev.startAt.split('T')[0].replace(/-/g, ''),
+    targetDateKey: dateKey(new Date(ev.startAt.split('T')[0] + 'T12:00:00')),
   }
 }
 
 function onGridPointerMove(e: PointerEvent) {
+  if (!eventDrag.value && !eventResize.value) return
+  // The dragged event holds the pointer capture, so day cells get no pointerenter while dragging: find the day
+  // under the pointer instead.
+  const dayKey = (document.elementFromPoint(e.clientX, e.clientY)?.closest('[data-day-key]') as HTMLElement | null)?.dataset.dayKey
   if (eventDrag.value) {
     eventDrag.value.ghostX = e.clientX
     eventDrag.value.ghostY = e.clientY
+    if (dayKey) eventDrag.value.targetDateKey = dayKey
   }
   if (eventResize.value) {
     eventResize.value.ghostX = e.clientX
     eventResize.value.ghostY = e.clientY
+    if (dayKey) eventResize.value.targetDateKey = dayKey
   }
 }
 
@@ -151,16 +157,6 @@ function onGridPointerUp() {
 function onGridPointerCancel() {
   eventDrag.value = null
   eventResize.value = null
-}
-
-// Called when pointer enters a day cell during drag/resize
-function onDayCellPointerEnter(day: Date) {
-  if (eventDrag.value) {
-    eventDrag.value.targetDateKey = dateKey(day)
-  }
-  if (eventResize.value) {
-    eventResize.value.targetDateKey = dateKey(day)
-  }
 }
 
 // ── Pointer-based resize (right-edge drag) ────────────────────────────────────
@@ -275,8 +271,8 @@ const resizeTargetDate = computed(() => {
               : externalDropTarget === dateKey(day) ? 'bg-primary/10 ring-1 ring-inset ring-primary/40'
                 : 'hover:bg-muted/30',
           ]"
+          :data-day-key="dateKey(day)"
           @click="!suppressNextClick && $emit('dayClick', day)"
-          @pointerenter="onDayCellPointerEnter(day)"
           @dragover="onExternalDragOver($event, day)"
           @dragleave="onExternalDragLeave"
           @drop="onExternalDrop($event, day)"
@@ -307,9 +303,11 @@ const resizeTargetDate = computed(() => {
               @pointerdown="onEventPointerDown($event, event)"
               @click.stop="!suppressNextClick && $emit('eventClick', event)"
             >
+              <!-- pointer-events-none: the event swallows clicks (@click.stop); the wrapper above handles them, as in week/day -->
               <ProtoCalendarEvent
                 :event="event"
                 view="month"
+                class="pointer-events-none"
               />
               <!-- Right-edge resize handle (last day of event only) -->
               <div
