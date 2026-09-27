@@ -15,12 +15,24 @@
     "crud",
     "crdt"
   ],
+  "homepage": "https://websideproject.com/docs/nuxt-protokit",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/websideproject/nuxt-protokit.git"
+    "url": "git+https://github.com/websideproject/nuxt-protokit.git",
+    "directory": "packages/nuxt-protokit"
+  },
+  "bugs": {
+    "url": "https://github.com/websideproject/nuxt-protokit/issues"
+  },
+  "author": {
+    "name": "Benjamin Gervan",
+    "url": "https://github.com/bgervan"
   },
   "license": "MIT",
   "type": "module",
+  "publishConfig": {
+    "access": "public"
+  },
   "exports": {
     ".": {
       "types": "./dist/types.d.mts",
@@ -36,7 +48,9 @@
     }
   },
   "files": [
-    "dist"
+    "dist",
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "nuxt-module-build build",
