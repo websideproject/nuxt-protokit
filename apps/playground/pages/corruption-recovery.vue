@@ -9,7 +9,7 @@ const schema: PrototypeSchema = {
   key: DOC_KEY,
   title: 'Corruption Recovery Test',
   shortTitle: 'Recovery Test',
-  description: 'Inject garbage into IndexedDB on the break-even page, then come here to trigger recovery.',
+  description: 'Change a value, corrupt the stored document, and see the recovery modal.',
   icon: 'i-lucide-database-zap',
   tags: ['demo'],
   defaultCols: 2,
@@ -68,6 +68,26 @@ const schema: PrototypeSchema = {
     },
   ],
 }
+
+// Append bytes that are not a valid Y.js update to this document's IndexedDB update log (the store y-indexeddb
+// writes to), then reload: loading the document fails, and ProtoTool opens the recovery modal.
+async function corruptStore() {
+  await new Promise<void>((resolve, reject) => {
+    const req = indexedDB.open(`proto:${DOC_KEY}`)
+    req.onerror = () => reject(req.error)
+    req.onsuccess = () => {
+      const db = req.result
+      const tx = db.transaction('updates', 'readwrite')
+      tx.objectStore('updates').add(new Uint8Array([255, 255, 255, 255, 1, 2, 3]))
+      tx.oncomplete = () => {
+        db.close()
+        resolve()
+      }
+      tx.onerror = () => reject(tx.error)
+    }
+  })
+  location.reload()
+}
 </script>
 
 <template>
@@ -77,8 +97,20 @@ const schema: PrototypeSchema = {
       color="neutral"
       variant="subtle"
       title="How to test corruption recovery"
-      description="1. Go to the Break-Even page and click 'Inject Garbage into IndexedDB'. 2. Navigate away (to any other page). 3. Come back here — ProtoTool will try to open the corrupt IndexedDB and trigger the recovery modal."
-    />
+      description="Corrupt this tool's IndexedDB store: the page reloads, loading the document fails, and the recovery modal opens. The document is shared with the Break-Even page."
+    >
+      <template #actions>
+        <UButton
+          icon="i-lucide-bomb"
+          color="error"
+          variant="subtle"
+          size="sm"
+          @click="corruptStore"
+        >
+          Corrupt the stored document
+        </UButton>
+      </template>
+    </UAlert>
 
     <ClientOnly>
       <ProtoTool

@@ -170,7 +170,7 @@ const rawState = computed(() => {
                     Reduce padding and font sizes
                   </p>
                 </div>
-                <UToggle v-model="state.compactMode.value" />
+                <USwitch v-model="state.compactMode.value" />
               </div>
               <div class="flex items-center justify-between">
                 <div>
@@ -181,7 +181,7 @@ const rawState = computed(() => {
                     Receive in-app notifications
                   </p>
                 </div>
-                <UToggle v-model="state.notifications.value" />
+                <USwitch v-model="state.notifications.value" />
               </div>
             </div>
           </div>

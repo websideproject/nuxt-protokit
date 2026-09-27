@@ -32,3 +32,7 @@ logs
 apps/web/.data
 apps/chat/.data
 packages/nuxt-protokit/coverage
+
+# Screenshot suite output
+test-results
+playwright-report

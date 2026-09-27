@@ -15,5 +15,7 @@ useSeoMeta({
     <NuxtLayout>
       <NuxtPage />
     </NuxtLayout>
+    <!-- Mounted once for the whole app: asks what to do when a stored document is corrupt -->
+    <ProtoCorruptionModal />
   </UApp>
 </template>
