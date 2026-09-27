@@ -110,6 +110,26 @@ const { state, derived, collections, isReady } = usePrototype(estimator)
 state.teamSize.value = 5 // persisted
 ```
 
+## In the playground
+
+The repo's playground runs these; the pictures are its CI screenshots.
+
+**[A tool from one schema](https://websideproject.com/docs/nuxt-protokit/getting-started/quick-start)** — fields, derived values, a result card and a chart:
+
+![The resource cost estimator: team size, salary, tooling, duration and overhead inputs; a cost summary with four stats and a Medium Project badge; a monthly cost breakdown bar chart](https://raw.githubusercontent.com/websideproject/nuxt-protokit/main/apps/docs/public/screenshots/resource-estimator-1440.png)
+
+**[ProtoCalendar](https://websideproject.com/docs/nuxt-protokit/components/proto-calendar)** — month, week and day views with drag and drop:
+
+![ProtoCalendar week view with five timed events laid out by the hour](https://raw.githubusercontent.com/websideproject/nuxt-protokit/main/apps/docs/public/screenshots/calendar-week-1440.png)
+
+**[Item panels](https://websideproject.com/docs/nuxt-protokit/components/proto-item-panels)** — a detail view for the selected collection item:
+
+![A content piece with its URL input, weekly metrics time series and copy templates panels](https://raw.githubusercontent.com/websideproject/nuxt-protokit/main/apps/docs/public/screenshots/item-panels-1440.png)
+
+**[Visualizations](https://websideproject.com/docs/nuxt-protokit/schemas/visualizations)** — stat cards, line, area, bar, pie, funnel, benchmark and timeline:
+
+![The built-in visualizations on one page](https://raw.githubusercontent.com/websideproject/nuxt-protokit/main/apps/docs/public/screenshots/charts-1440.png)
+
 ## Server backup
 
 With `serverSync` enabled (the default is `true`) the client pushes each document's full Y.js state to your
