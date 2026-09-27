@@ -1,17 +1,12 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
 
-const props = defineProps<{
-  modelValue: string[]
-  placeholder?: string
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: string[]]
-}>()
-
+const props = defineProps({
+  modelValue: { type: Array, required: true },
+  placeholder: { type: String, required: false },
+})
+const emit = defineEmits(['update:modelValue'])
 const input = ref('')
-
 function addTag() {
   const val = input.value.trim()
   if (!val) return
@@ -19,14 +14,12 @@ function addTag() {
   emit('update:modelValue', [...props.modelValue, val])
   input.value = ''
 }
-
-function removeTag(index: number) {
+function removeTag(index) {
   const updated = [...props.modelValue]
   updated.splice(index, 1)
   emit('update:modelValue', updated)
 }
-
-function onKeydown(e: KeyboardEvent) {
+function onKeydown(e) {
   if (e.key === 'Enter') {
     e.preventDefault()
     addTag()

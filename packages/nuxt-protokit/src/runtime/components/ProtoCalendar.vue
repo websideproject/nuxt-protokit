@@ -1,7 +1,5 @@
-<script setup lang="ts">
+<script setup>
 import { ref, computed } from 'vue'
-import type * as Y from 'yjs'
-import type { CalendarView, CalendarEvent } from '../types/calendar'
 import {
   addDays,
   formatMonthTitle,
@@ -11,37 +9,29 @@ import {
 } from '../utils/calendarLayout'
 import { useProtoCalendar } from '../composables/useProtoCalendar'
 
-const props = defineProps<{
-  docKey?: string
-  namespace?: string
-  existingDoc?: Y.Doc
-  initialView?: CalendarView
-  initialDate?: string
-  disableSync?: boolean
-}>()
-
-const currentView = ref<CalendarView>(props.initialView ?? 'month')
-const currentDate = ref<Date>(
-  props.initialDate ? new Date(props.initialDate) : new Date(),
+const props = defineProps({
+  docKey: { type: String, required: false },
+  namespace: { type: String, required: false },
+  existingDoc: { type: null, required: false },
+  initialView: { type: String, required: false },
+  initialDate: { type: String, required: false },
+  disableSync: { type: Boolean, required: false },
+})
+const currentView = ref(props.initialView ?? 'month')
+const currentDate = ref(
+  props.initialDate ? new Date(props.initialDate) : /* @__PURE__ */ new Date(),
 )
-
 const { events, addEvent, updateEvent, removeEvent, moveEvent, isReady } = useProtoCalendar({
   docKey: props.docKey,
   namespace: props.namespace,
   existingDoc: props.existingDoc,
   disableSync: props.disableSync,
 })
-
-// ── Header title ──────────────────────────────────────────────────────────────
-
 const viewTitle = computed(() => {
   if (currentView.value === 'month') return formatMonthTitle(currentDate.value)
   if (currentView.value === 'week') return formatWeekTitle(currentDate.value)
   return formatDayTitle(currentDate.value)
 })
-
-// ── Navigation ────────────────────────────────────────────────────────────────
-
 function navigatePrev() {
   const d = new Date(currentDate.value)
   if (currentView.value === 'month') {
@@ -55,7 +45,6 @@ function navigatePrev() {
   }
   currentDate.value = d
 }
-
 function navigateNext() {
   const d = new Date(currentDate.value)
   if (currentView.value === 'month') {
@@ -69,21 +58,16 @@ function navigateNext() {
   }
   currentDate.value = d
 }
-
 function goToToday() {
-  currentDate.value = new Date()
+  currentDate.value = /* @__PURE__ */ new Date()
 }
-
-// ── Modal state ───────────────────────────────────────────────────────────────
-
 const isModalOpen = ref(false)
-const selectedEvent = ref<CalendarEvent | null>(null)
-const newEventDefaults = ref<Partial<CalendarEvent>>({})
-
-function onDayClick(date: Date, hour = 9) {
+const selectedEvent = ref(null)
+const newEventDefaults = ref({})
+function onDayClick(date, hour = 9) {
   const start = new Date(date)
   start.setHours(hour, 0, 0, 0)
-  const end = new Date(start.getTime() + 60 * 60 * 1000)
+  const end = new Date(start.getTime() + 60 * 60 * 1e3)
   newEventDefaults.value = {
     startAt: toLocalISOString(start),
     endAt: toLocalISOString(end),
@@ -91,28 +75,23 @@ function onDayClick(date: Date, hour = 9) {
   selectedEvent.value = null
   isModalOpen.value = true
 }
-
-function onRangeSelect(startAt: string, endAt: string) {
+function onRangeSelect(startAt, endAt) {
   newEventDefaults.value = { startAt, endAt }
   selectedEvent.value = null
   isModalOpen.value = true
 }
-
-function onEventClick(event: CalendarEvent) {
+function onEventClick(event) {
   selectedEvent.value = event
   newEventDefaults.value = {}
   isModalOpen.value = true
 }
-
-function onEventMove(id: string, newStartAt: string, newEndAt: string) {
+function onEventMove(id, newStartAt, newEndAt) {
   moveEvent(id, newStartAt, newEndAt)
 }
-
-function onEventUpdate(id: string, patch: Partial<CalendarEvent>) {
+function onEventUpdate(id, patch) {
   updateEvent(id, patch)
 }
-
-function onModalSave(event: CalendarEvent) {
+function onModalSave(event) {
   if (selectedEvent.value?.id) {
     updateEvent(event.id, event)
   }
@@ -121,13 +100,10 @@ function onModalSave(event: CalendarEvent) {
     addEvent(rest)
   }
 }
-
-function onModalDelete(event: CalendarEvent) {
+function onModalDelete(event) {
   removeEvent(event.id)
 }
-
-// Navigate to a day when "+N more" is clicked in month view
-function onMonthDayClick(date: Date) {
+function onMonthDayClick(date) {
   currentDate.value = date
   currentView.value = 'day'
 }
@@ -172,7 +148,7 @@ function onMonthDayClick(date: Date) {
         <!-- View toggle -->
         <div class="flex items-center gap-1">
           <UButton
-            v-for="view in (['month', 'week', 'day'] as CalendarView[])"
+            v-for="view in ['month', 'week', 'day']"
             :key="view"
             :variant="currentView === view ? 'solid' : 'ghost'"
             :color="currentView === view ? 'primary' : 'neutral'"

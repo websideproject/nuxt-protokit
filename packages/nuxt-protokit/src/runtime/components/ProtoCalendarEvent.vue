@@ -1,18 +1,12 @@
-<script setup lang="ts">
+<script setup>
 import { computed } from 'vue'
-import type { CalendarEvent, CalendarView } from '../types/calendar'
 import { getEventColorStyle, formatTimeRange, formatStartTime } from '../utils/calendarLayout'
 
-const props = defineProps<{
-  event: CalendarEvent
-  view: CalendarView
-}>()
-
-defineEmits<{
-  click: []
-}>()
-
-// Use inline CSS vars so Tailwind scanning is not required
+const props = defineProps({
+  event: { type: Object, required: true },
+  view: { type: String, required: true },
+})
+defineEmits(['click'])
 const colorStyle = computed(() => getEventColorStyle(props.event.color ?? 'blue'))
 </script>
 
@@ -35,14 +29,14 @@ const colorStyle = computed(() => getEventColorStyle(props.event.color ?? 'blue'
           v-if="!event.allDay && event.startAt"
           class="opacity-75 mr-1"
         >{{ formatStartTime(event.startAt) }}</span>
-        {{ event.title || '(No title)' }}
+        {{ event.title || "(No title)" }}
       </p>
     </template>
 
     <!-- Week view: title + time range -->
     <template v-else-if="view === 'week'">
       <p class="text-xs font-semibold truncate leading-tight">
-        {{ event.title || '(No title)' }}
+        {{ event.title || "(No title)" }}
       </p>
       <p
         v-if="!event.allDay && event.startAt && event.endAt"
@@ -55,7 +49,7 @@ const colorStyle = computed(() => getEventColorStyle(props.event.color ?? 'blue'
     <!-- Day view: title + time + location + description -->
     <template v-else>
       <p class="text-sm font-semibold truncate leading-tight">
-        {{ event.title || '(No title)' }}
+        {{ event.title || "(No title)" }}
       </p>
       <p
         v-if="!event.allDay && event.startAt && event.endAt"

@@ -90,40 +90,40 @@ export interface PresetPack {
 
 // --- Collection Item Actions ---
 
-export type CollectionItemAction =
+export type CollectionItemAction
+  = | {
+    type: 'open-url'
+    id: string
+    icon: string
+    label?: string
+    title?: string
+    color?: string
+    variant?: string
+    showWhen?: (item: Record<string, any>) => boolean
+    disabledWhen?: (item: Record<string, any>) => boolean
+    url: (item: Record<string, any>, collections: Record<string, any[]>) => string | null
+  }
   | {
-      type: 'open-url'
-      id: string
-      icon: string
-      label?: string
-      title?: string
-      color?: string
-      variant?: string
-      showWhen?: (item: Record<string, any>) => boolean
-      disabledWhen?: (item: Record<string, any>) => boolean
-      url: (item: Record<string, any>, collections: Record<string, any[]>) => string | null
-    }
+    type: 'status-set'
+    id: string
+    icon: string
+    label?: string
+    title?: string
+    color?: string
+    toStatus: string
+    showWhen?: (item: Record<string, any>) => boolean
+  }
   | {
-      type: 'status-set'
-      id: string
-      icon: string
-      label?: string
-      title?: string
-      color?: string
-      toStatus: string
-      showWhen?: (item: Record<string, any>) => boolean
-    }
-  | {
-      type: 'custom'
-      id: string
-      icon: string
-      label?: string
-      title?: string
-      color?: string
-      variant?: string
-      showWhen?: (item: Record<string, any>) => boolean
-      disabledWhen?: (item: Record<string, any>) => boolean
-    }
+    type: 'custom'
+    id: string
+    icon: string
+    label?: string
+    title?: string
+    color?: string
+    variant?: string
+    showWhen?: (item: Record<string, any>) => boolean
+    disabledWhen?: (item: Record<string, any>) => boolean
+  }
 
 // --- Status Field ---
 

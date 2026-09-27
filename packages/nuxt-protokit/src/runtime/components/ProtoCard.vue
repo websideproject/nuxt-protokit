@@ -1,18 +1,12 @@
-<script setup lang="ts">
-interface StatItem {
-  label: string
-  value: string | number
-  valueClass?: string
-}
-
-defineProps<{
-  title: string
-  icon?: string
-  description?: string
-  stats?: StatItem[]
-  badge?: { label: string, color: string } | null
-  footer?: string
-}>()
+<script setup>
+defineProps({
+  title: { type: String, required: true },
+  icon: { type: String, required: false },
+  description: { type: String, required: false },
+  stats: { type: Array, required: false },
+  badge: { type: [Object, null], required: false },
+  footer: { type: String, required: false },
+})
 </script>
 
 <template>
@@ -31,7 +25,7 @@ defineProps<{
         </div>
         <UBadge
           v-if="badge"
-          :color="(badge.color as any)"
+          :color="badge.color"
           variant="subtle"
         >
           {{ badge.label }}

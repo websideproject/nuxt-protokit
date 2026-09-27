@@ -1,3 +1,5 @@
+import { useRuntimeConfig } from '#imports'
+
 export interface ProtoKitSyncConfig {
   enabled: boolean
   baseUrl: string

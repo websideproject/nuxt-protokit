@@ -1,15 +1,15 @@
-<script setup lang="ts">
-defineProps<{
-  label: string
-  color?: string
-  icon?: string
-  variant?: 'solid' | 'subtle' | 'outline'
-}>()
+<script setup>
+defineProps({
+  label: { type: String, required: true },
+  color: { type: String, required: false },
+  icon: { type: String, required: false },
+  variant: { type: String, required: false },
+})
 </script>
 
 <template>
   <UBadge
-    :color="(color as any) || 'primary'"
+    :color="color || 'primary'"
     :variant="variant || 'subtle'"
   >
     <UIcon

@@ -55,6 +55,15 @@ export class EncryptedIdbPersistence {
       this.db = await this._openDB()
       this.cryptoKey = await this._resolveKey()
 
+      // Store the current doc state (which includes defaults written by useProtoMap)
+      // before loading stored updates. This mirrors y-indexeddb's beforeApplyUpdatesCallback:
+      // it ensures that origin items referenced by stored delta updates will exist
+      // in future sessions, allowing correct Y.js CRDT integration.
+      const initialState = Y.encodeStateAsUpdate(this.doc)
+      if (initialState.length > 2) {
+        await this._storeUpdate(initialState)
+      }
+
       const blobs = await this._getAllBlobs()
       if (blobs.length > 0) {
         const updates: Uint8Array[] = []

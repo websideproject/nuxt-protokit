@@ -1,46 +1,26 @@
-<script setup lang="ts">
+<script setup>
 import { ref, computed } from 'vue'
-import type { CalendarEvent, CalendarColor } from '../../types/calendar'
-import type { CollectionCalendarConfig } from '../../types/brick'
 
-const props = defineProps<{
-  items: any[]
-  config: CollectionCalendarConfig
-  onUpdate?: (index: number, item: any) => void
-}>()
-
-const emit = defineEmits<{
-  'event-click': [id: string]
-  'day-click': [date: string]
-}>()
-
-const currentDate = ref(new Date())
-const view = ref<'month' | 'week'>('month')
-
+const props = defineProps({
+  items: { type: Array, required: true },
+  config: { type: Object, required: true },
+  onUpdate: { type: Function, required: false },
+})
+const emit = defineEmits(['event-click', 'day-click'])
+const currentDate = ref(/* @__PURE__ */ new Date())
+const view = ref('month')
 const idField = computed(() => props.config.idField ?? '_id')
-
-function itemToEvent(item: any): CalendarEvent | null {
-  const date = item[props.config.dateField] || (props.config.endDateField && item[props.config.endDateField])
+function itemToEvent(item) {
+  const date = item[props.config.dateField] || props.config.endDateField && item[props.config.endDateField]
   if (!date) return null
-
   const isAllDay = props.config.allDayField ? item[props.config.allDayField] !== false : true
   const timeField = props.config.timeField
   const endTimeField = props.config.endTimeField
-
-  const startAt = (!isAllDay && timeField && item[timeField])
-    ? `${date}T${item[timeField]}:00`
-    : `${date}T00:00:00`
-
-  const endDate = props.config.endDateField ? (item[props.config.endDateField] || date) : date
-  const endAt = (!isAllDay && endTimeField && item[endTimeField])
-    ? `${endDate}T${item[endTimeField]}:00`
-    : `${endDate}T23:59:59`
-
-  const status = item.status as string | undefined
-  const color: CalendarColor = (status && props.config.statusColorMap?.[status])
-    || props.config.defaultColor
-    || 'neutral'
-
+  const startAt = !isAllDay && timeField && item[timeField] ? `${date}T${item[timeField]}:00` : `${date}T00:00:00`
+  const endDate = props.config.endDateField ? item[props.config.endDateField] || date : date
+  const endAt = !isAllDay && endTimeField && item[endTimeField] ? `${endDate}T${item[endTimeField]}:00` : `${endDate}T23:59:59`
+  const status = item.status
+  const color = status && props.config.statusColorMap?.[status] || props.config.defaultColor || 'neutral'
   return {
     id: item[idField.value],
     title: item[props.config.titleField] || 'Untitled',
@@ -53,28 +33,24 @@ function itemToEvent(item: any): CalendarEvent | null {
     linkedTaskId: '',
   }
 }
-
-const events = computed<CalendarEvent[]>(() =>
-  props.items.flatMap((item) => {
+const events = computed(
+  () => props.items.flatMap((item) => {
     const event = itemToEvent(item)
     return event ? [event] : []
   }),
 )
-
-function findIndex(id: string): number {
+function findIndex(id) {
   return props.items.findIndex(item => item[idField.value] === id)
 }
-
-function onEventClick(event: CalendarEvent) {
+function onEventClick(event) {
   emit('event-click', event.id)
 }
-
-function onEventMove(id: string, newStartAt: string, newEndAt: string) {
+function onEventMove(id, newStartAt, newEndAt) {
   const idx = findIndex(id)
   if (idx === -1) return
   const item = props.items[idx]
   const isAllDay = props.config.allDayField ? item[props.config.allDayField] !== false : true
-  const patch: Record<string, any> = { [props.config.dateField]: newStartAt.split('T')[0] }
+  const patch = { [props.config.dateField]: newStartAt.split('T')[0] }
   if (!isAllDay && props.config.timeField) {
     patch[props.config.timeField] = newStartAt.split('T')[1]?.slice(0, 5) ?? ''
     if (props.config.endTimeField)
@@ -82,8 +58,7 @@ function onEventMove(id: string, newStartAt: string, newEndAt: string) {
   }
   props.onUpdate?.(idx, { ...item, ...patch })
 }
-
-function onEventUpdate(id: string, patch: Partial<CalendarEvent>) {
+function onEventUpdate(id, patch) {
   const idx = findIndex(id)
   if (idx === -1) return
   const item = props.items[idx]
@@ -92,8 +67,8 @@ function onEventUpdate(id: string, patch: Partial<CalendarEvent>) {
       ...item,
       [props.config.allDayField]: true,
       [props.config.dateField]: patch.startAt?.split('T')[0] ?? item[props.config.dateField],
-      ...(props.config.timeField ? { [props.config.timeField]: '' } : {}),
-      ...(props.config.endTimeField ? { [props.config.endTimeField]: '' } : {}),
+      ...props.config.timeField ? { [props.config.timeField]: '' } : {},
+      ...props.config.endTimeField ? { [props.config.endTimeField]: '' } : {},
     })
   }
   else if (patch.allDay === false && patch.startAt && props.config.allDayField) {
@@ -101,37 +76,32 @@ function onEventUpdate(id: string, patch: Partial<CalendarEvent>) {
       ...item,
       [props.config.allDayField]: false,
       [props.config.dateField]: patch.startAt.split('T')[0],
-      ...(props.config.timeField ? { [props.config.timeField]: patch.startAt.split('T')[1]?.slice(0, 5) ?? '' } : {}),
-      ...(props.config.endTimeField ? { [props.config.endTimeField]: patch.endAt?.split('T')[1]?.slice(0, 5) ?? '' } : {}),
+      ...props.config.timeField ? { [props.config.timeField]: patch.startAt.split('T')[1]?.slice(0, 5) ?? '' } : {},
+      ...props.config.endTimeField ? { [props.config.endTimeField]: patch.endAt?.split('T')[1]?.slice(0, 5) ?? '' } : {},
     })
   }
 }
-
-function onDayClick(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, '0')
+function onDayClick(date) {
+  const pad = n => String(n).padStart(2, '0')
   emit('day-click', `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`)
 }
-
 function navigatePrev() {
   const d = new Date(currentDate.value)
   if (view.value === 'week') d.setDate(d.getDate() - 7)
   else d.setMonth(d.getMonth() - 1, 1)
   currentDate.value = d
 }
-
 function navigateNext() {
   const d = new Date(currentDate.value)
   if (view.value === 'week') d.setDate(d.getDate() + 7)
   else d.setMonth(d.getMonth() + 1, 1)
   currentDate.value = d
 }
-
-const title = computed(() =>
-  view.value === 'week' ? formatWeekTitle(currentDate.value) : formatMonthTitle(currentDate.value),
+const title = computed(
+  () => view.value === 'week' ? formatWeekTitle(currentDate.value) : formatMonthTitle(currentDate.value),
 )
-
-const undatedItems = computed(() =>
-  props.items.filter(item => !item[props.config.dateField]),
+const undatedItems = computed(
+  () => props.items.filter(item => !item[props.config.dateField]),
 )
 </script>
 
@@ -153,7 +123,7 @@ const undatedItems = computed(() =>
         variant="ghost"
         color="neutral"
         size="sm"
-        @click="currentDate = new Date()"
+        @click="currentDate = /* @__PURE__ */ new Date()"
       >
         Today
       </UButton>
@@ -231,7 +201,7 @@ const undatedItems = computed(() =>
           @click="emit('event-click', item[idField])"
         >
           <p class="text-sm font-medium text-highlighted truncate">
-            {{ item[config.titleField] || 'Untitled' }}
+            {{ item[config.titleField] || "Untitled" }}
           </p>
           <UBadge
             v-if="item.status"

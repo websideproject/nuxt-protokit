@@ -1,32 +1,27 @@
-<script setup lang="ts">
+<script setup>
+import { computed, nextTick, ref, watch } from 'vue'
+import { useProtoCorruption } from '../composables/useProtoCorruption'
 const { corruptionQueue, resolveCorruption } = useProtoCorruption()
-
-// Show the first queued event — processed one at a time
 const current = computed(() => corruptionQueue.value[0] ?? null)
-
-// Plain ref so UModal's internal state never desyncs from our intent.
-// A computed with a no-op setter breaks UModal: the component sets its internal
-// state to "closed" before emitting update:open, causing a permanent desync.
 const isOpen = ref(false)
-
 watch(
   () => corruptionQueue.value.length,
-  (len) => { isOpen.value = len > 0 },
+  (len) => {
+    isOpen.value = len > 0
+  },
   { immediate: true },
 )
-
-// Called when UModal wants to close (ESC, overlay click, or the X button we've hidden).
-// Re-open on the next tick so the user is forced to make a choice.
-function handleOpenChange(val: boolean) {
+function handleOpenChange(val) {
   if (!val && corruptionQueue.value.length > 0) {
-    nextTick(() => { isOpen.value = true })
+    nextTick(() => {
+      isOpen.value = true
+    })
   }
 }
-
 const snapshotAgeDisplay = computed(() => {
   const age = current.value?.latestSnapshotAge
   if (age == null) return 'unknown time ago'
-  const minutes = Math.floor(age / 60_000)
+  const minutes = Math.floor(age / 6e4)
   if (minutes < 1) return 'less than a minute ago'
   if (minutes < 60) return `${minutes} minute${minutes === 1 ? '' : 's'} ago`
   const hours = Math.floor(minutes / 60)
@@ -34,15 +29,10 @@ const snapshotAgeDisplay = computed(() => {
   const days = Math.floor(hours / 24)
   return `${days} day${days === 1 ? '' : 's'} ago`
 })
-
 const hasBackup = computed(() => !!current.value?.latestSnapshotId)
-
-function resolve(action: 'restore' | 'fresh') {
+function resolve(action) {
   if (!current.value) return
-  // Empty the queue first so handleOpenChange sees length=0 and won't reopen.
   resolveCorruption(current.value.id, action)
-  // Set isOpen synchronously — don't wait for the watcher's async flush.
-  // The watcher will also fire (as a no-op) on the next tick.
   isOpen.value = false
 }
 </script>
@@ -91,7 +81,7 @@ function resolve(action: 'restore' | 'fresh') {
               Server backup found
             </p>
             <p class="text-xs text-muted">
-              {{ current?.latestSnapshotLabel ? `"${current.latestSnapshotLabel}" — ` : '' }}Saved {{ snapshotAgeDisplay }}. Restoring will recover your data from the server.
+              {{ current?.latestSnapshotLabel ? `"${current.latestSnapshotLabel}" \u2014 ` : "" }}Saved {{ snapshotAgeDisplay }}. Restoring will recover your data from the server.
             </p>
           </div>
         </div>
@@ -120,7 +110,7 @@ function resolve(action: 'restore' | 'fresh') {
           v-if="corruptionQueue.length > 1"
           class="text-xs text-muted text-right"
         >
-          {{ corruptionQueue.length - 1 }} more item{{ corruptionQueue.length > 2 ? 's' : '' }} to resolve
+          {{ corruptionQueue.length - 1 }} more item{{ corruptionQueue.length > 2 ? "s" : "" }} to resolve
         </p>
       </div>
     </template>
@@ -141,7 +131,7 @@ function resolve(action: 'restore' | 'fresh') {
           icon="i-lucide-trash-2"
           @click="resolve('fresh')"
         >
-          {{ hasBackup ? 'Start fresh' : 'Start fresh (data will be lost)' }}
+          {{ hasBackup ? "Start fresh" : "Start fresh (data will be lost)" }}
         </UButton>
       </div>
     </template>

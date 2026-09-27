@@ -27,6 +27,12 @@ const navItems = [
     { label: 'Schema Migration', to: '/schema-migration', icon: 'i-lucide-arrow-up-circle' },
     { label: 'Permissions', to: '/permissions', icon: 'i-lucide-shield' },
   ],
+  [
+    { type: 'label', label: 'Headless Mode' },
+    { label: 'Settings Store', to: '/headless-settings', icon: 'i-lucide-sliders-horizontal' },
+    { label: 'Custom Task List', to: '/headless-tasks', icon: 'i-lucide-list-todo' },
+    { label: 'Notes (useProtoText)', to: '/headless-notes', icon: 'i-lucide-file-text' },
+  ],
 ]
 </script>
 

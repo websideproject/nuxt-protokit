@@ -63,6 +63,18 @@ export default defineNuxtConfig({
 
 📖 **[Full Documentation →](https://github.com/websideproject/nuxt-protokit)**
 
+## 🤖 Claude Code Skills
+
+If you use [Claude Code](https://claude.ai/code), install the skill plugin to give Claude accurate knowledge of `nuxt-protokit` APIs — schemas, composables, components, visualizations, offline persistence, and extensions.
+
+```bash
+/plugin marketplace add websideproject/nuxt-protokit
+/plugin install nuxt-protokit-skills
+```
+
+The plugin provides:
+- **`nuxt-protokit`** — `definePrototype`, `usePrototype`, `ProtoTool`, all field/viz types, collections, derived values, extensions, headless mode, and module authoring patterns
+
 ## 🤝 Contributing
 
 <!-- automd:file src=".github/snippets/contributing.md" -->

@@ -29,6 +29,7 @@ export interface UseProtoCollectionReturn {
    * states. Enforce collection access on the server for real security.
    */
   permissions: CollectionPermissionsResolved
+  destroy: () => void
 }
 
 /**
@@ -40,19 +41,24 @@ export function useProtoCollection(
   options?: {
     docKey?: string
     existingDoc?: Y.Doc
+    disableSync?: boolean
   },
 ): UseProtoCollectionReturn {
   let doc: Y.Doc
   let isReady: Ref<boolean>
+  let destroy: () => void = () => {}
 
   if (options?.existingDoc) {
     doc = options.existingDoc
     isReady = ref(true) as Ref<boolean>
   }
   else {
-    const protoDoc = useProtoDoc(options?.docKey ?? `collection-${schema.key}`)
+    const protoDoc = useProtoDoc(options?.docKey ?? `collection-${schema.key}`, {
+      disableSync: options?.disableSync,
+    })
     doc = protoDoc.doc
     isReady = protoDoc.isReady
+    destroy = protoDoc.destroy
   }
 
   const list = useProtoList(doc, schema.key, {
@@ -112,5 +118,6 @@ export function useProtoCollection(
     reset: list.reset,
     isReady,
     permissions,
+    destroy,
   }
 }

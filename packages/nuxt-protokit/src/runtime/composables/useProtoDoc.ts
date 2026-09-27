@@ -3,6 +3,7 @@ import * as Y from 'yjs'
 import { IndexeddbPersistence } from 'y-indexeddb'
 import { useProtoCorruption } from './useProtoCorruption'
 import { EncryptedIdbPersistence, type EncryptionConfig } from './useEncryptedIdb'
+import { useProtoKitConfig } from './useProtoKitConfig'
 
 export type { EncryptionConfig }
 

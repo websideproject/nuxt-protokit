@@ -135,7 +135,10 @@ const pieTab = ref<'pie' | 'donut'>('pie')
       <h2 class="text-sm font-semibold text-muted uppercase tracking-wide mb-3">
         Analytics Overview
       </h2>
-      <VizStatCards :cards="statCards" :cols="3" />
+      <VizStatCards
+        :cards="statCards"
+        :cols="3"
+      />
     </section>
 
     <!-- ── Line + Area Charts ─────────────────────────────────────────────── -->
@@ -201,7 +204,10 @@ const pieTab = ref<'pie' | 'donut'>('pie')
           <h3 class="text-sm font-medium text-highlighted mb-3">
             Bar Chart — Revenue by Product
           </h3>
-          <VizBarChart :data="barData" unit="$" />
+          <VizBarChart
+            :data="barData"
+            unit="$"
+          />
         </div>
 
         <div class="rounded-lg border border-default bg-default p-4">
@@ -239,7 +245,10 @@ const pieTab = ref<'pie' | 'donut'>('pie')
               <p class="text-xs text-muted mb-1">
                 Revenue Goal
               </p>
-              <VizProgressBar :value="82" :max="100" />
+              <VizProgressBar
+                :value="82"
+                :max="100"
+              />
               <p class="text-xs text-muted mt-1">
                 $48,291 / $58,800
               </p>
@@ -248,7 +257,11 @@ const pieTab = ref<'pie' | 'donut'>('pie')
               <p class="text-xs text-muted mb-1">
                 User Growth
               </p>
-              <VizProgressBar :value="67" :max="100" :thresholds="[{ value: 80, color: 'bg-emerald-500', label: 'Target' }]" />
+              <VizProgressBar
+                :value="67"
+                :max="100"
+                :thresholds="[{ value: 80, color: 'bg-emerald-500', label: 'Target' }]"
+              />
               <p class="text-xs text-muted mt-1">
                 2,847 / 4,250
               </p>
@@ -257,7 +270,11 @@ const pieTab = ref<'pie' | 'donut'>('pie')
               <p class="text-xs text-muted mb-1">
                 Trial Conversions
               </p>
-              <VizProgressBar :value="45" :max="100" :thresholds="[{ value: 60, color: 'bg-amber-500' }]" />
+              <VizProgressBar
+                :value="45"
+                :max="100"
+                :thresholds="[{ value: 60, color: 'bg-amber-500' }]"
+              />
               <p class="text-xs text-muted mt-1">
                 840 / 1,870
               </p>
@@ -266,7 +283,10 @@ const pieTab = ref<'pie' | 'donut'>('pie')
               <p class="text-xs text-muted mb-1">
                 NPS Target
               </p>
-              <VizProgressBar :value="72" :max="100" />
+              <VizProgressBar
+                :value="72"
+                :max="100"
+              />
               <p class="text-xs text-muted mt-1">
                 72 / 100
               </p>
@@ -286,7 +306,10 @@ const pieTab = ref<'pie' | 'donut'>('pie')
           <h3 class="text-sm font-medium text-highlighted mb-4">
             Funnel Chart — Acquisition to Retention
           </h3>
-          <VizFunnelChart :data="funnelData" show-conversion />
+          <VizFunnelChart
+            :data="funnelData"
+            show-conversion
+          />
         </div>
 
         <div class="rounded-lg border border-default bg-default p-4">
@@ -332,7 +355,11 @@ const pieTab = ref<'pie' | 'donut'>('pie')
         >
           <div class="flex items-center justify-between mb-2">
             <span class="text-xs text-muted">{{ card.label }}</span>
-            <UIcon v-if="card.icon" :name="card.icon" class="w-3.5 h-3.5 text-muted" />
+            <UIcon
+              v-if="card.icon"
+              :name="card.icon"
+              class="w-3.5 h-3.5 text-muted"
+            />
           </div>
           <p class="text-xl font-bold text-highlighted">
             {{ card.value }}

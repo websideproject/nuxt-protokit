@@ -1,17 +1,13 @@
-<script setup lang="ts">
+<script setup>
 import { ref } from 'vue'
 
-const props = withDefaults(defineProps<{
-  title: string
-  icon?: string
-  description?: string
-  collapsible?: boolean
-  defaultOpen?: boolean
-}>(), {
-  collapsible: false,
-  defaultOpen: true,
+const props = defineProps({
+  title: { type: String, required: true },
+  icon: { type: String, required: false },
+  description: { type: String, required: false },
+  collapsible: { type: Boolean, required: false, default: false },
+  defaultOpen: { type: Boolean, required: false, default: true },
 })
-
 const isOpen = ref(props.defaultOpen)
 </script>
 
@@ -20,7 +16,7 @@ const isOpen = ref(props.defaultOpen)
     <div
       class="flex items-center gap-2 mb-3"
       :class="collapsible ? 'cursor-pointer' : ''"
-      @click="collapsible ? (isOpen = !isOpen) : null"
+      @click="collapsible ? isOpen = !isOpen : null"
     >
       <UIcon
         v-if="collapsible"

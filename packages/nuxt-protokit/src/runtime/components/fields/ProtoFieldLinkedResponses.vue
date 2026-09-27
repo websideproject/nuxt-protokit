@@ -1,35 +1,26 @@
-<script setup lang="ts">
-import type { LinkedResponsesFieldDef } from '../../types/schema'
-
-const props = defineProps<{
-  fieldDef: LinkedResponsesFieldDef
-  modelValue: Array<{ sourceId: string, answer: string }>
-  collectionItems?: Record<string, any[]>
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: Array<{ sourceId: string, answer: string }>]
-}>()
-
+<script setup>
+import { computed } from 'vue'
+const props = defineProps({
+  fieldDef: { type: Object, required: true },
+  modelValue: { type: Array, required: true },
+  collectionItems: { type: Object, required: false },
+})
+const emit = defineEmits(['update:modelValue'])
 const sourceItems = computed(() => {
   return props.collectionItems?.[props.fieldDef.sourceCollection] ?? []
 })
-
-// Build a reactive lookup: sourceId → answer
 const answersMap = computed(() => {
-  const map: Record<string, string> = {}
+  const map = {}
   for (const r of props.modelValue || []) {
     map[r.sourceId] = r.answer
   }
   return map
 })
-
-function getAnswer(sourceId: string): string {
+function getAnswer(sourceId) {
   return answersMap.value[sourceId] ?? ''
 }
-
-function setAnswer(sourceId: string, answer: string) {
-  const current = [...(props.modelValue || [])]
+function setAnswer(sourceId, answer) {
+  const current = [...props.modelValue || []]
   const idx = current.findIndex(r => r.sourceId === sourceId)
   if (idx >= 0) {
     current[idx] = { sourceId, answer }
@@ -73,7 +64,7 @@ function setAnswer(sourceId: string, answer: string) {
       <div class="pl-7">
         <UTextarea
           :model-value="getAnswer(item.id || String(idx))"
-          :placeholder="fieldDef.answerPlaceholder || 'Record response…'"
+          :placeholder="fieldDef.answerPlaceholder || 'Record response\u2026'"
           :rows="fieldDef.answerRows || 2"
           class="w-full"
           @update:model-value="setAnswer(item.id || String(idx), $event)"

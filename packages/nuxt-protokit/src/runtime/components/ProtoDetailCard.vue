@@ -1,26 +1,22 @@
-<script setup lang="ts">
-import type { FieldDef } from '../types/schema'
+<script setup>
+import { computed } from 'vue'
 import { applyFormat } from '../utils/formatters'
 
-const props = withDefaults(defineProps<{
-  fields: Record<string, FieldDef>
-  data: Record<string, any>
-  cols?: 1 | 2 | 3
-  title?: string
-}>(), {
-  cols: 2,
+const props = defineProps({
+  fields: { type: Object, required: true },
+  data: { type: Object, required: true },
+  cols: { type: Number, required: false, default: 2 },
+  title: { type: String, required: false },
 })
-
 const gridClass = computed(() => {
-  const colMap: Record<number, string> = {
+  const colMap = {
     1: 'grid-cols-1',
     2: 'grid-cols-2',
     3: 'grid-cols-3',
   }
   return `grid ${colMap[props.cols] || 'grid-cols-2'} gap-3`
 })
-
-function getLabel(key: string, fieldDef: FieldDef): string {
+function getLabel(key, fieldDef) {
   if (typeof fieldDef.label === 'function') return fieldDef.label(props.data[key])
   return fieldDef.label
 }
@@ -43,10 +39,10 @@ function getLabel(key: string, fieldDef: FieldDef): string {
         class="space-y-0.5"
       >
         <div class="text-xs text-muted">
-          {{ getLabel(key as string, fieldDef) }}
+          {{ getLabel(key, fieldDef) }}
         </div>
         <div class="font-medium text-highlighted">
-          {{ applyFormat(data[key as string], (fieldDef as any).format) }}
+          {{ applyFormat(data[key], fieldDef.format) }}
         </div>
       </div>
     </div>

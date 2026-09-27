@@ -130,9 +130,17 @@ function statusColor(status: string) {
           <div class="w-72 shrink-0 border-r border-default flex flex-col overflow-hidden">
             <div class="px-4 py-3 border-b border-default flex items-center justify-between">
               <div class="flex items-center gap-2">
-                <UIcon name="i-lucide-file-text" class="size-4 text-primary" />
+                <UIcon
+                  name="i-lucide-file-text"
+                  class="size-4 text-primary"
+                />
                 <span class="text-sm font-semibold text-highlighted">Content Pieces</span>
-                <UBadge variant="subtle" size="sm">{{ items.length }}</UBadge>
+                <UBadge
+                  variant="subtle"
+                  size="sm"
+                >
+                  {{ items.length }}
+                </UBadge>
               </div>
               <UButton
                 size="xs"
@@ -146,8 +154,13 @@ function statusColor(status: string) {
               v-if="items.length === 0"
               class="flex-1 flex flex-col items-center justify-center gap-3 px-6 py-8 text-center"
             >
-              <UIcon name="i-lucide-file-plus" class="size-8 text-muted" />
-              <p class="text-sm text-muted">No content pieces yet.</p>
+              <UIcon
+                name="i-lucide-file-plus"
+                class="size-8 text-muted"
+              />
+              <p class="text-sm text-muted">
+                No content pieces yet.
+              </p>
               <UButton
                 size="sm"
                 variant="outline"
@@ -284,8 +297,13 @@ function statusColor(status: string) {
               v-else
               class="flex flex-col items-center justify-center h-full gap-3 text-center px-8 py-16"
             >
-              <UIcon name="i-lucide-panel-right-open" class="size-8 text-muted" />
-              <p class="text-sm text-muted">Select a content piece to see its detail panels.</p>
+              <UIcon
+                name="i-lucide-panel-right-open"
+                class="size-8 text-muted"
+              />
+              <p class="text-sm text-muted">
+                Select a content piece to see its detail panels.
+              </p>
             </div>
           </div>
         </div>

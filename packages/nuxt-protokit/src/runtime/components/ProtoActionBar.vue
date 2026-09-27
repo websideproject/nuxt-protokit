@@ -1,33 +1,26 @@
-<script setup lang="ts">
-import type { ProtoAction } from '../types/schema'
-import type { ComputeContext } from '../types/compute'
-
-const props = defineProps<{
-  actions: ProtoAction[]
-  computeContext: ComputeContext
-  collectionArrays: Record<string, any[]>
-  onReset?: () => void
-}>()
-
-// Track per-button "Copied!" state
-const copiedState = ref<Record<string, boolean>>({})
-
-function isVisible(action: ProtoAction): boolean {
+<script setup>
+import { computed, ref } from 'vue'
+const props = defineProps({
+  actions: { type: Array, required: true },
+  computeContext: { type: Object, required: true },
+  collectionArrays: { type: Object, required: true },
+  onReset: { type: Function, required: false },
+})
+const copiedState = ref({})
+function isVisible(action) {
   if (!action.showWhen) return true
   return action.showWhen(props.computeContext)
 }
-
-async function handleCopyText(action: Extract<ProtoAction, { type: 'copy-text' }>) {
+async function handleCopyText(action) {
   const text = action.text(props.computeContext, props.collectionArrays)
   try {
     await navigator.clipboard.writeText(text)
     copiedState.value[action.id] = true
     setTimeout(() => {
       copiedState.value[action.id] = false
-    }, 2000)
+    }, 2e3)
   }
   catch {
-    // Fallback: create temp textarea
     const ta = document.createElement('textarea')
     ta.value = text
     ta.style.position = 'fixed'
@@ -40,14 +33,12 @@ async function handleCopyText(action: Extract<ProtoAction, { type: 'copy-text' }
     copiedState.value[action.id] = true
     setTimeout(() => {
       copiedState.value[action.id] = false
-    }, 2000)
+    }, 2e3)
   }
 }
-
-function handleExportMarkdown(action: Extract<ProtoAction, { type: 'export-markdown' }>) {
+function handleExportMarkdown(action) {
   const content = action.content(props.computeContext, props.collectionArrays)
   const filename = action.filename || 'export.md'
-
   try {
     const blob = new Blob([content], { type: 'text/markdown;charset=utf-8' })
     const url = URL.createObjectURL(blob)
@@ -58,16 +49,15 @@ function handleExportMarkdown(action: Extract<ProtoAction, { type: 'export-markd
     URL.revokeObjectURL(url)
   }
   catch {
-    // Fallback: clipboard
-    navigator.clipboard.writeText(content).catch(() => {})
+    navigator.clipboard.writeText(content).catch(() => {
+    })
     copiedState.value[action.id] = true
     setTimeout(() => {
       copiedState.value[action.id] = false
-    }, 2000)
+    }, 2e3)
   }
 }
-
-function handleAction(action: ProtoAction) {
+function handleAction(action) {
   if (action.type === 'copy-text') {
     handleCopyText(action)
   }
@@ -78,7 +68,6 @@ function handleAction(action: ProtoAction) {
     props.onReset?.()
   }
 }
-
 const visibleActions = computed(() => props.actions.filter(a => isVisible(a)))
 </script>
 
@@ -92,11 +81,11 @@ const visibleActions = computed(() => props.actions.filter(a => isVisible(a)))
       :key="action.id"
       variant="outline"
       size="sm"
-      :icon="copiedState[action.id] ? 'i-lucide-check' : (action.icon || 'i-lucide-zap')"
+      :icon="copiedState[action.id] ? 'i-lucide-check' : action.icon || 'i-lucide-zap'"
       :color="action.type === 'reset' ? 'neutral' : 'primary'"
       @click="handleAction(action)"
     >
-      {{ copiedState[action.id] ? 'Copied!' : action.label }}
+      {{ copiedState[action.id] ? "Copied!" : action.label }}
     </UButton>
   </div>
 </template>

@@ -1,17 +1,14 @@
-<script setup lang="ts">
-const props = defineProps<{
-  modelValue: number
-  placeholder?: string
-  min?: number
-  max?: number
-  step?: number
-  leading?: string
-  trailing?: string
-}>()
-
-const emit = defineEmits<{
-  'update:modelValue': [value: number]
-}>()
+<script setup>
+const props = defineProps({
+  modelValue: { type: Number, required: true },
+  placeholder: { type: String, required: false },
+  min: { type: Number, required: false },
+  max: { type: Number, required: false },
+  step: { type: Number, required: false },
+  leading: { type: String, required: false },
+  trailing: { type: String, required: false },
+})
+const emit = defineEmits(['update:modelValue'])
 </script>
 
 <template>

@@ -1,0 +1,20 @@
+{
+  "name": "nuxt-protokit-skills",
+  "owner": {
+    "name": "websideproject"
+  },
+  "metadata": {
+    "description": "Claude Code skills for @websideproject/nuxt-protokit — schema-driven rapid prototyping for Nuxt 4",
+    "version": "0.0.3"
+  },
+  "plugins": [
+    {
+      "name": "nuxt-protokit-skills",
+      "description": "Skills for nuxt-protokit: definePrototype, usePrototype, ProtoTool, collections, visualizations, offline-first, extensions, and module authoring",
+      "source": "./",
+      "skills": [
+        "./.claude/skills/nuxt-protokit"
+      ]
+    }
+  ]
+}

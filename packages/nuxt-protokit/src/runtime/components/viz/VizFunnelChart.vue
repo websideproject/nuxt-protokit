@@ -1,21 +1,11 @@
-<script setup lang="ts">
+<script setup>
 import { computed } from 'vue'
 
-interface FunnelStep {
-  label: string
-  value: number
-  color?: string
-}
-
-const props = withDefaults(defineProps<{
-  data: FunnelStep[]
-  unit?: string
-  showConversion?: boolean
-}>(), {
-  unit: '',
-  showConversion: true,
+const props = defineProps({
+  data: { type: Array, required: true },
+  unit: { type: String, required: false, default: '' },
+  showConversion: { type: Boolean, required: false, default: true },
 })
-
 const PALETTE = [
   'var(--color-primary-500, #3b82f6)',
   'var(--color-primary-400, #60a5fa)',
@@ -23,16 +13,12 @@ const PALETTE = [
   'var(--color-primary-200, #bfdbfe)',
   'var(--color-primary-100, #dbeafe)',
 ]
-
 const max = computed(() => props.data[0]?.value || 1)
-
 const steps = computed(() => props.data.map((d, i) => ({
   ...d,
-  pct: Math.round((d.value / max.value) * 100),
+  pct: Math.round(d.value / max.value * 100),
   color: d.color || PALETTE[i % PALETTE.length],
-  conversion: i > 0 && props.data[i - 1]
-    ? Math.round((d.value / props.data[i - 1]!.value) * 100)
-    : null,
+  conversion: i > 0 && props.data[i - 1] ? Math.round(d.value / props.data[i - 1].value * 100) : null,
 })))
 </script>
 
