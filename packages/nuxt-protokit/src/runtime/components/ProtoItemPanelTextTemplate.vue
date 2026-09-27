@@ -1,46 +1,59 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed, watch } from 'vue'
+import type { TextTemplatePanelDef } from '../types/schema'
 
-const props = defineProps({
-  panelDef: { type: Object, required: true },
-  item: { type: Object, required: true },
-  collections: { type: Object, required: true },
-})
+const props = defineProps<{
+  panelDef: TextTemplatePanelDef
+  item: Record<string, any>
+  collections: Record<string, any[]>
+}>()
+
 const ctx = computed(() => ({ collections: props.collections }))
-const resolvedSections = computed(
-  () => props.panelDef.sections.map(section => ({
+
+const resolvedSections = computed(() =>
+  props.panelDef.sections.map(section => ({
     ...section,
     content: section.template(props.item, ctx.value),
   })),
 )
+
 const resolvedTip = computed(() => {
   const tip = props.panelDef.tip
-  if (!tip) return void 0
+  if (!tip) return undefined
   if (typeof tip === 'function') return tip(props.item, ctx.value)
   return tip
 })
-const localContents = ref({})
+
+// Local editable copies of section content — reset on Regenerate
+const localContents = ref<Record<string, string>>({})
+
 function initLocal() {
-  const vals = {}
+  const vals: Record<string, string> = {}
   for (const s of resolvedSections.value) {
     vals[s.id] = s.content
   }
   localContents.value = vals
 }
 initLocal()
+
+// When item identity changes, re-init locals
 watch(() => props.item._id ?? JSON.stringify(props.item), () => initLocal())
+
 function regenerate() {
   initLocal()
 }
-async function copySection(id) {
+
+async function copySection(id: string) {
   const text = localContents.value[id] ?? ''
   try {
     await navigator.clipboard.writeText(text)
   }
   catch {
+    // fallback: select text
   }
 }
-function charCount(id) {
+
+function charCount(id: string): number {
   return (localContents.value[id] ?? '').length
 }
 </script>

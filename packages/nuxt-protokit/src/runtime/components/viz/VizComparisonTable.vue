@@ -1,15 +1,15 @@
-<script setup>
-defineProps({
-  columns: { type: Array, required: true },
-  rows: { type: Array, required: true },
-})
+<script setup lang="ts">
+defineProps<{
+  columns: Array<{ key: string, label: string }>
+  rows: Array<Record<string, any>>
+}>()
 </script>
 
 <template>
   <UTable
     v-if="rows.length > 0"
     :data="rows"
-    :columns="columns.map((c) => ({ accessorKey: c.key, header: c.label }))"
+    :columns="columns.map(c => ({ accessorKey: c.key, header: c.label }))"
   />
   <div
     v-else

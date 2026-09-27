@@ -1,14 +1,24 @@
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue'
 
-const props = defineProps({
-  series: { type: Array, required: true },
-  showAxes: { type: Boolean, required: false },
-  unit: { type: String, required: false, default: '' },
-  emptyText: { type: String, required: false },
-  stacked: { type: Boolean, required: false },
+interface Series {
+  label: string
+  data: Array<{ label: string, value: number }>
+  color?: string
+}
+
+const props = withDefaults(defineProps<{
+  series: Series[]
+  showAxes?: boolean
+  unit?: string
+  emptyText?: string
+  stacked?: boolean
+}>(), {
+  unit: '',
 })
+
 const uid = Math.random().toString(36).slice(2, 7)
+
 const PALETTE = [
   'var(--color-primary-500, #3b82f6)',
   'var(--color-violet-500, #8b5cf6)',
@@ -16,24 +26,31 @@ const PALETTE = [
   'var(--color-amber-500, #f59e0b)',
   'var(--color-rose-500, #f43f5e)',
 ]
+
 const VW = 400
 const VH = computed(() => props.showAxes ? 130 : 80)
-const PAD = computed(
-  () => props.showAxes ? { top: 12, right: 10, bottom: 28, left: 38 } : { top: 8, right: 8, bottom: 8, left: 8 },
+const PAD = computed(() => props.showAxes
+  ? { top: 12, right: 10, bottom: 28, left: 38 }
+  : { top: 8, right: 8, bottom: 8, left: 8 },
 )
+
 const xLabels = computed(() => {
   const first = props.series[0]
   if (!first) return []
   return first.data.map(d => d.label)
 })
+
 const chart = computed(() => {
   if (!props.series.length || !props.series[0]?.data.length) return null
   const n = props.series[0].data.length
   if (n < 2) return null
+
   const { top, right, bottom, left } = PAD.value
   const iW = VW - left - right
   const iH = VH.value - top - bottom
   const baseY = top + iH
+
+  // Find global max (or stacked max)
   let maxVal = 0
   if (props.stacked) {
     for (let i = 0; i < n; i++) {
@@ -47,21 +64,29 @@ const chart = computed(() => {
     }
   }
   if (maxVal === 0) return null
+
   const seriesPaths = props.series.map((ser, si) => {
     const color = ser.color || PALETTE[si % PALETTE.length]
     const gradId = `vac-${uid}-${si}`
+
     const pts = ser.data.map((d, i) => {
-      const x = left + i / (n - 1) * iW
-      const y = top + iH - d.value / maxVal * iH
+      const x = left + (i / (n - 1)) * iW
+      const y = top + iH - (d.value / maxVal) * iH
       return { x, y, value: d.value, label: d.label }
     })
+
     const lineD = pts.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x.toFixed(1)} ${p.y.toFixed(1)}`).join(' ')
-    const areaD = `${lineD} L${pts.at(-1).x.toFixed(1)} ${baseY} L${pts[0].x.toFixed(1)} ${baseY} Z`
+    const areaD = `${lineD} L${pts.at(-1)!.x.toFixed(1)} ${baseY} L${pts[0].x.toFixed(1)} ${baseY} Z`
+
     return { pts, lineD, areaD, color, gradId, label: ser.label }
   })
+
   const maxLabels = 6
   const step = Math.max(1, Math.ceil((n - 1) / (maxLabels - 1)))
-  const xTicks = Array.from({ length: n }, (_, i) => i).filter(i => i === 0 || i === n - 1 || i % step === 0).map(i => ({ x: left + i / (n - 1) * iW, label: xLabels.value[i] }))
+  const xTicks = Array.from({ length: n }, (_, i) => i)
+    .filter(i => i === 0 || i === n - 1 || i % step === 0)
+    .map(i => ({ x: left + (i / (n - 1)) * iW, label: xLabels.value[i] }))
+
   return { seriesPaths, maxVal, baseY, xTicks, left, top, iH, iW }
 })
 </script>
@@ -73,7 +98,7 @@ const chart = computed(() => {
       class="flex items-center justify-center text-xs text-muted italic"
       :style="{ height: `${VH}px` }"
     >
-      {{ emptyText || "Not enough data" }}
+      {{ emptyText || 'Not enough data' }}
     </div>
 
     <template v-else>

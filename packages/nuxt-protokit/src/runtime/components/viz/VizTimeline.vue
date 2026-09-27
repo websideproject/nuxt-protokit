@@ -1,20 +1,24 @@
-<script setup>
-defineProps({
-  items: { type: Array, required: true },
-})
-function statusColor(status) {
+<script setup lang="ts">
+defineProps<{
+  items: Array<{
+    title: string
+    description?: string
+    date?: string
+    status?: 'done' | 'current' | 'upcoming'
+    icon?: string
+  }>
+}>()
+
+function statusColor(status?: string) {
   switch (status) {
-    case 'done':
-      return 'bg-emerald-500'
-    case 'current':
-      return 'bg-[var(--ui-primary)]'
-    case 'upcoming':
-      return 'bg-muted'
-    default:
-      return 'bg-muted'
+    case 'done': return 'bg-emerald-500'
+    case 'current': return 'bg-[var(--ui-primary)]'
+    case 'upcoming': return 'bg-muted'
+    default: return 'bg-muted'
   }
 }
-function statusRing(status) {
+
+function statusRing(status?: string) {
   return status === 'current' ? 'ring-2 ring-[var(--ui-primary)] ring-offset-2 ring-offset-[var(--ui-bg)]' : ''
 }
 </script>

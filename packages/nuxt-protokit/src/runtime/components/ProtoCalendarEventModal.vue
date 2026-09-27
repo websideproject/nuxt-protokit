@@ -1,23 +1,31 @@
-<script setup>
+<script setup lang="ts">
 import { ref, watch, computed } from 'vue'
+import type { CalendarEvent, CalendarColor } from '../types/calendar'
 import { CALENDAR_EVENT_DEFAULTS, CALENDAR_COLORS, CALENDAR_COLOR_HEX } from '../types/calendar'
 import { toLocalISOString } from '../utils/calendarLayout'
 
-const props = defineProps({
-  event: { type: [Object, null], required: false },
-  defaults: { type: Object, required: false },
-})
-const emit = defineEmits(['save', 'delete'])
-const isOpen = defineModel('open', { type: Boolean, ...{ default: false } })
+const props = defineProps<{
+  event?: CalendarEvent | null
+  defaults?: Partial<CalendarEvent>
+}>()
+
+const emit = defineEmits<{
+  save: [event: CalendarEvent]
+  delete: [event: CalendarEvent]
+}>()
+
+const isOpen = defineModel<boolean>('open', { default: false })
+
 const isEditMode = computed(() => !!props.event?.id)
-function buildFormData() {
+
+function buildFormData(): CalendarEvent {
   if (props.event?.id) {
     return { ...props.event }
   }
-  const now = /* @__PURE__ */ new Date()
+  const now = new Date()
   now.setMinutes(0, 0, 0)
   const start = toLocalISOString(now)
-  const end = toLocalISOString(new Date(now.getTime() + 60 * 60 * 1e3))
+  const end = toLocalISOString(new Date(now.getTime() + 60 * 60 * 1000))
   return {
     ...CALENDAR_EVENT_DEFAULTS,
     startAt: start,
@@ -25,18 +33,22 @@ function buildFormData() {
     ...props.defaults,
   }
 }
-const formData = ref(buildFormData())
-const validationError = ref(null)
+
+const formData = ref<CalendarEvent>(buildFormData())
+const validationError = ref<string | null>(null)
+
 watch(isOpen, (open) => {
   if (!open) return
   formData.value = buildFormData()
   validationError.value = null
 })
+
 watch(() => props.event, (event) => {
   if (event) {
     formData.value = { ...event }
   }
 })
+
 watch(() => formData.value.allDay, (allDay) => {
   if (allDay) {
     const strStart = formData.value.startAt?.split('T')[0]
@@ -45,30 +57,28 @@ watch(() => formData.value.allDay, (allDay) => {
     if (strEnd) formData.value.endAt = `${strEnd}T00:00:00`
   }
 })
+
+// datetime-local inputs use "YYYY-MM-DDTHH:mm" (no seconds)
 const startAtInput = computed({
   get: () => formData.value.startAt?.slice(0, 16) ?? '',
-  set: (v) => {
-    formData.value.startAt = v ? `${v}:00` : ''
-  },
+  set: (v: string) => { formData.value.startAt = v ? `${v}:00` : '' },
 })
+
 const endAtInput = computed({
   get: () => formData.value.endAt?.slice(0, 16) ?? '',
-  set: (v) => {
-    formData.value.endAt = v ? `${v}:00` : ''
-  },
+  set: (v: string) => { formData.value.endAt = v ? `${v}:00` : '' },
 })
+
 const startDateInput = computed({
   get: () => formData.value.startAt?.split('T')[0] ?? '',
-  set: (v) => {
-    formData.value.startAt = v ? `${v}T00:00:00` : ''
-  },
+  set: (v: string) => { formData.value.startAt = v ? `${v}T00:00:00` : '' },
 })
+
 const endDateInput = computed({
   get: () => formData.value.endAt?.split('T')[0] ?? '',
-  set: (v) => {
-    formData.value.endAt = v ? `${v}T00:00:00` : ''
-  },
+  set: (v: string) => { formData.value.endAt = v ? `${v}T00:00:00` : '' },
 })
+
 function save() {
   validationError.value = null
   if (!formData.value.title?.trim()) {
@@ -82,16 +92,19 @@ function save() {
   emit('save', { ...formData.value })
   isOpen.value = false
 }
+
 function deleteEvent() {
   if (props.event) {
     emit('delete', props.event)
     isOpen.value = false
   }
 }
-function selectColor(color) {
+
+function selectColor(color: CalendarColor) {
   formData.value.color = color
 }
-function swatchStyle(color) {
+
+function swatchStyle(color: CalendarColor) {
   return { backgroundColor: CALENDAR_COLOR_HEX[color] ?? '#3b82f6' }
 }
 </script>
@@ -227,7 +240,7 @@ function swatchStyle(color) {
           icon="i-lucide-check"
           @click="save"
         >
-          {{ isEditMode ? "Save Changes" : "Add Event" }}
+          {{ isEditMode ? 'Save Changes' : 'Add Event' }}
         </UButton>
       </div>
     </template>

@@ -1,12 +1,15 @@
-<script setup>
-defineProps({
-  modelValue: { type: Number, required: true },
-  min: { type: Number, required: false },
-  max: { type: Number, required: false },
-  step: { type: Number, required: false },
-  rangeLabels: { type: Object, required: false },
-})
-const emit = defineEmits(['update:modelValue'])
+<script setup lang="ts">
+defineProps<{
+  modelValue: number
+  min?: number
+  max?: number
+  step?: number
+  rangeLabels?: { min: string, max: string }
+}>()
+
+const emit = defineEmits<{
+  'update:modelValue': [value: number]
+}>()
 </script>
 
 <template>
@@ -18,7 +21,7 @@ const emit = defineEmits(['update:modelValue'])
       :min="min"
       :max="max"
       :step="step"
-      @input="emit('update:modelValue', Number($event.target.value))"
+      @input="emit('update:modelValue', Number(($event.target as HTMLInputElement).value))"
     >
     <div
       v-if="rangeLabels"

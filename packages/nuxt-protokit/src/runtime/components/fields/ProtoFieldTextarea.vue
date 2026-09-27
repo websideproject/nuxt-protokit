@@ -1,9 +1,12 @@
-<script setup>
-defineProps({
-  modelValue: { type: String, required: true },
-  placeholder: { type: String, required: false },
-})
-const emit = defineEmits(['update:modelValue'])
+<script setup lang="ts">
+defineProps<{
+  modelValue: string
+  placeholder?: string
+}>()
+
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+}>()
 </script>
 
 <template>

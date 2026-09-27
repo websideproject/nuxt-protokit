@@ -1,8 +1,11 @@
-<script setup>
-defineProps({
-  features: { type: Array, required: true },
-  entities: { type: Array, required: true },
-})
+<script setup lang="ts">
+defineProps<{
+  features: string[]
+  entities: Array<{
+    name: string
+    coverage: Record<string, boolean | 'partial'>
+  }>
+}>()
 </script>
 
 <template>

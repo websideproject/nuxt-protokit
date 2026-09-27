@@ -1,8 +1,11 @@
-<script setup>
-defineProps({
-  modelValue: { type: String, required: true },
-})
-const emit = defineEmits(['update:modelValue'])
+<script setup lang="ts">
+defineProps<{
+  modelValue: string
+}>()
+
+const emit = defineEmits<{
+  'update:modelValue': [value: string]
+}>()
 </script>
 
 <template>
@@ -11,7 +14,7 @@ const emit = defineEmits(['update:modelValue'])
       :value="modelValue"
       type="color"
       class="h-9 w-12 rounded border border-default cursor-pointer"
-      @input="emit('update:modelValue', $event.target.value)"
+      @input="emit('update:modelValue', ($event.target as HTMLInputElement).value)"
     >
     <UInput
       :model-value="modelValue"

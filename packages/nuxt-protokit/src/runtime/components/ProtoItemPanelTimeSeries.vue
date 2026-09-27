@@ -1,40 +1,56 @@
-<script setup>
+<script setup lang="ts">
 import { ref, computed } from 'vue'
+import type { TimeSeriesPanelDef } from '../types/schema'
 
-const props = defineProps({
-  panelDef: { type: Object, required: true },
-  item: { type: Object, required: true },
-  collections: { type: Object, required: true },
-})
-const emit = defineEmits(['update'])
-const today = (/* @__PURE__ */ new Date()).toISOString().slice(0, 10)
+const props = defineProps<{
+  panelDef: TimeSeriesPanelDef
+  item: Record<string, any>
+  collections: Record<string, any[]>
+}>()
+
+const emit = defineEmits<{
+  update: [patch: Partial<Record<string, any>>]
+}>()
+
+const today = new Date().toISOString().slice(0, 10)
 const snapshotDate = ref(today)
-const metricValues = ref({})
-const visibleMetrics = computed(
-  () => props.panelDef.metrics.filter(m => !m.showWhen || m.showWhen(props.item)),
+const metricValues = ref<Record<string, number>>({})
+
+// Initialize metric values from props
+const visibleMetrics = computed(() =>
+  props.panelDef.metrics.filter(m => !m.showWhen || m.showWhen(props.item)),
 )
+
 function initMetrics() {
-  const vals = {}
+  const vals: Record<string, number> = {}
   for (const m of visibleMetrics.value) {
     vals[m.key] = props.item[m.key] ?? 0
   }
   metricValues.value = vals
 }
 initMetrics()
-const history = computed(() => {
+
+const history = computed<Array<Record<string, any>>>(() => {
   const raw = props.item[props.panelDef.historyKey]
   if (!Array.isArray(raw)) return []
   return [...raw].sort((a, b) => (b.date ?? '').localeCompare(a.date ?? '')).slice(0, 7)
 })
+
 function saveSnapshot() {
-  const snapshot = { date: snapshotDate.value }
-  const topLevelPatch = {}
+  const snapshot: Record<string, any> = { date: snapshotDate.value }
+  const topLevelPatch: Record<string, any> = {}
+
   for (const m of visibleMetrics.value) {
     const val = metricValues.value[m.key] ?? 0
     snapshot[m.key] = val
     topLevelPatch[m.key] = val
   }
-  const existingHistory = Array.isArray(props.item[props.panelDef.historyKey]) ? [...props.item[props.panelDef.historyKey]] : []
+
+  const existingHistory: Record<string, any>[] = Array.isArray(props.item[props.panelDef.historyKey])
+    ? [...props.item[props.panelDef.historyKey]]
+    : []
+
+  // Replace snapshot for the same date if it exists
   const idx = existingHistory.findIndex(h => h.date === snapshotDate.value)
   if (idx >= 0) {
     existingHistory[idx] = snapshot
@@ -42,6 +58,7 @@ function saveSnapshot() {
   else {
     existingHistory.push(snapshot)
   }
+
   emit('update', {
     ...topLevelPatch,
     [props.panelDef.historyKey]: existingHistory,
@@ -117,7 +134,7 @@ function saveSnapshot() {
               :key="metric.key"
               class="py-1 px-2 text-right tabular-nums"
             >
-              {{ snap[metric.key] ?? "\u2014" }}
+              {{ snap[metric.key] ?? '—' }}
             </td>
           </tr>
         </tbody>
