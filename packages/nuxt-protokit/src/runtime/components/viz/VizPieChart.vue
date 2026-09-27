@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { formatNumber } from '../../utils/formatters'
 
 interface Slice {
   label: string
@@ -106,7 +107,7 @@ const slices = computed(() => {
           class="transition-opacity hover:opacity-100"
           style="cursor: default"
         >
-          <title>{{ slice.label }}: {{ slice.value.toLocaleString() }}{{ unit }} ({{ slice.pct }}%)</title>
+          <title>{{ slice.label }}: {{ formatNumber(slice.value) }}{{ unit }} ({{ slice.pct }}%)</title>
         </path>
         <text
           v-if="donut"
@@ -118,7 +119,7 @@ const slices = computed(() => {
           fill="currentColor"
           class="text-highlighted"
         >
-          {{ total.toLocaleString() }}
+          {{ formatNumber(total) }}
         </text>
       </svg>
 

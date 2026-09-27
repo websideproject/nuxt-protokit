@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, useId } from 'vue'
+import { formatNumber } from '../../utils/formatters'
 
 interface Series {
   label: string
@@ -51,7 +52,7 @@ const maxValue = computed(() => {
 // The y-axis labels are right-aligned in the left padding: make it as wide as the longest one (~5.5 units per
 // character at font-size 9), so a label like "22,935$" is not cut off.
 const PAD = computed(() => props.showAxes
-  ? { top: 12, right: 10, bottom: 28, left: Math.max(38, 8 + `${maxValue.value.toLocaleString()}${props.unit}`.length * 5.5) }
+  ? { top: 12, right: 10, bottom: 28, left: Math.max(38, 8 + `${formatNumber(maxValue.value)}${props.unit}`.length * 5.5) }
   : { top: 8, right: 8, bottom: 8, left: 8 },
 )
 
@@ -178,7 +179,7 @@ const chart = computed(() => {
             fill="currentColor"
             opacity="0.5"
           >
-            {{ chart.maxVal.toLocaleString() }}{{ unit }}
+            {{ formatNumber(chart.maxVal) }}{{ unit }}
           </text>
           <text
             :x="chart.left - 4"
@@ -188,7 +189,7 @@ const chart = computed(() => {
             fill="currentColor"
             opacity="0.35"
           >
-            {{ Math.round(chart.maxVal / 2).toLocaleString() }}
+            {{ formatNumber(Math.round(chart.maxVal / 2)) }}
           </text>
           <text
             :x="chart.left - 4"
@@ -241,7 +242,7 @@ const chart = computed(() => {
             stroke="white"
             stroke-width="1.5"
           >
-            <title>{{ pt.label }}: {{ pt.value.toLocaleString() }}{{ unit }}</title>
+            <title>{{ pt.label }}: {{ formatNumber(pt.value) }}{{ unit }}</title>
           </circle>
         </template>
       </svg>
