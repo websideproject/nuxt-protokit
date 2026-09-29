@@ -280,6 +280,8 @@ watch(
                 />
               </template>
             </USelect>
+            <!-- A plain dropdown, not the calendar select's `item-aligned`: that lines the list up with the trigger's
+              value text, and this trigger hides it, so the list had nothing to align to and opened off screen -->
             <USelect
               v-else
               v-model="state.color"
@@ -290,8 +292,8 @@ watch(
               trailing-icon="i-lucide-chevrons-up-down"
               aria-label="Colour"
               class="-me-2"
-              :content="{ position: 'item-aligned', align: 'start' }"
-              :ui="{ base: 'rounded-sm', content: 'min-w-fit max-h-72', value: 'hidden' }"
+              :content="{ align: 'end' }"
+              :ui="{ base: 'rounded-sm', content: 'min-w-fit', value: 'hidden' }"
             >
               <template #leading>
                 <span

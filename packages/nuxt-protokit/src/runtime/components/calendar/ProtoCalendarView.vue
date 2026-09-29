@@ -155,8 +155,9 @@ useEventListener('keydown', (event: KeyboardEvent) => {
       <slot name="toolbar-start" />
 
       <h2 class="flex min-w-0 flex-1 items-baseline gap-1.5 text-lg tracking-tight sm:text-xl">
-        <span class="truncate font-bold text-highlighted">{{ title.months }}</span>
-        <span class="hidden font-normal text-muted sm:inline">{{ title.year }}</span>
+        <!-- The space is only text: a flex container does not lay it out, but it keeps "March 2026" one phrase for a
+          screen reader and for anything reading the text -->
+        <span class="truncate font-bold text-highlighted">{{ title.months }}</span>{{ ' ' }}<span class="hidden font-normal text-muted sm:inline">{{ title.year }}</span>
       </h2>
 
       <!-- Down to the initial below `sm`, where the toolbar cannot spare the width for the labels -->
