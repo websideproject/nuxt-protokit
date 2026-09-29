@@ -119,12 +119,39 @@ Renders collection items as a searchable list. Uses `schema.collections[key].lis
 
 ---
 
-## `<ProtoCalendar>` — Calendar Widget
+## `<ProtoCalendar>` / `<ProtoCalendarView>` — Calendar
 
-Renders a monthly/weekly/daily calendar from collection items.
+Day / week / infinite month calendar (from the Nuxt UI calendar template): drag to create, move and
+resize, inline event form, quick natural-language events. Needs `@nuxt/ui` >= 4.5.
 
 ```vue
-<ProtoCalendar
+<!-- Y.js-backed, persists itself -->
+<ProtoCalendar doc-key="my-calendar" class="h-screen" />
+
+<!-- Bring your own data: events in, changes out -->
+<ProtoCalendarView
+  v-model:view="view"
+  :events="events"
+  :calendars="[{ id: 'work', name: 'Work', color: 'primary' }]"
+  sidebar
+  @create="onCreate"
+  @update="onUpdate"
+  @remove="onRemove"
+  @event-click="onClick"
+/>
+```
+
+- `CalendarViewEvent` (`#protokit/calendar`): `{ id, title, start, end, allDay?, calendarId?, color?, description?, location?, editable? }` — floating local `YYYY-MM-DDTHH:mm:ss`, `end` EXCLUSIVE
+- Flags: `editable` (move/resize), `creatable` (draw new), `popover` (inline form), `droppable` (`@external-drop`), `sidebar`, `toolbar`, `shortcuts`, `weekStartsOn`, `views`, `loading`
+- A plain `view="month"` pins the view; use `v-model:view` when offering several
+- `ProtoCalendar` passes every view prop/listener through; converts stored ⇄ view with `fromStoredEvent` / `toStoredPatch`
+
+## `<VizCollectionCalendar>` — Collection on a Calendar
+
+Renders collection items as calendar events; dragging one writes the new date/time back via `onUpdate`.
+
+```vue
+<VizCollectionCalendar
   :items="proto.collections.events.items.value"
   :config="{
     dateField: 'date',
@@ -134,6 +161,7 @@ Renders a monthly/weekly/daily calendar from collection items.
     statusColorMap: { scheduled: 'blue', done: 'green' },
     defaultColor: 'neutral',
   }"
+  :on-update="(idx, val) => proto.collections.events.update(idx, val)"
 />
 ```
 

@@ -37,6 +37,18 @@ interface Shot {
   act?: (page: Page) => Promise<void>
   /** Photograph one part of the page instead of the whole content column: a README-sized picture of one feature. */
   crop?: (page: Page) => Locator
+  /**
+   * Keep the app shell at the viewport's height instead of letting the content flow. For pages that scroll inside
+   * themselves: the calendar's month view is a virtualized ±5-year list, and unbounded it would lay out every row.
+   */
+  keepHeight?: boolean
+  /**
+   * Start the clock at FIXED_NOW and let it run, instead of freezing it there. Vue ignores an event whose timestamp
+   * is not later than the moment its listener was attached, so with `Date.now()` frozen a listener added after the
+   * page loaded never fires once an ancestor's listener has stamped the event: the calendar's form opens in a
+   * popover, and the colour select inside it would not open. The seconds that pass do not reach the picture.
+   */
+  clockRuns?: boolean
 }
 
 /** A card: the rounded, bordered box around a heading or title text. */
@@ -67,27 +79,42 @@ const addCompetitors = async (page: Page) => {
   }
 }
 
-// ─── Calendar: events through the event modal, on the pinned "today" ──────────
+// ─── Calendar: events drawn on the grid, on the pinned "today" ────────────────
 const EVENTS = [
-  { title: 'Sprint planning', start: '2026-03-09T09:00', end: '2026-03-09T10:30', color: 'violet' },
-  { title: 'Design review', start: '2026-03-11T13:00', end: '2026-03-11T14:00', color: 'pink' },
-  { title: 'Customer call — Acme', start: '2026-03-11T15:30', end: '2026-03-11T16:15', color: 'amber' },
-  { title: 'Release 0.1.0', start: '2026-03-12T11:00', end: '2026-03-12T12:00', color: 'emerald' },
-  { title: 'Retro', start: '2026-03-13T16:00', end: '2026-03-13T17:00', color: 'sky' },
+  { title: 'Sprint planning', day: '2026-03-09', start: ['09', '00'], end: ['10', '30'], color: 'violet' },
+  { title: 'Design review', day: '2026-03-11', start: ['13', '00'], end: ['14', '00'], color: 'pink' },
+  { title: 'Customer call — Acme', day: '2026-03-11', start: ['15', '30'], end: ['16', '15'], color: 'amber' },
+  { title: 'Release 0.1.0', day: '2026-03-12', start: ['11', '00'], end: ['12', '00'], color: 'emerald' },
+  { title: 'Retro', day: '2026-03-13', start: ['16', '00'], end: ['17', '00'], color: 'sky' },
 ]
+/** A time field's hour and minute, typed the way a person does: click the segment, type the digits. */
+const setTime = async (form: Locator, field: string, [hour, minute]: string[]) => {
+  const group = form.getByRole('group', { name: field })
+  await group.getByRole('spinbutton', { name: /^hour/ }).click()
+  await form.page().keyboard.type(hour!)
+  await group.getByRole('spinbutton', { name: /^minute/ }).click()
+  await form.page().keyboard.type(minute!)
+}
 const addEvents = async (page: Page) => {
   for (const e of EVENTS) {
-    await page.getByRole('button', { name: 'Add Event' }).first().click()
-    const d = dialog(page)
-    await expect(d).toContainText('New Event')
-    await d.getByPlaceholder('Add title').fill(e.title)
-    await d.locator('input[type="datetime-local"]').nth(0).fill(e.start)
-    await d.locator('input[type="datetime-local"]').nth(1).fill(e.end)
-    await d.locator(`button[title="${e.color}"]`).click()
-    await d.getByRole('button', { name: 'Add Event' }).click()
+    // A double click on a day in the month view drafts a one-hour event at 9:00 and opens its form beside it.
+    // Low in the cell, clear of the events already in it
+    const cell = page.locator(`[data-date="${e.day}"]`).first()
+    const box = (await cell.boundingBox())!
+    await cell.dblclick({ position: { x: box.width / 2, y: box.height - 10 } })
+    const form = dialog(page)
+    await expect(form).toBeVisible()
+    // The end first: the start typed first would briefly sit after the draft's 10:00 end
+    await setTime(form, 'End time', e.end)
+    await setTime(form, 'Start time', e.start)
+    await form.getByRole('combobox', { name: 'Colour' }).click()
+    await page.getByRole('option', { name: e.color, exact: true }).click()
+    // Enter in the title saves the draft and closes the form
+    await form.getByPlaceholder('New Event').fill(e.title)
+    await form.getByPlaceholder('New Event').press('Enter')
     await expect(dialog(page)).toBeHidden()
+    await expect(page.locator('main')).toContainText(e.title)
   }
-  await expect(page.locator('main')).toContainText('Release 0.1.0')
 }
 
 // ─── Tasks typed into an input ────────────────────────────────────────────────
@@ -116,29 +143,33 @@ const SHOTS: Shot[] = [
   { name: 'competitors', path: '/competitors', says: 'Competitor Tracker', act: addCompetitors },
 
   // ── Components ─────────────────────────────────────────────────────────────
-  { name: 'calendar', path: '/calendar', says: 'March 2026', act: addEvents },
+  { name: 'calendar', path: '/calendar', says: 'March 2026', keepHeight: true, clockRuns: true, act: addEvents },
   {
-    name: 'calendar-week', path: '/calendar', says: 'March 2026',
+    name: 'calendar-week', path: '/calendar', says: 'March 2026', keepHeight: true, clockRuns: true,
     act: async (page) => {
       await addEvents(page)
-      await page.getByRole('button', { name: 'week', exact: true }).click()
-      await expect(page.locator('main')).toContainText('Customer call — Acme')
+      await page.getByRole('tab', { name: 'Week' }).click()
+      await expect(page.locator('[data-week-grid]')).toContainText('Customer call — Acme')
     },
   },
   {
-    name: 'calendar-event', path: '/calendar', says: 'March 2026', crop: dialog,
+    name: 'calendar-event', path: '/calendar', says: 'March 2026', keepHeight: true, clockRuns: true, crop: dialog,
     act: async (page) => {
       await addEvents(page)
-      // The event's text ignores the pointer (its wrapper handles the click), so click where a person would
-      await page.getByText('Design review').first().click({ force: true })
-      await expect(dialog(page)).toContainText('Edit Event')
+      // Clicking an event opens its form in place, already holding the event
+      await page.getByRole('button', { name: /^Design review/ }).first().click()
+      await expect(dialog(page).getByPlaceholder('New Event')).toHaveValue('Design review')
     },
   },
   {
-    name: 'calendar-tasks', path: '/calendar-tasks', says: 'March 2026',
+    name: 'calendar-tasks', path: '/calendar-tasks', says: 'March 2026', keepHeight: true, clockRuns: true,
     act: async (page) => {
       await addTasks(page, 'New task...')
-      await page.getByText(TASKS[0]!, { exact: true }).dragTo(page.getByText('12', { exact: true }).first())
+      // Dropped on the day's cell (the day number is a button of its own, not a drop target), it becomes an event
+      const thursday = page.locator('[data-date="2026-03-12"]').first()
+      const box = (await thursday.boundingBox())!
+      await page.getByText(TASKS[0]!, { exact: true }).dragTo(thursday, { targetPosition: { x: box.width / 2, y: box.height - 10 } })
+      await expect(page.locator('[data-event]').filter({ hasText: TASKS[0]! })).toBeVisible()
     },
   },
   { name: 'charts', path: '/charts', says: 'Q4 Kickoff' },
@@ -213,7 +244,8 @@ for (const viewport of VIEWPORTS) {
       const image = `${shot.name}-${viewport.width}`
 
       test(image, async ({ page }) => {
-        await page.clock.setFixedTime(FIXED_NOW)
+        if (shot.clockRuns) await page.clock.setSystemTime(FIXED_NOW)
+        else await page.clock.setFixedTime(FIXED_NOW)
 
         // serverSync is off: any request other than a read means a page talks to a server it should not
         const writes: string[] = []
@@ -245,7 +277,9 @@ for (const viewport of VIEWPORTS) {
 
         // The layout is a fixed-height shell whose <main> scrolls; let the content flow so a tall page is captured
         // whole, then photograph the content without the sidebar.
-        await page.addStyleTag({ content: '.h-screen { height: auto !important; } main { overflow: visible !important; }' })
+        if (!shot.keepHeight) {
+          await page.addStyleTag({ content: '.h-screen { height: auto !important; } main { overflow: visible !important; }' })
+        }
         const target = shot.crop ? shot.crop(page) : page.locator('main > *').first()
         await expect(target).toHaveScreenshot(`${image}.png`)
       })

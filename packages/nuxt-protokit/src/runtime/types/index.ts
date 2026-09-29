@@ -3,5 +3,5 @@ export type { SectionDef, ResultSectionDef, CardDef, VizDef, BuiltInVizDef, Cust
 export type { ComputeContext, DerivedDef, ConnectionsDef } from './compute'
 export type { ProtokitExtension, ProtokitExtensionInput, ProtokitFieldExtension, ProtokitVizExtension } from '../utils/defineProtokitExtension'
 export type { PermissionGuard, PermissionContext, PermissionAction, CollectionPermissions, FieldPermissions, CollectionPermissionsResolved, FieldPermissionsResolved } from './permissions'
-export type { CalendarEvent, CalendarView, CalendarDragState, CalendarEventLayout, CalendarColor } from './calendar'
-export { CALENDAR_EVENT_DEFAULTS, CALENDAR_COLORS, CALENDAR_COLOR_HEX } from './calendar'
+export type { CalendarEvent, CalendarView, CalendarColor } from './calendar'
+export { CALENDAR_EVENT_DEFAULTS, CALENDAR_COLORS } from './calendar'

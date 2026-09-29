@@ -1,250 +1,80 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+// <ProtoCalendar> — <ProtoCalendarView> bound to a Y.js document through `useProtoCalendar`, so it
+// persists to IndexedDB and syncs across tabs with no wiring. Any other <ProtoCalendarView> prop or
+// listener (`week-starts-on`, `sidebar`, `@event-click`, …) passes straight through.
+//
+// The store keeps its own event shape (all-day `endAt` is the last day); `fromStoredEvent` and
+// `toStoredPatch` convert both ways, so documents written by earlier versions still open.
 import type * as Y from 'yjs'
-import type { CalendarView, CalendarEvent } from '../types/calendar'
-import {
-  addDays,
-  formatMonthTitle,
-  formatWeekTitle,
-  formatDayTitle,
-  toLocalISOString,
-} from '../utils/calendarLayout'
+import { parseDate } from '@internationalized/date'
+import type { CalendarDate } from '@internationalized/date'
+import { computed, ref, shallowRef } from 'vue'
+import type { CalendarEvent, CalendarView } from '../calendar/types'
+import { fromStoredEvent, toStoredPatch } from '../calendar/stored'
+import { todayDate } from '../calendar/dates'
+import { CALENDAR_EVENT_DEFAULTS } from '../types/calendar'
 import { useProtoCalendar } from '../composables/useProtoCalendar'
+import ProtoCalendarView from './calendar/ProtoCalendarView.vue'
 
-const props = defineProps<{
+const props = withDefaults(defineProps<{
   docKey?: string
   namespace?: string
   existingDoc?: Y.Doc
   initialView?: CalendarView
+  /** `YYYY-MM-DD` (a longer ISO string is cut to its date). */
   initialDate?: string
   disableSync?: boolean
-}>()
+}>(), {
+  initialView: 'month',
+})
 
-const currentView = ref<CalendarView>(props.initialView ?? 'month')
-const currentDate = ref<Date>(
-  props.initialDate ? new Date(props.initialDate) : new Date(),
-)
-
-const { events, addEvent, updateEvent, removeEvent, moveEvent, isReady } = useProtoCalendar({
+const { events: stored, addEvent, updateEvent, removeEvent, isReady } = useProtoCalendar({
   docKey: props.docKey,
   namespace: props.namespace,
   existingDoc: props.existingDoc,
   disableSync: props.disableSync,
 })
 
-// ── Header title ──────────────────────────────────────────────────────────────
-
-const viewTitle = computed(() => {
-  if (currentView.value === 'month') return formatMonthTitle(currentDate.value)
-  if (currentView.value === 'week') return formatWeekTitle(currentDate.value)
-  return formatDayTitle(currentDate.value)
-})
-
-// ── Navigation ────────────────────────────────────────────────────────────────
-
-function navigatePrev() {
-  const d = new Date(currentDate.value)
-  if (currentView.value === 'month') {
-    d.setMonth(d.getMonth() - 1)
+function startingDate(): CalendarDate {
+  try {
+    return props.initialDate ? parseDate(props.initialDate.slice(0, 10)) : todayDate()
   }
-  else if (currentView.value === 'week') {
-    d.setDate(d.getDate() - 7)
-  }
-  else {
-    d.setDate(d.getDate() - 1)
-  }
-  currentDate.value = d
-}
-
-function navigateNext() {
-  const d = new Date(currentDate.value)
-  if (currentView.value === 'month') {
-    d.setMonth(d.getMonth() + 1)
-  }
-  else if (currentView.value === 'week') {
-    d.setDate(d.getDate() + 7)
-  }
-  else {
-    d.setDate(d.getDate() + 1)
-  }
-  currentDate.value = d
-}
-
-function goToToday() {
-  currentDate.value = new Date()
-}
-
-// ── Modal state ───────────────────────────────────────────────────────────────
-
-const isModalOpen = ref(false)
-const selectedEvent = ref<CalendarEvent | null>(null)
-const newEventDefaults = ref<Partial<CalendarEvent>>({})
-
-function onDayClick(date: Date, hour = 9) {
-  const start = new Date(date)
-  start.setHours(hour, 0, 0, 0)
-  const end = new Date(start.getTime() + 60 * 60 * 1000)
-  newEventDefaults.value = {
-    startAt: toLocalISOString(start),
-    endAt: toLocalISOString(end),
-  }
-  selectedEvent.value = null
-  isModalOpen.value = true
-}
-
-function onRangeSelect(startAt: string, endAt: string) {
-  newEventDefaults.value = { startAt, endAt }
-  selectedEvent.value = null
-  isModalOpen.value = true
-}
-
-function onEventClick(event: CalendarEvent) {
-  selectedEvent.value = event
-  newEventDefaults.value = {}
-  isModalOpen.value = true
-}
-
-function onEventMove(id: string, newStartAt: string, newEndAt: string) {
-  moveEvent(id, newStartAt, newEndAt)
-}
-
-function onEventUpdate(id: string, patch: Partial<CalendarEvent>) {
-  updateEvent(id, patch)
-}
-
-function onModalSave(event: CalendarEvent) {
-  if (selectedEvent.value?.id) {
-    updateEvent(event.id, event)
-  }
-  else {
-    const { id: _id, ...rest } = event
-    addEvent(rest)
+  catch {
+    return todayDate()
   }
 }
 
-function onModalDelete(event: CalendarEvent) {
-  removeEvent(event.id)
+const view = ref<CalendarView>(props.initialView)
+// Shallow: a reactive proxy would break `CalendarDate`'s private fields
+const date = shallowRef<CalendarDate>(startingDate())
+
+const events = computed(() => stored.value.map(fromStoredEvent))
+
+function onCreate(event: CalendarEvent) {
+  addEvent({ ...CALENDAR_EVENT_DEFAULTS, ...toStoredPatch(event) })
 }
 
-// Navigate to a day when "+N more" is clicked in month view
-function onMonthDayClick(date: Date) {
-  currentDate.value = date
-  currentView.value = 'day'
+function onUpdate(event: CalendarEvent) {
+  updateEvent(event.id, toStoredPatch(event))
 }
 </script>
 
 <template>
+  <!-- The document lives in IndexedDB, so there is nothing to render on the server; until it has loaded, the
+    view shows its placeholders rather than an empty calendar -->
   <ClientOnly>
-    <div class="flex flex-col h-full overflow-hidden">
-      <!-- Calendar header -->
-      <div class="flex items-center gap-2 px-4 py-3 border-b border-default shrink-0">
-        <!-- Prev/Next/Today -->
-        <div class="flex items-center gap-1">
-          <UButton
-            icon="i-lucide-chevron-left"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="navigatePrev"
-          />
-          <UButton
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="goToToday"
-          >
-            Today
-          </UButton>
-          <UButton
-            icon="i-lucide-chevron-right"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="navigateNext"
-          />
-        </div>
-
-        <!-- Title -->
-        <h2 class="flex-1 text-base font-semibold text-highlighted">
-          {{ viewTitle }}
-        </h2>
-
-        <!-- View toggle -->
-        <div class="flex items-center gap-1">
-          <UButton
-            v-for="view in (['month', 'week', 'day'] as CalendarView[])"
-            :key="view"
-            :variant="currentView === view ? 'solid' : 'ghost'"
-            :color="currentView === view ? 'primary' : 'neutral'"
-            size="sm"
-            class="capitalize"
-            @click="currentView = view"
-          >
-            {{ view }}
-          </UButton>
-        </div>
-
-        <!-- Add event button -->
-        <UButton
-          icon="i-lucide-plus"
-          size="sm"
-          @click="onDayClick(currentDate)"
-        >
-          Add Event
-        </UButton>
-      </div>
-
-      <!-- Loading state -->
-      <div
-        v-if="!isReady"
-        class="flex-1 animate-pulse bg-muted/30 m-2 rounded"
-      />
-
-      <!-- Calendar views -->
-      <template v-else>
-        <ProtoCalendarMonth
-          v-if="currentView === 'month'"
-          :events="events"
-          :current-date="currentDate"
-          class="flex-1 overflow-hidden"
-          @day-click="onMonthDayClick"
-          @event-click="onEventClick"
-          @event-move="onEventMove"
-        />
-        <ProtoCalendarWeek
-          v-else-if="currentView === 'week'"
-          :events="events"
-          :current-date="currentDate"
-          class="flex-1 overflow-hidden"
-          @range-select="onRangeSelect"
-          @event-click="onEventClick"
-          @event-move="onEventMove"
-          @event-update="onEventUpdate"
-        />
-        <ProtoCalendarDay
-          v-else
-          :events="events"
-          :current-date="currentDate"
-          class="flex-1 overflow-hidden"
-          @range-select="onRangeSelect"
-          @event-click="onEventClick"
-          @event-move="onEventMove"
-          @event-update="onEventUpdate"
-        />
-      </template>
-    </div>
-
-    <!-- Event modal -->
-    <ProtoCalendarEventModal
-      v-model:open="isModalOpen"
-      :event="selectedEvent"
-      :defaults="newEventDefaults"
-      @save="onModalSave"
-      @delete="onModalDelete"
+    <ProtoCalendarView
+      v-model:view="view"
+      v-model:date="date"
+      :events="events"
+      :loading="!isReady"
+      @create="onCreate"
+      @update="onUpdate"
+      @remove="removeEvent"
     />
 
     <template #fallback>
-      <div class="flex-1 animate-pulse bg-muted rounded m-4" />
+      <div class="flex-1 h-full animate-pulse bg-muted rounded m-4" />
     </template>
   </ClientOnly>
 </template>

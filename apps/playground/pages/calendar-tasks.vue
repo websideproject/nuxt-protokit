@@ -1,13 +1,25 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { useAutoAnimate } from '@formkit/auto-animate/vue'
-import type { CalendarView, CalendarColor } from '#protokit/types'
-import { formatDayTitle, formatMonthTitle, formatWeekTitle } from '#protokit/utils/calendarLayout'
+import type { CalendarColor } from '#protokit/types'
+import type { CalendarExternalDrop, CalendarViewEvent } from '#protokit/calendar'
+import { fromStoredEvent, toStoredPatch } from '#protokit/calendar'
 
 // ── Calendar events ───────────────────────────────────────────────────────────
-const { doc, events, addEvent, updateEvent, removeEvent, moveEvent, isReady } = useProtoCalendar({
+// The store keeps its own event shape; the view gets [start, end) events and hands changes back.
+const { doc, events, addEvent, updateEvent, removeEvent, isReady } = useProtoCalendar({
   docKey: 'calendar-tasks-demo',
 })
+
+const viewEvents = computed(() => events.value.map(fromStoredEvent))
+const view = ref<'month' | 'week' | 'day'>('month')
+
+function onCreate(event: CalendarViewEvent) {
+  addEvent({ ...toStoredPatch(event), linkedTaskId: '' })
+}
+function onUpdate(event: CalendarViewEvent) {
+  updateEvent(event.id, toStoredPatch(event))
+}
 
 // ── Tasks (co-located in the same Y.Doc) ─────────────────────────────────────
 interface Task {
@@ -62,32 +74,6 @@ const scheduledTaskIds = computed(() =>
 const pendingTasks = computed(() => taskList.items.value.filter(t => !t.done))
 const doneTasks = computed(() => taskList.items.value.filter(t => t.done))
 
-// ── Calendar state ────────────────────────────────────────────────────────────
-const currentView = ref<CalendarView>('month')
-const currentDate = ref(new Date())
-
-function navigatePrev() {
-  const d = new Date(currentDate.value)
-  if (currentView.value === 'month') d.setMonth(d.getMonth() - 1)
-  else if (currentView.value === 'week') d.setDate(d.getDate() - 7)
-  else d.setDate(d.getDate() - 1)
-  currentDate.value = d
-}
-
-function navigateNext() {
-  const d = new Date(currentDate.value)
-  if (currentView.value === 'month') d.setMonth(d.getMonth() + 1)
-  else if (currentView.value === 'week') d.setDate(d.getDate() + 7)
-  else d.setDate(d.getDate() + 1)
-  currentDate.value = d
-}
-
-const viewTitle = computed(() => {
-  if (currentView.value === 'month') return formatMonthTitle(currentDate.value)
-  if (currentView.value === 'week') return formatWeekTitle(currentDate.value)
-  return formatDayTitle(currentDate.value)
-})
-
 // ── Task drag → calendar ──────────────────────────────────────────────────────
 // Store the dragging task in a ref so we don't rely on dataTransfer parsing
 const draggingTask = ref<Task | null>(null)
@@ -107,60 +93,23 @@ function onTaskDragEnd() {
   draggingTask.value = null
 }
 
-// Unified handler for all views — (startAt, endAt, allDay, data) signature
-function onExternalDrop(startAt: string, endAt: string, allDay: boolean, rawData: string) {
+// A task dropped on the grid becomes an event where it landed (an hour in the time grid, the day on
+// the all-day row or in the month view) and stays linked to the task
+function onExternalDrop({ start, end, allDay, data }: CalendarExternalDrop) {
   // Prefer the in-memory ref (more reliable than dataTransfer parsing)
   let task: Task | null = draggingTask.value
   if (!task) {
-    try { task = JSON.parse(rawData) }
+    try { task = JSON.parse(data) }
     catch { return }
   }
   if (!task?.title) return
 
   addEvent({
-    title: task.title,
-    startAt,
-    endAt,
-    allDay,
-    color: task.color ?? 'sky',
-    description: '',
-    location: '',
+    ...toStoredPatch({ id: '', title: task.title, start, end, allDay, color: task.color ?? 'sky' }),
     linkedTaskId: task.id,
   })
   draggingTask.value = null
 }
-
-// ── Event modal ───────────────────────────────────────────────────────────────
-const isModalOpen = ref(false)
-const selectedEvent = ref<any>(null)
-const newEventDefaults = ref<any>({})
-
-function onEventClick(event: any) {
-  selectedEvent.value = event
-  newEventDefaults.value = {}
-  isModalOpen.value = true
-}
-
-function onRangeSelect(startAt: string, endAt: string) {
-  newEventDefaults.value = { startAt, endAt }
-  selectedEvent.value = null
-  isModalOpen.value = true
-}
-
-function onMonthDayClick(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  const d = `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-  newEventDefaults.value = { startAt: `${d}T09:00:00`, endAt: `${d}T10:00:00` }
-  selectedEvent.value = null
-  isModalOpen.value = true
-}
-
-function onModalSave(event: any) {
-  if (selectedEvent.value?.id) updateEvent(event.id, event)
-  else { const { id: _, ...rest } = event; addEvent(rest) }
-}
-
-function onModalDelete(event: any) { removeEvent(event.id) }
 
 // ── Auto-animate refs ─────────────────────────────────────────────────────────
 const [pendingListRef] = useAutoAnimate()
@@ -180,84 +129,15 @@ function colorDot(color: CalendarColor) {
     >
       <!-- ── Left: Calendar ─────────────────────────────────────────────── -->
       <div class="flex-1 min-w-0 flex flex-col overflow-hidden">
-        <!-- Calendar header -->
-        <div class="flex items-center gap-1.5 px-4 py-3 border-b border-default shrink-0">
-          <UButton
-            icon="i-lucide-chevron-left"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="navigatePrev"
-          />
-          <UButton
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="currentDate = new Date()"
-          >
-            Today
-          </UButton>
-          <UButton
-            icon="i-lucide-chevron-right"
-            variant="ghost"
-            color="neutral"
-            size="sm"
-            @click="navigateNext"
-          />
-          <h2 class="flex-1 text-base font-semibold text-highlighted px-1">
-            {{ viewTitle }}
-          </h2>
-          <!-- View toggle -->
-          <div class="flex items-center gap-0.5">
-            <UButton
-              v-for="v in (['month', 'week', 'day'] as CalendarView[])"
-              :key="v"
-              :variant="currentView === v ? 'solid' : 'ghost'"
-              :color="currentView === v ? 'primary' : 'neutral'"
-              size="sm"
-              class="capitalize"
-              @click="currentView = v"
-            >
-              {{ v }}
-            </UButton>
-          </div>
-        </div>
-
-        <!-- Month view -->
-        <ProtoCalendarMonth
-          v-if="currentView === 'month'"
-          :events="events"
-          :current-date="currentDate"
-          class="flex-1 overflow-hidden"
-          @day-click="onMonthDayClick"
-          @event-click="onEventClick"
-          @event-move="(id, s, e) => moveEvent(id, s, e)"
-          @external-drop="onExternalDrop"
-        />
-
-        <!-- Week view -->
-        <ProtoCalendarWeek
-          v-else-if="currentView === 'week'"
-          :events="events"
-          :current-date="currentDate"
-          class="flex-1 overflow-hidden"
-          @range-select="onRangeSelect"
-          @event-click="onEventClick"
-          @event-move="(id, s, e) => moveEvent(id, s, e)"
-          @event-update="(id, patch) => updateEvent(id, patch)"
-          @external-drop="onExternalDrop"
-        />
-
-        <!-- Day view -->
-        <ProtoCalendarDay
-          v-else
-          :events="events"
-          :current-date="currentDate"
-          class="flex-1 overflow-hidden"
-          @range-select="onRangeSelect"
-          @event-click="onEventClick"
-          @event-move="(id, s, e) => moveEvent(id, s, e)"
-          @event-update="(id, patch) => updateEvent(id, patch)"
+        <ProtoCalendarView
+          v-model:view="view"
+          :events="viewEvents"
+          sidebar
+          droppable
+          shortcuts
+          @create="onCreate"
+          @update="onUpdate"
+          @remove="removeEvent"
           @external-drop="onExternalDrop"
         />
       </div>
@@ -451,13 +331,4 @@ function colorDot(color: CalendarColor) {
       </div>
     </template>
   </ClientOnly>
-
-  <!-- Event modal -->
-  <ProtoCalendarEventModal
-    v-model:open="isModalOpen"
-    :event="selectedEvent"
-    :defaults="newEventDefaults"
-    @save="onModalSave"
-    @delete="onModalDelete"
-  />
 </template>

@@ -1,140 +1,102 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import type { CalendarEvent, CalendarColor } from '../../types/calendar'
-import { CALENDAR_COLOR_HEX } from '../../types/calendar'
+// A collection drawn on <ProtoCalendarView>: each item with a date becomes an event, and dragging one
+// writes the new date (and times, for a timed item) back through `onUpdate`. Items are edited through
+// the collection's own UI, so the calendar neither creates events nor opens its inline form; a click
+// emits `event-click` with the item id.
+import { computed, ref } from 'vue'
+import { addDays, addMinutes } from 'date-fns'
+import type { CalendarEvent, CalendarView } from '../../calendar/types'
 import type { CollectionCalendarConfig } from '../../types/brick'
-import { formatMonthTitle, formatWeekTitle } from '../../utils/calendarLayout'
+import { toLocalISO } from '../../calendar/dates'
+import ProtoCalendarView from '../calendar/ProtoCalendarView.vue'
+
+type Item = Record<string, any>
 
 const props = defineProps<{
-  items: any[]
+  items: Item[]
   config: CollectionCalendarConfig
-  onUpdate?: (index: number, item: any) => void
+  onUpdate?: (index: number, value: Item) => void
 }>()
 
 const emit = defineEmits<{
   'event-click': [id: string]
-  'day-click': [date: string]
 }>()
 
-const currentDate = ref(new Date())
-const view = ref<'month' | 'week'>('month')
+const view = ref<CalendarView>('month')
 
 const idField = computed(() => props.config.idField ?? '_id')
 
-function itemToEvent(item: any): CalendarEvent | null {
-  const date = item[props.config.dateField] || (props.config.endDateField && item[props.config.endDateField])
-  if (!date) return null
+function isAllDay(item: Item): boolean {
+  return props.config.allDayField ? item[props.config.allDayField] !== false : true
+}
 
-  const isAllDay = props.config.allDayField ? item[props.config.allDayField] !== false : true
-  const timeField = props.config.timeField
-  const endTimeField = props.config.endTimeField
+function nextDay(ymd: string): string {
+  return toLocalISO(addDays(new Date(`${ymd}T00:00:00`), 1)).slice(0, 10)
+}
 
-  const startAt = (!isAllDay && timeField && item[timeField])
-    ? `${date}T${item[timeField]}:00`
-    : `${date}T00:00:00`
-
-  const endDate = props.config.endDateField ? (item[props.config.endDateField] || date) : date
-  const endAt = (!isAllDay && endTimeField && item[endTimeField])
-    ? `${endDate}T${item[endTimeField]}:00`
-    : `${endDate}T23:59:59`
-
-  const status = item.status as string | undefined
-  const color: CalendarColor = (status && props.config.statusColorMap?.[status])
-    || props.config.defaultColor
-    || 'neutral'
-
-  return {
-    id: item[idField.value],
-    title: item[props.config.titleField] || 'Untitled',
-    startAt,
-    endAt,
-    allDay: isAllDay,
-    color,
-    description: '',
-    location: '',
-    linkedTaskId: '',
+// Dates are `YYYY-MM-DD` and times `HH:mm` on the item. The view's ranges are [start, end): an all-day
+// item ends at 00:00 the day after its last day, and a timed one with no end time runs an hour
+function itemToEvent(item: Item): CalendarEvent | null {
+  const { config } = props
+  const date: string | undefined = item[config.dateField] || (config.endDateField && item[config.endDateField])
+  if (!date) {
+    return null
   }
+
+  const endDate: string = (config.endDateField && item[config.endDateField]) || date
+  const status = item.status
+  const color = (status && config.statusColorMap?.[status]) || config.defaultColor || 'neutral'
+  const base = { id: String(item[idField.value]), title: item[config.titleField] || 'Untitled', color }
+
+  if (isAllDay(item) || !config.timeField || !item[config.timeField]) {
+    return { ...base, start: `${date}T00:00:00`, end: `${nextDay(endDate)}T00:00:00`, allDay: true }
+  }
+
+  const start = `${date}T${item[config.timeField]}:00`
+  const end = config.endTimeField && item[config.endTimeField]
+    ? `${endDate}T${item[config.endTimeField]}:00`
+    : toLocalISO(addMinutes(new Date(start), 60))
+
+  return { ...base, start, end: end > start ? end : toLocalISO(addMinutes(new Date(start), 60)) }
 }
 
-const events = computed<CalendarEvent[]>(() =>
-  props.items.flatMap((item) => {
-    const event = itemToEvent(item)
-    return event ? [event] : []
-  }),
-)
-
-function findIndex(id: string): number {
-  return props.items.findIndex(item => item[idField.value] === id)
-}
+const events = computed(() => props.items.flatMap((item) => {
+  const event = itemToEvent(item)
+  return event ? [event] : []
+}))
 
 function onEventClick(event: CalendarEvent) {
   emit('event-click', event.id)
 }
 
-function onEventMove(id: string, newStartAt: string, newEndAt: string) {
-  const idx = findIndex(id)
-  if (idx === -1) return
-  const item = props.items[idx]
-  const isAllDay = props.config.allDayField ? item[props.config.allDayField] !== false : true
-  const patch: Record<string, any> = { [props.config.dateField]: newStartAt.split('T')[0] }
-  if (!isAllDay && props.config.timeField) {
-    patch[props.config.timeField] = newStartAt.split('T')[1]?.slice(0, 5) ?? ''
-    if (props.config.endTimeField)
-      patch[props.config.endTimeField] = newEndAt.split('T')[1]?.slice(0, 5) ?? ''
+function onEventUpdate(event: CalendarEvent) {
+  const { config } = props
+  const index = props.items.findIndex(item => String(item[idField.value]) === event.id)
+  if (index === -1) {
+    return
   }
-  props.onUpdate?.(idx, { ...item, ...patch })
-}
 
-function onEventUpdate(id: string, patch: Partial<CalendarEvent>) {
-  const idx = findIndex(id)
-  if (idx === -1) return
-  const item = props.items[idx]
-  if (patch.allDay === true && props.config.allDayField) {
-    props.onUpdate?.(idx, {
-      ...item,
-      [props.config.allDayField]: true,
-      [props.config.dateField]: patch.startAt?.split('T')[0] ?? item[props.config.dateField],
-      ...(props.config.timeField ? { [props.config.timeField]: '' } : {}),
-      ...(props.config.endTimeField ? { [props.config.endTimeField]: '' } : {}),
-    })
+  const item = props.items[index]!
+  const patch: Item = { [config.dateField]: event.start.slice(0, 10) }
+
+  if (config.endDateField && item[config.endDateField]) {
+    // An all-day item's last day sits a day before the exclusive end
+    patch[config.endDateField] = event.allDay
+      ? toLocalISO(addDays(new Date(event.end), -1)).slice(0, 10)
+      : event.end.slice(0, 10)
   }
-  else if (patch.allDay === false && patch.startAt && props.config.allDayField) {
-    props.onUpdate?.(idx, {
-      ...item,
-      [props.config.allDayField]: false,
-      [props.config.dateField]: patch.startAt.split('T')[0],
-      ...(props.config.timeField ? { [props.config.timeField]: patch.startAt.split('T')[1]?.slice(0, 5) ?? '' } : {}),
-      ...(props.config.endTimeField ? { [props.config.endTimeField]: patch.endAt?.split('T')[1]?.slice(0, 5) ?? '' } : {}),
-    })
+
+  if (!event.allDay && config.timeField) {
+    patch[config.timeField] = event.start.slice(11, 16)
+    if (config.endTimeField) {
+      patch[config.endTimeField] = event.end.slice(11, 16)
+    }
   }
+
+  props.onUpdate?.(index, { ...item, ...patch })
 }
 
-function onDayClick(date: Date) {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  emit('day-click', `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`)
-}
-
-function navigatePrev() {
-  const d = new Date(currentDate.value)
-  if (view.value === 'week') d.setDate(d.getDate() - 7)
-  else d.setMonth(d.getMonth() - 1, 1)
-  currentDate.value = d
-}
-
-function navigateNext() {
-  const d = new Date(currentDate.value)
-  if (view.value === 'week') d.setDate(d.getDate() + 7)
-  else d.setMonth(d.getMonth() + 1, 1)
-  currentDate.value = d
-}
-
-const title = computed(() =>
-  view.value === 'week' ? formatWeekTitle(currentDate.value) : formatMonthTitle(currentDate.value),
-)
-
-const undatedItems = computed(() =>
-  props.items.filter(item => !item[props.config.dateField]),
-)
+const undatedItems = computed(() => props.items.filter(item => !item[props.config.dateField]))
 </script>
 
 <template>
@@ -142,80 +104,21 @@ const undatedItems = computed(() =>
     class="flex flex-col gap-4"
     style="height: calc(100vh - 280px); min-height: 480px;"
   >
-    <!-- Navigation bar -->
-    <div class="flex items-center gap-1 shrink-0">
-      <UButton
-        icon="i-lucide-chevron-left"
-        variant="ghost"
-        color="neutral"
-        size="sm"
-        @click="navigatePrev"
+    <div class="flex-1 min-h-0 overflow-hidden border border-default rounded-lg">
+      <ProtoCalendarView
+        v-model:view="view"
+        :events="events"
+        :views="['month', 'week']"
+        :editable="!!onUpdate"
+        :creatable="false"
+        :popover="false"
+        @event-click="onEventClick"
+        @update="onEventUpdate"
       />
-      <UButton
-        variant="ghost"
-        color="neutral"
-        size="sm"
-        @click="currentDate = new Date()"
-      >
-        Today
-      </UButton>
-      <UButton
-        icon="i-lucide-chevron-right"
-        variant="ghost"
-        color="neutral"
-        size="sm"
-        @click="navigateNext"
-      />
-      <h2 class="flex-1 text-base font-semibold text-highlighted px-1">
-        {{ title }}
-      </h2>
-      <div class="flex">
-        <UButton
-          icon="i-lucide-calendar-days"
-          size="sm"
-          :variant="view === 'month' ? 'solid' : 'ghost'"
-          color="neutral"
-          class="rounded-r-none"
-          @click="view = 'month'"
-        >
-          Month
-        </UButton>
-        <UButton
-          icon="i-lucide-calendar-range"
-          size="sm"
-          :variant="view === 'week' ? 'solid' : 'ghost'"
-          color="neutral"
-          class="rounded-l-none -ml-px"
-          @click="view = 'week'"
-        >
-          Week
-        </UButton>
-      </div>
     </div>
 
-    <ProtoCalendarMonth
-      v-if="view === 'month'"
-      :events="events"
-      :current-date="currentDate"
-      class="flex-1 overflow-hidden border border-default rounded-lg"
-      @day-click="onDayClick"
-      @event-click="onEventClick"
-      @event-move="onEventMove"
-    />
-
-    <ProtoCalendarWeek
-      v-else
-      :events="events"
-      :current-date="currentDate"
-      class="flex-1 overflow-hidden border border-default rounded-lg"
-      @event-click="onEventClick"
-      @event-move="onEventMove"
-      @event-update="onEventUpdate"
-    />
-
-    <!-- Undated items (month view only) -->
     <div
-      v-if="view === 'month' && undatedItems.length"
+      v-if="undatedItems.length"
       class="shrink-0"
     >
       <p class="text-sm font-medium text-muted mb-2 flex items-center gap-1">
@@ -230,22 +133,18 @@ const undatedItems = computed(() =>
           v-for="item in undatedItems"
           :key="item[idField]"
           class="text-left p-2 border border-default rounded-lg hover:bg-elevated transition-colors"
-          @click="emit('event-click', item[idField])"
+          @click="emit('event-click', String(item[idField]))"
         >
           <p class="text-sm font-medium text-highlighted truncate">
-            {{ item[config.titleField] || 'Untitled' }}
+            {{ item[config.titleField] || "Untitled" }}
           </p>
           <UBadge
             v-if="item.status"
-            color="neutral"
+            :color="(config.statusColorMap?.[item.status] as any) ?? 'neutral'"
             variant="soft"
             size="sm"
             class="mt-1"
           >
-            <span
-              class="size-1.5 rounded-full"
-              :style="{ backgroundColor: CALENDAR_COLOR_HEX[config.statusColorMap?.[item.status] ?? 'neutral'] }"
-            />
             {{ item.status }}
           </UBadge>
         </button>
