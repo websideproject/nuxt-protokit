@@ -179,40 +179,51 @@ useEventListener('keydown', (event: KeyboardEvent) => {
       <div class="flex items-center gap-2">
         <slot name="toolbar-end" />
 
-        <UTheme :props="{ button: { color: 'neutral', variant: 'soft', size: 'sm', class: 'rounded-full' } }">
-          <div class="flex items-center gap-1">
-            <UTooltip
-              text="Previous"
-              :kbds="shortcuts ? ['arrowleft'] : undefined"
-            >
-              <UButton
-                icon="i-lucide-chevron-left"
-                aria-label="Previous"
-                @click="setDate(prevDate)"
-              />
-            </UTooltip>
-            <UTooltip
-              text="Today"
-              :kbds="shortcuts ? ['t'] : undefined"
-            >
-              <UButton
-                label="Today"
-                class="hidden sm:inline-flex"
-                @click="goToday"
-              />
-            </UTooltip>
-            <UTooltip
-              text="Next"
-              :kbds="shortcuts ? ['arrowright'] : undefined"
-            >
-              <UButton
-                icon="i-lucide-chevron-right"
-                aria-label="Next"
-                @click="setDate(nextDate)"
-              />
-            </UTooltip>
-          </div>
-        </UTheme>
+        <!-- The props on each button rather than a UTheme around them: UTheme only takes `props` in Nuxt UI
+          releases after 4.5, which the kit still supports -->
+        <div class="flex items-center gap-1">
+          <UTooltip
+            text="Previous"
+            :kbds="shortcuts ? ['arrowleft'] : undefined"
+          >
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="sm"
+              icon="i-lucide-chevron-left"
+              aria-label="Previous"
+              class="rounded-full"
+              @click="setDate(prevDate)"
+            />
+          </UTooltip>
+          <UTooltip
+            text="Today"
+            :kbds="shortcuts ? ['t'] : undefined"
+          >
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="sm"
+              label="Today"
+              class="hidden rounded-full sm:inline-flex"
+              @click="goToday"
+            />
+          </UTooltip>
+          <UTooltip
+            text="Next"
+            :kbds="shortcuts ? ['arrowright'] : undefined"
+          >
+            <UButton
+              color="neutral"
+              variant="soft"
+              size="sm"
+              icon="i-lucide-chevron-right"
+              aria-label="Next"
+              class="rounded-full"
+              @click="setDate(nextDate)"
+            />
+          </UTooltip>
+        </div>
 
         <NewEventMenu
           v-if="canCreate"
