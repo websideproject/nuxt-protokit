@@ -141,14 +141,17 @@ The doc is persisted to IndexedDB under `key` and synced via BroadcastChannel be
 
 ---
 
-## `useProtoCalendar` — Calendar Event Layout
+## `useProtoCalendar` — Calendar Event Store
 
 ```ts
-const calendar = useProtoCalendar(items, options?)
-// items: Ref<any[]> or ComputedRef<any[]>
-
-// Returns layout data for <ProtoCalendar> component
+const { events, addEvent, updateEvent, removeEvent, moveEvent, isReady, doc } = useProtoCalendar({
+  docKey: 'my-calendar',   // or existingDoc: doc to share a Y.Doc with other tools
+})
+// events: Ref<CalendarEvent[]> in the STORED shape — startAt/endAt, all-day endAt = last day (inclusive)
 ```
+
+`<ProtoCalendar>` wraps this for you. To drive `<ProtoCalendarView>` from it yourself, convert with
+`fromStoredEvent` / `toStoredPatch` from `#protokit/calendar` (the view's events are [start, end)).
 
 ---
 
