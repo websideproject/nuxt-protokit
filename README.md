@@ -112,6 +112,25 @@ If you use [Claude Code](https://claude.ai/code), install the skill plugin to gi
 The plugin provides:
 - **`nuxt-protokit`** — `definePrototype`, `usePrototype`, `ProtoTool`, all field/viz types, collections, derived values, extensions, headless mode, and module authoring patterns
 
+## 🔍 PR Previews
+
+<!-- automd:file src=".github/snippets/pr-preview.md" -->
+
+Every pull request publishes a preview package via [pkg.pr.new](https://pkg.pr.new), so you can install and test changes before they are merged.
+
+```bash
+# npm
+npm install https://pkg.pr.new/@websideproject/nuxt-protokit@<pr-number>
+
+# pnpm
+pnpm add https://pkg.pr.new/@websideproject/nuxt-protokit@<pr-number>
+
+# bun
+bun add https://pkg.pr.new/@websideproject/nuxt-protokit@<pr-number>
+```
+
+<!-- /automd -->
+
 ## 🤝 Contributing
 
 <!-- automd:file src=".github/snippets/contributing.md" -->
