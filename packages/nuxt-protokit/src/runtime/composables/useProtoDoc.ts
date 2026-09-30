@@ -493,6 +493,7 @@ export function useProtoDoc(
         latestSnapshotId,
         latestSnapshotAge,
         latestSnapshotLabel,
+        syncEnabled,
         reason: msg,
       })
 

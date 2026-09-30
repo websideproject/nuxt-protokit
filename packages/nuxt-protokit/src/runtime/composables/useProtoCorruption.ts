@@ -12,6 +12,8 @@ export interface CorruptionEvent {
   latestSnapshotAge: number | null
   /** Optional snapshot label from the server */
   latestSnapshotLabel: string | null
+  /** Whether server sync is on for this doc — decides what the modal promises about future backups */
+  syncEnabled: boolean
   /** Raw error message for debugging */
   reason: string
   /** Internal: resolved by resolveCorruption() */

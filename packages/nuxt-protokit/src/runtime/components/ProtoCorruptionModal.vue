@@ -110,10 +110,13 @@ function resolve(action: 'restore' | 'fresh') {
           />
           <div>
             <p class="text-sm font-medium text-error">
-              No server backup available
+              {{ current?.syncEnabled ? 'No server backup available' : 'No backup available' }}
             </p>
             <p class="text-xs text-muted">
-              Starting fresh will clear the corrupt data. Future changes will be backed up to the server automatically.
+              Starting fresh will clear the corrupt data.
+              {{ current?.syncEnabled
+                ? 'Future changes will be backed up to the server automatically.'
+                : 'Server sync is off, so changes are stored in this browser only.' }}
             </p>
           </div>
         </div>
