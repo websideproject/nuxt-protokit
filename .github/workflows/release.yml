@@ -69,10 +69,16 @@ jobs:
             cp README.md packages/nuxt-protokit/README.md
           fi
 
+      # npm trusted publishing (OIDC, the id-token permission above): no token. npm never takes a version twice, so a
+      # re-run after a publish that went through skips it instead of failing.
       - name: Publish to npm
-        run: bunx npm publish --workspace=@websideproject/nuxt-protokit --provenance --access public
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: |
+          VERSION=${{ steps.version.outputs.version }}
+          if [ "$(npm view "@websideproject/nuxt-protokit@$VERSION" version 2>/dev/null)" = "$VERSION" ]; then
+            echo "@websideproject/nuxt-protokit@$VERSION is already on npm, skipping"
+          else
+            bunx npm publish --workspace=@websideproject/nuxt-protokit --provenance --access public
+          fi
 
       - name: Commit version updates
         run: |
