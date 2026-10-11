@@ -39,6 +39,8 @@ export interface CalendarEvent {
   color?: CalendarColor
   description?: string
   location?: string
+  /** An icon (`i-lucide-video`) drawn in place of the dot, so the event says what KIND of thing it is. */
+  icon?: string
   /** `false` locks this one event: no drag, no resize, no form. A click still emits `event-click`. */
   editable?: boolean
 }
