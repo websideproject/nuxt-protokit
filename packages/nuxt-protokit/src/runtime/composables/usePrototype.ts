@@ -120,18 +120,23 @@ export function usePrototype(
         maxItems: collSchema.maxItems,
         version: collSchema.version,
         migrations: collSchema.migrations,
+        // Migrate the stored items once IndexedDB has loaded them, not the empty list before
+        waitFor: isReady,
       })
       collectionPermissions[key] = resolveCollectionPermissions(collSchema.permissions, collSchema.key)
     }
   }
 
+  // Values consumed from other tools' outputs — filled by useProtoOutputs, read by the derived values
+  const connectionInputs = ref<Record<string, any>>({})
+
   // Compute derived values
   const derived = schema.derived
-    ? useProtoDerived(state, schema.derived, { collections })
+    ? useProtoDerived(state, schema.derived, { collections, connections: connectionInputs })
     : computed(() => ({}))
 
   // Wire produces/consumes connections
-  const { connectionInputs } = useProtoOutputs(doc, schema, derived)
+  useProtoOutputs(doc, schema, derived, connectionInputs)
 
   // Full compute context for display components
   const computeContext = computed<ComputeContext>(() => {

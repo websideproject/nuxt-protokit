@@ -2,6 +2,7 @@
 import { ref, computed } from 'vue'
 import type * as Y from 'yjs'
 import type { CollectionSchema, PresetPack } from '../types/schema'
+import { useProtoPermissions } from '../composables/useProtoPermissions'
 
 const props = withDefaults(defineProps<{
   schema: CollectionSchema
@@ -22,6 +23,10 @@ const emit = defineEmits<{
 
 const isModalMode = computed(() => props.schema.editMode === 'modal')
 
+// The collection's role guards (frontend only): read hides the list, create/update/delete hide their controls
+const { resolveCollectionPermissions } = useProtoPermissions()
+const permissions = resolveCollectionPermissions(props.schema.permissions, props.schema.key)
+
 // Inline form state
 const showForm = ref(false)
 const editingIndex = ref<number | null>(null)
@@ -34,11 +39,13 @@ const modalEditData = ref<Record<string, any> | null>(null)
 
 const search = ref(props.searchQuery)
 
+// Each row keeps its index in `items`: edit and remove act on the full list, also while a search filters it
 const filteredItems = computed(() => {
-  if (!search.value || !props.schema.searchable) return props.items
+  const rows = props.items.map((item, index) => ({ item, index }))
+  if (!search.value || !props.schema.searchable) return rows
   const q = search.value.toLowerCase()
   const searchFields = props.schema.searchFields || Object.keys(props.schema.fields)
-  return props.items.filter((item) => {
+  return rows.filter(({ item }) => {
     return searchFields.some((field) => {
       const val = item[field]
       return val != null && String(val).toLowerCase().includes(q)
@@ -138,10 +145,10 @@ function loadPreset(preset: PresetPack) {
 
 const hasPresets = computed(() => (props.schema.presets?.length ?? 0) > 0)
 const showOnboardingPresets = computed(() =>
-  props.schema.onboardingPresets && props.items.length === 0 && hasPresets.value,
+  props.schema.onboardingPresets && props.items.length === 0 && hasPresets.value && permissions.canCreate.value,
 )
 const showCompactPresets = computed(() =>
-  hasPresets.value && props.items.length > 0,
+  hasPresets.value && props.items.length > 0 && permissions.canCreate.value,
 )
 
 // Draft key for modal
@@ -149,7 +156,10 @@ const draftKey = computed(() => props.schema.key)
 </script>
 
 <template>
-  <div class="space-y-4">
+  <div
+    v-if="permissions.canRead.value"
+    class="space-y-4"
+  >
     <!-- Header -->
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-2">
@@ -169,7 +179,7 @@ const draftKey = computed(() => props.schema.key)
         </UBadge>
       </div>
       <UButton
-        v-if="!showForm"
+        v-if="!showForm && permissions.canCreate.value"
         variant="outline"
         icon="i-lucide-plus"
         size="sm"
@@ -332,7 +342,7 @@ const draftKey = computed(() => props.schema.key)
       class="space-y-2"
     >
       <div
-        v-for="(item, index) in filteredItems"
+        v-for="{ item, index } in filteredItems"
         :key="item.id || index"
         class="flex items-center justify-between p-3 rounded-lg bg-elevated border border-default"
       >
@@ -366,12 +376,14 @@ const draftKey = computed(() => props.schema.key)
         </slot>
         <div class="flex items-center gap-1 ml-2 shrink-0">
           <UButton
+            v-if="permissions.canUpdate.value"
             variant="ghost"
             size="xs"
             icon="i-lucide-pencil"
             @click="startEdit(index)"
           />
           <UButton
+            v-if="permissions.canDelete.value"
             variant="ghost"
             size="xs"
             icon="i-lucide-x"
@@ -392,7 +404,7 @@ const draftKey = computed(() => props.schema.key)
         class="size-8 mx-auto mb-2 opacity-50"
       />
       <p class="text-sm">
-        No items yet. Click "Add" to get started.
+        {{ permissions.canCreate.value ? 'No items yet. Click "Add" to get started.' : 'No items yet.' }}
       </p>
     </div>
   </div>

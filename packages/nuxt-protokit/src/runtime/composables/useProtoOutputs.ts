@@ -15,9 +15,10 @@ export function useProtoOutputs(
   doc: Y.Doc,
   schema: PrototypeSchema,
   derived: ComputedRef<Record<string, any>>,
+  /** Ref to fill with the consumed values — pass one that `derived` already reads, so derived values can use them. */
+  connectionInputs: Ref<Record<string, any>> = ref({}),
 ): { connectionInputs: Ref<Record<string, any>> } {
   const outputsMap = doc.getMap<any>(`outputs:${schema.key}`)
-  const connectionInputs = ref<Record<string, any>>({})
 
   // Write produces fields to outputs map whenever derived changes
   if (schema.produces) {
@@ -28,7 +29,9 @@ export function useProtoOutputs(
         doc.transact(() => {
           for (const key of producesKeys) {
             const val = d[key]
-            if (val !== undefined) {
+            // Unchanged values are not rewritten: every set is a new Y.js item, and a tool that consumes its
+            // own output would otherwise loop
+            if (val !== undefined && JSON.stringify(val) !== JSON.stringify(outputsMap.get(key))) {
               outputsMap.set(key, val)
             }
           }

@@ -79,10 +79,10 @@ Everything from one schema
   icon: i-lucide-bar-chart-2
   ---
   #title
-  5 visualization types
+  12 visualization types
 
   #description
-  Progress bar, benchmark bar, bar chart, comparison table, feature matrix, and timeline — driven by schema.
+  Progress, benchmark, bar, line, area, pie and donut charts, funnel, stat cards, comparison table, feature matrix, and timeline — driven by schema.
   :::
 
   :::u-page-feature
@@ -93,7 +93,7 @@ Everything from one schema
   Offline-first
 
   #description
-  Y.js + IndexedDB — every write is local-first. Sync is async and automatic. Works on a plane.
+  Y.js + IndexedDB — every write is local-first, open tabs stay in sync, and an optional server keeps backups. Works on a plane.
   :::
 
   :::u-page-feature
@@ -104,6 +104,6 @@ Everything from one schema
   Connected prototypes
 
   #description
-  Wire prototypes together with `produces`/`consumes` — a reactive data graph with automatic CRDT merge.
+  Wire prototypes that share a Y.js document together with `produces`/`consumes` — a reactive data graph.
   :::
 ::

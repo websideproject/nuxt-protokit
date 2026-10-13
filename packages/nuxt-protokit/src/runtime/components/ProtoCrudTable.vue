@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import type { CollectionSchema } from '../types/schema'
 import { applyFormat } from '../utils/formatters'
+import { useProtoPermissions } from '../composables/useProtoPermissions'
 
 const props = withDefaults(defineProps<{
   schema: CollectionSchema
@@ -15,6 +16,10 @@ const emit = defineEmits<{
   update: [index: number, item: any]
   remove: [index: number]
 }>()
+
+// The collection's read guard (frontend only) hides the table
+const { resolveCollectionPermissions } = useProtoPermissions()
+const permissions = resolveCollectionPermissions(props.schema.permissions, props.schema.key)
 
 // Build columns from schema if not provided
 const tableColumns = computed(() => {
@@ -42,7 +47,7 @@ const rows = computed(() => {
 </script>
 
 <template>
-  <div>
+  <div v-if="permissions.canRead.value">
     <div class="flex items-center justify-between mb-3">
       <div class="flex items-center gap-2">
         <UIcon

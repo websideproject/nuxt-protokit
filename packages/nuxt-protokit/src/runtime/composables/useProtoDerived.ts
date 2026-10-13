@@ -1,4 +1,4 @@
-import { computed, type Ref, type ComputedRef } from 'vue'
+import { computed, unref, type Ref, type ComputedRef } from 'vue'
 import type { ComputeContext, DerivedDef } from '../types/compute'
 
 /**
@@ -7,13 +7,13 @@ import type { ComputeContext, DerivedDef } from '../types/compute'
  *
  * @param state - Reactive state refs (from useProtoMap)
  * @param derivedDefs - Map of derived value definitions
- * @param extras - Optional extra context (connections, collections)
+ * @param extras - Optional extra context (connections — a plain object or a ref — and collections)
  */
 export function useProtoDerived(
   state: Record<string, Ref>,
   derivedDefs: Record<string, DerivedDef>,
   extras?: {
-    connections?: Record<string, any>
+    connections?: Record<string, any> | Ref<Record<string, any>>
     collections?: Record<string, { items: Ref<any[]> }>
   },
 ): ComputedRef<Record<string, any>> {
@@ -26,8 +26,9 @@ export function useProtoDerived(
 
     // Unwrap connections
     const connections: Record<string, any> = {}
-    if (extras?.connections) {
-      for (const [k, v] of Object.entries(extras.connections)) {
+    const connectionValues = unref(extras?.connections)
+    if (connectionValues) {
+      for (const [k, v] of Object.entries(connectionValues)) {
         connections[k] = v
       }
     }
