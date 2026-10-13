@@ -18,6 +18,8 @@ export interface UsePrototypeReturn {
   computeContext: ComputedRef<ComputeContext>
   reset: () => void
   isReady: Ref<boolean>
+  /** Set when an encrypted store could not be opened (wrong password or key) — see `useProtoDoc`. */
+  encryptionError: Ref<Error | null>
   doc: Y.Doc
   /**
    * Per-field reactive permission flags for the prototype's top-level fields.
@@ -85,6 +87,7 @@ export function usePrototype(
   // Get or create document
   let doc: Y.Doc
   let isReady: Ref<boolean>
+  let encryptionError: Ref<Error | null> = ref(null)
 
   if (options?.existingDoc) {
     doc = options.existingDoc
@@ -99,6 +102,7 @@ export function usePrototype(
     })
     doc = protoDoc.doc
     isReady = protoDoc.isReady
+    encryptionError = protoDoc.encryptionError
   }
 
   // Initialize map state from schema fields
@@ -167,6 +171,7 @@ export function usePrototype(
     computeContext,
     reset,
     isReady,
+    encryptionError,
     doc,
     fieldPermissions,
     collectionPermissions,

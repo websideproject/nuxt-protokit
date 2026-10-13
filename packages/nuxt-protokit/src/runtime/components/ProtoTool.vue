@@ -48,7 +48,7 @@ const encryption = computed<EncryptionConfig | undefined>(() =>
   props.encryptionPassword ? { password: props.encryptionPassword } : undefined,
 )
 
-const { state, collections, derived, computeContext, reset, isReady, doc } = usePrototype(props.schema, {
+const { state, collections, derived, computeContext, reset, isReady, encryptionError, doc } = usePrototype(props.schema, {
   docKey: props.docKey,
   existingDoc: props.doc,
   namespace: props.namespace,
@@ -79,6 +79,15 @@ const collectionItems = computed(() => {
       class="size-6 animate-spin text-muted"
     />
   </div>
+
+  <UAlert
+    v-else-if="encryptionError"
+    color="error"
+    variant="subtle"
+    icon="i-lucide-lock"
+    title="This tool can't be unlocked with this password"
+    description="The saved data is untouched. Try again with the right password."
+  />
 
   <div
     v-else
