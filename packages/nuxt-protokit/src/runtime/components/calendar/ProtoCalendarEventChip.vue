@@ -53,8 +53,13 @@ function onClick() {
       @click.stop="onClick"
       @pointerdown="onChipPointerdown($event, event)"
     >
+      <UIcon
+        v-if="event.icon"
+        :name="event.icon"
+        class="size-3.5 shrink-0"
+      />
       <span
-        v-if="event.allDay"
+        v-else-if="event.allDay"
         :class="calendarDotClass"
         class="rounded-full flex items-center justify-center p-0.5 -mx-0.75"
       >

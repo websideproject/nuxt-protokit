@@ -99,7 +99,14 @@ function onClick() {
         :class="calendarDotClass"
       />
 
-      <span class="w-full font-medium truncate">{{ event.title }}</span>
+      <span class="flex w-full min-w-0 items-center gap-1 font-medium">
+        <UIcon
+          v-if="event.icon"
+          :name="event.icon"
+          class="size-3.5 shrink-0"
+        />
+        <span class="truncate">{{ event.title }}</span>
+      </span>
       <span
         v-if="!compact || dragging"
         class="w-full truncate opacity-80 tabular-nums"
