@@ -9,6 +9,11 @@ export default defineNuxtConfig({
       __VUE_PROD_HYDRATION_MISMATCH_DETAILS__: 'true',
     },
   },
+  // Public Sans comes from public/fonts (see assets/css/main.css), not from a download at build time: Google Fonts
+  // does not always serve the same file, and a different file shifts the glyphs in every screenshot.
+  fonts: {
+    families: [{ name: 'Public Sans', provider: 'none' }],
+  },
   protokit: {
     serverSync: false,
   },
