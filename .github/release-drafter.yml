@@ -25,13 +25,12 @@ categories:
 change-template: '- $TITLE @$AUTHOR (#$NUMBER)'
 change-title-escapes: '\<*_&'
 
-# While the package is 0.x a breaking change is a minor bump (0.1.0 → 0.2.0). At 1.0, move `breaking` to major.
+# Every release is a patch — features included. Only a breaking change bumps the minor version while the
+# package is 0.x (0.1.0 → 0.2.0); at 1.0, move `breaking` to major.
 version-resolver:
   minor:
     labels:
       - 'breaking'
-      - 'feature'
-      - 'enhancement'
   default: patch
 
 template: |
