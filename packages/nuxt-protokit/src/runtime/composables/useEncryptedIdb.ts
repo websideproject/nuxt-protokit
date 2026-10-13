@@ -24,6 +24,17 @@ export type EncryptionConfig
   = | { password: string, key?: never }
     | { key: CryptoKey, password?: never }
 
+/**
+ * The stored data cannot be decrypted with the given password or key. Nothing was read into the document
+ * and nothing was written: the store is left exactly as it was, so the right password still opens it.
+ */
+export class EncryptionKeyError extends Error {
+  constructor(dbName: string) {
+    super(`[EncryptedIdb] "${dbName}" cannot be decrypted with this password or key`)
+    this.name = 'EncryptionKeyError'
+  }
+}
+
 export class EncryptedIdbPersistence {
   private db: IDBDatabase | null = null
   private cryptoKey: CryptoKey | null = null
@@ -55,38 +66,46 @@ export class EncryptedIdbPersistence {
       this.db = await this._openDB()
       this.cryptoKey = await this._resolveKey()
 
-      // Store the current doc state (which includes defaults written by useProtoMap)
-      // before loading stored updates. This mirrors y-indexeddb's beforeApplyUpdatesCallback:
-      // it ensures that origin items referenced by stored delta updates will exist
-      // in future sessions, allowing correct Y.js CRDT integration.
+      // The current doc state (defaults written by useProtoMap), captured before the stored updates are
+      // applied. It is stored below — once the key is known to be right — mirroring y-indexeddb's
+      // beforeApplyUpdatesCallback: origin items referenced by stored delta updates then exist in future
+      // sessions, allowing correct Y.js CRDT integration.
       const initialState = Y.encodeStateAsUpdate(this.doc)
+
+      const blobs = await this._getAllBlobs()
+      const updates: Uint8Array[] = []
+      for (const blob of blobs) {
+        try {
+          updates.push(await decryptBytes(this.cryptoKey, blob))
+        }
+        catch {
+          console.warn(`[EncryptedIdb] Skipping undecryptable update in "${this.dbName}"`)
+        }
+      }
+
+      // Stored data of which nothing decrypts: a wrong password or key. Write nothing — no initial state,
+      // no compaction (which would replace the store with an empty snapshot under this key, destroying the
+      // real data), no update listener — and fail, so the app can ask again.
+      if (blobs.length > 0 && updates.length === 0) {
+        throw new EncryptionKeyError(this.dbName)
+      }
+
       if (initialState.length > 2) {
         await this._storeUpdate(initialState)
       }
 
-      const blobs = await this._getAllBlobs()
-      if (blobs.length > 0) {
-        const updates: Uint8Array[] = []
-        for (const blob of blobs) {
-          try {
-            updates.push(await decryptBytes(this.cryptoKey, blob))
+      if (updates.length > 0) {
+        Y.transact(this.doc, () => {
+          for (const u of updates) {
+            try { Y.applyUpdate(this.doc, u) }
+            catch {}
           }
-          catch {
-            // Wrong key or corrupted blob — skip silently; the rest may still apply
-            console.warn(`[EncryptedIdb] Skipping undecryptable update in "${this.dbName}"`)
-          }
-        }
-        if (updates.length > 0) {
-          Y.transact(this.doc, () => {
-            for (const u of updates) {
-              try { Y.applyUpdate(this.doc, u) }
-              catch {}
-            }
-          }, 'encrypted-idb')
-        }
-        if (blobs.length >= COMPACT_THRESHOLD) {
-          await this._compact()
-        }
+        }, 'encrypted-idb')
+      }
+      // Compact only when every update decrypted: compaction rewrites the store from memory, so a blob that
+      // failed (corruption) would otherwise be deleted for good.
+      if (blobs.length >= COMPACT_THRESHOLD && updates.length === blobs.length) {
+        await this._compact()
       }
 
       this.updateListener = (update: Uint8Array, origin: unknown) => {

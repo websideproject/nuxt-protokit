@@ -21,6 +21,8 @@ export const providerCache = new Map<string, {
   serverPushTimer?: ReturnType<typeof setTimeout>
   // Stable client ID for this doc (sent with sync pushes)
   clientId?: string
+  // Set when an encrypted store cannot be opened with the given password or key (EncryptionKeyError)
+  encryptionError?: Ref<Error | null>
 }>()
 export const refCountCache = new Map<string, number>()
 // Shared isReady ref per doc key — all callers with the same key share one ref
@@ -257,6 +259,12 @@ export async function clearProtoKeys(namespace: string, schemaKeys: string[]): P
 export interface UseProtoDocReturn {
   doc: Y.Doc
   isReady: Ref<boolean>
+  /**
+   * Set when an encrypted store could not be opened — `EncryptionKeyError` for a wrong password or key. The
+   * document is then empty and nothing is persisted or synced (the stored data is left untouched); open it
+   * again with the right password.
+   */
+  encryptionError: Ref<Error | null>
   destroy: () => void
 }
 
@@ -348,6 +356,8 @@ export function useProtoDoc(
     isReadyRefCache.set(fullKey, ref(false))
   }
   const isReady = isReadyRefCache.get(fullKey)!
+  if (!providers.encryptionError) providers.encryptionError = ref(null)
+  const encryptionError = providers.encryptionError
 
   // ── Encrypted IndexedDB persistence ───────────────────────────────────────
   if (enableIndexedDB && encryption && !providers.encryptedIdb && import.meta.client) {
@@ -364,12 +374,14 @@ export function useProtoDoc(
       }
     }).catch((err: unknown) => {
       console.warn(`[useProtoDoc] Encrypted IDB failed for "${fullKey}":`, err)
+      encryptionError.value = err instanceof Error ? err : new Error(String(err))
       isReady.value = true // unblock the UI even on failure
     })
 
     // Debounced server push on updates (same as unencrypted path)
     doc.on('update', (_update: Uint8Array, origin: any) => {
       if (!isReady.value) return
+      if (encryptionError.value) return // an unopened store: never push its empty state over the server copy
       if (origin === 'broadcast' || origin === 'encrypted-idb') return
       if (!syncEnabled) return
       const existing = providers.serverPushTimer
@@ -620,5 +632,5 @@ export function useProtoDoc(
     })
   }
 
-  return { doc, isReady, destroy }
+  return { doc, isReady, encryptionError, destroy }
 }

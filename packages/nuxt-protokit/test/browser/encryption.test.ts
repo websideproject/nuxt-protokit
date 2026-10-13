@@ -4,7 +4,7 @@
  * Covers:
  * - Pure crypto functions (generateSalt, deriveKey, encryptBytes, decryptBytes)
  * - EncryptedIdbPersistence: persist → reload with correct password → data present
- * - EncryptedIdbPersistence: wrong password → data not readable
+ * - EncryptedIdbPersistence: wrong password → EncryptionKeyError, store untouched
  * - EncryptedIdbPersistence: raw IDB value is not plaintext Y.js binary
  * - EncryptedIdbPersistence: compaction (>50 updates collapses to 1)
  * - EncryptedIdbPersistence: destroy cleans up listeners
@@ -19,7 +19,7 @@ import {
   decryptBytes,
   importRawKey,
 } from '../../src/runtime/utils/encryption'
-import { EncryptedIdbPersistence } from '../../src/runtime/composables/useEncryptedIdb'
+import { EncryptedIdbPersistence, EncryptionKeyError } from '../../src/runtime/composables/useEncryptedIdb'
 import {
   clearProtoNamespace,
   clearProtoKeys,
@@ -138,7 +138,7 @@ describe('EncryptedIdbPersistence', () => {
     s2.doc.destroy()
   })
 
-  it('wrong password: data is not readable — doc loads empty', async () => {
+  it('wrong password: fails with EncryptionKeyError, reads nothing, and leaves the data for the right one', async () => {
     const name = dbName()
     trackTestDb(name)
 
@@ -150,13 +150,19 @@ describe('EncryptedIdbPersistence', () => {
     await s1.provider.destroy()
     s1.doc.destroy()
 
-    // Attempt to load with wrong password
+    // Attempt to load with wrong password: nothing decrypts, so the store is not opened
     const s2 = createEncryptedDoc(name, 'wrong-password')
-    await s2.provider.whenSynced
-    // The update cannot be decrypted — doc should be empty (default Y.Doc state)
+    await expect(s2.provider.whenSynced).rejects.toBeInstanceOf(EncryptionKeyError)
     expect(s2.doc.getMap('fields').get('secret')).toBeUndefined()
     await s2.provider.destroy()
     s2.doc.destroy()
+
+    // The right password still opens the data
+    const s3 = createEncryptedDoc(name, 'correct-password')
+    await s3.provider.whenSynced
+    expect(s3.doc.getMap('fields').get('secret')).toBe('classified')
+    await s3.provider.destroy()
+    s3.doc.destroy()
   })
 
   it('raw IDB blob is not plaintext Y.js binary', async () => {
