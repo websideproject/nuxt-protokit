@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { barColorClass } from '../../utils/vizColor'
 
 const props = withDefaults(defineProps<{
   value: number
   max?: number
   label?: string
+  /** `color`: a Nuxt UI colour name (`'error'`) or a background class (`'bg-emerald-500'`). */
   thresholds?: Array<{ value: number, color: string, label?: string }>
 }>(), {
   max: 100,
@@ -20,7 +22,7 @@ const barColor = computed(() => {
   for (const t of sorted) {
     if (props.value >= t.value) color = t.color
   }
-  return color
+  return barColorClass(color)
 })
 
 const thresholdLabel = computed(() => {
